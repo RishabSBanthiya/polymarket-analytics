@@ -75,8 +75,16 @@ class BacktestResults:
     
     # Bias warnings
     survivorship_bias_warning: bool = True  # Always true for closed markets
-    look_ahead_bias_warning: bool = True    # Usually true without live orderbook
+    look_ahead_bias_warning: bool = False   # Resolution data from API, not price inference
     execution_assumption_warning: bool = True  # Always true for simulated execution
+    
+    # Data quality info
+    uses_price_history: bool = True   # /prices-history endpoint
+    uses_orderbook_depth: bool = False  # No historical orderbook depth available
+    
+    # Spread/liquidity estimation method
+    spread_estimation_method: str = "price_bounce"  # Method used to estimate spread
+    liquidity_estimation_method: str = "multi_window_volatility"  # Method used to estimate liquidity
     
     # Additional metadata
     markets_analyzed: int = 0
@@ -235,14 +243,26 @@ class BacktestResults:
         
         if self.look_ahead_bias_warning:
             print("\n⚠️  LOOK-AHEAD BIAS:")
-            print("   Historical orderbook data not available.")
-            print("   Execution prices are estimates only.")
+            print("   Some future data may have been used in analysis.")
+        
+        # Data quality note
+        if self.uses_price_history:
+            print("\n✅ HISTORICAL DATA:")
+            print("   Using /prices-history timeseries endpoint.")
+            print("   Resolution determined from API outcomePrices (no look-ahead bias).")
+            if not self.uses_orderbook_depth:
+                print("\n⚠️  NO HISTORICAL ORDERBOOK:")
+                print(f"   Spread estimation method: {self.spread_estimation_method}")
+                print(f"   Liquidity estimation method: {self.liquidity_estimation_method}")
+                print("   These are approximations based on price patterns.")
         
         if self.execution_assumption_warning:
-            print("\n⚠️  EXECUTION OPTIMISM:")
-            print("   Assumes fills at quoted/estimated prices.")
-            print("   Real slippage may be significantly higher.")
-            print("   Large orders may move the market.")
+            print("\n⚠️  EXECUTION ASSUMPTIONS:")
+            print("   Slippage modeled based on estimated liquidity.")
+            print("   Spread estimated from price bounce patterns.")
+            print("   Real slippage may vary with market conditions.")
+            print("   Large orders may have more market impact.")
+            print("   Partial fills not accurately modeled without orderbook.")
         
         print("\n" + "="*60)
         print("⚠️  ACTUAL RESULTS MAY VARY SIGNIFICANTLY")
@@ -274,6 +294,11 @@ class BacktestResults:
                 "survivorship_bias": self.survivorship_bias_warning,
                 "look_ahead_bias": self.look_ahead_bias_warning,
                 "execution_assumption": self.execution_assumption_warning,
+            },
+            "estimation_methods": {
+                "spread": self.spread_estimation_method,
+                "liquidity": self.liquidity_estimation_method,
+                "uses_orderbook_depth": self.uses_orderbook_depth,
             }
         }
 

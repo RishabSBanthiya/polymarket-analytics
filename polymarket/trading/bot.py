@@ -360,13 +360,17 @@ class TradingBot:
                 logger.info(f"  📈 Spread: {spread:.2%}" if spread else "  📈 Spread: N/A")
                 logger.info(f"  💳 Available: ${available:.2f}")
                 
+                # Get original signal price (from flow alert) for price drift check
+                original_signal_price = signal.metadata.get("price")
+                
                 result = await self.executor.execute(
                     client=self.client,
                     token_id=signal.token_id,
                     side=side,
                     size_usd=size_usd,
                     price=current_price,
-                    orderbook=None
+                    orderbook=None,
+                    original_signal_price=original_signal_price
                 )
                 
                 if result.success and result.filled_shares > 0:

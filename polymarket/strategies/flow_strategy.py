@@ -240,6 +240,8 @@ def create_flow_bot(
     min_score: float = 30.0,
     min_trade_size: float = 100.0,
     category: Optional[str] = None,
+    max_spread: float = 0.03,  # 3% max spread
+    max_price_drift: float = 0.10,  # 10% max price drift from original trade
 ) -> TradingBot:
     """
     Create a flow copy strategy trading bot.
@@ -251,6 +253,8 @@ def create_flow_bot(
         min_score: Minimum composite score to trade
         min_trade_size: Minimum trade size to track in flow detector
         category: Market category filter (crypto, sports, politics, etc.)
+        max_spread: Maximum bid-ask spread allowed (default 3%)
+        max_price_drift: Maximum price drift from original signal (default 10%)
     
     Returns:
         Configured TradingBot ready to start
@@ -267,6 +271,8 @@ def create_flow_bot(
     logger.info(f"  Min Trade Size: ${min_trade_size:,.0f}")
     logger.info(f"  Category:       {category or 'ALL'}")
     logger.info(f"  Position Size:  2% base, up to 3x for high scores")
+    logger.info(f"  Max Spread:     {max_spread:.0%}")
+    logger.info(f"  Max Price Drift: {max_price_drift:.0%}")
     logger.info(f"{'='*60}")
     logger.info(f"  Signal Weights:")
     for signal_type, weight in SIGNAL_WEIGHTS.items():
@@ -291,7 +297,11 @@ def create_flow_bot(
         max_multiplier=3.0,  # Max 3x base position
     )
     
-    executor = DryRunExecutor() if dry_run else AggressiveExecutor(max_slippage=0.02)
+    executor = DryRunExecutor() if dry_run else AggressiveExecutor(
+        max_slippage=0.02,
+        max_spread=max_spread,
+        max_price_drift=max_price_drift
+    )
     
     # Create bot
     bot = TradingBot(
@@ -314,6 +324,8 @@ async def run_flow_bot(
     min_score: float = 30.0,
     min_trade_size: float = 100.0,
     category: Optional[str] = None,
+    max_spread: float = 0.03,
+    max_price_drift: float = 0.10,
 ):
     """
     Run the flow copy strategy bot.
@@ -326,6 +338,8 @@ async def run_flow_bot(
         min_score=min_score,
         min_trade_size=min_trade_size,
         category=category,
+        max_spread=max_spread,
+        max_price_drift=max_price_drift,
     )
     
     signal_source: FlowCopySignalSource = bot.signal_source
@@ -357,6 +371,8 @@ if __name__ == "__main__":
     parser.add_argument("--min-score", type=float, default=30.0, help="Minimum signal score")
     parser.add_argument("--min-trade-size", type=float, default=100.0, help="Min trade size to track")
     parser.add_argument("--category", type=str, default=None, help="Market category filter")
+    parser.add_argument("--max-spread", type=float, default=0.03, help="Max bid-ask spread (default: 0.03 = 3%%)")
+    parser.add_argument("--max-price-drift", type=float, default=0.10, help="Max price drift from signal (default: 0.10 = 10%%)")
     
     args = parser.parse_args()
     
@@ -373,5 +389,7 @@ if __name__ == "__main__":
         min_score=args.min_score,
         min_trade_size=args.min_trade_size,
         category=args.category,
+        max_spread=args.max_spread,
+        max_price_drift=args.max_price_drift,
     ))
 

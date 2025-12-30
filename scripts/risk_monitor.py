@@ -53,6 +53,8 @@ def cmd_status(args):
     
     with storage.transaction() as txn:
         wallet_state = txn.get_wallet_state(wallet)
+        # Also get all agents (not filtered by wallet) to see the full picture
+        all_agents = txn.get_all_agents()
     
     print("\n" + "="*60)
     print("RISK MONITOR STATUS")
@@ -65,9 +67,31 @@ def cmd_status(args):
     print(f"Available: ${wallet_state.available_capital:,.2f}")
     print(f"Total Exposure: ${wallet_state.total_exposure:,.2f} ({wallet_state.exposure_pct:.1%})")
     
-    print(f"\nActive Agents: {len([a for a in wallet_state.agents if a.status == AgentStatus.ACTIVE])}")
+    # Show agents - both for this wallet and total
+    wallet_active = len([a for a in wallet_state.agents if a.status == AgentStatus.ACTIVE])
+    all_active = len([a for a in all_agents if a.status == AgentStatus.ACTIVE])
+    
+    if wallet_active != all_active:
+        print(f"\nActive Agents (this wallet): {wallet_active}")
+        print(f"Active Agents (total): {all_active}")
+        if all_active > wallet_active:
+            print(f"  ⚠️  {all_active - wallet_active} agent(s) registered with different wallet")
+    else:
+        print(f"\nActive Agents: {all_active}")
+    
     print(f"Open Positions: {len([p for p in wallet_state.positions])}")
     print(f"Active Reservations: {len([r for r in wallet_state.reservations if r.is_active])}")
+    
+    # Show agent breakdown if there are multiple agents
+    if len(all_agents) > 0:
+        print(f"\nAgent Breakdown:")
+        for agent in all_agents:
+            status_emoji = {
+                AgentStatus.ACTIVE: "🟢",
+                AgentStatus.STOPPED: "⚪",
+                AgentStatus.CRASHED: "🔴",
+            }.get(agent.status, "❓")
+            print(f"  {status_emoji} {agent.agent_id} ({agent.agent_type}) - {agent.status.value}")
     
     print("="*60 + "\n")
 

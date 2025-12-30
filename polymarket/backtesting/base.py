@@ -126,25 +126,24 @@ class BaseBacktester(ABC):
         """
         Prepare a market for backtesting.
         
-        Fetches price history and determines winner.
+        Uses resolution data from API response to determine winner.
+        This avoids look-ahead bias by not fetching price history to infer outcomes.
         """
         market = self.api.parse_market(raw_market)
         if not market:
             return None
         
-        # Determine winning outcome
-        winning_outcome = None
-        for token in market.tokens:
-            # Fetch final price to determine winner
-            history = await self.api.fetch_price_history(token.token_id, interval="max")
-            if history:
-                final_price = history[-1].price if history else 0
-                if final_price > 0.9:  # Resolved to YES
-                    winning_outcome = token.outcome
-                    break
+        # The winning_outcome is now extracted from outcomePrices in parse_market()
+        # which uses the API's resolution data (no look-ahead bias)
         
-        market.winning_outcome = winning_outcome
-        market.resolved = True
+        # Only include resolved markets with a clear winner for backtesting
+        if not market.resolved:
+            logger.debug(f"Skipping unresolved market: {market.question[:50]}")
+            return None
+        
+        if not market.winning_outcome:
+            logger.debug(f"Skipping market with no winning outcome: {market.question[:50]}")
+            return None
         
         return market
     
@@ -241,29 +240,94 @@ class BaseBacktester(ABC):
         max_slippage: float = 0.01
     ) -> float:
         """
-        Estimate liquidity from price history.
+        Estimate liquidity from price history using multiple heuristics.
         
-        Very rough estimate based on price stability.
+        Uses:
+        - Price volatility (lower volatility = higher liquidity)
+        - Trade frequency (gaps in timestamps = low liquidity)
+        - Multi-window analysis (1min, 5min, 15min stability)
+        - Recent data weighted more heavily
+        
+        Returns:
+            Estimated liquidity in USD
         """
         if len(price_history) < 10:
-            return 100.0  # Base estimate
+            return 100.0  # Base estimate for insufficient data
         
-        # Calculate price volatility as proxy for liquidity
-        recent_prices = [p.price for p in price_history[-20:]]
+        # Get recent prices with timestamps
+        recent = price_history[-60:]  # Last 60 data points
+        prices = [p.price for p in recent]
+        timestamps = [p.timestamp for p in recent]
         
-        if not recent_prices:
+        if not prices:
             return 100.0
         
-        avg_price = sum(recent_prices) / len(recent_prices)
-        volatility = sum(abs(p - avg_price) for p in recent_prices) / len(recent_prices)
+        # 1. Volatility-based estimate (existing logic, improved)
+        avg_price = sum(prices) / len(prices)
+        volatility = sum(abs(p - avg_price) for p in prices) / len(prices)
         
-        # Lower volatility = higher liquidity (rough heuristic)
         if volatility > 0:
-            liquidity_estimate = 100.0 / (volatility * 10)
+            volatility_liquidity = 500.0 / (volatility * 50)  # Scaled estimate
         else:
-            liquidity_estimate = 1000.0
+            volatility_liquidity = 2000.0
         
-        return max(10.0, min(10000.0, liquidity_estimate))
+        # 2. Trade frequency analysis (gaps indicate low liquidity)
+        if len(timestamps) >= 2:
+            gaps = [timestamps[i] - timestamps[i-1] for i in range(1, len(timestamps))]
+            avg_gap = sum(gaps) / len(gaps)
+            
+            # If average gap > 5 minutes (300s), reduce liquidity estimate
+            # If average gap < 1 minute (60s), increase liquidity estimate
+            if avg_gap > 300:
+                frequency_factor = 0.3  # Low frequency = low liquidity
+            elif avg_gap > 60:
+                frequency_factor = 0.6
+            elif avg_gap > 10:
+                frequency_factor = 1.0
+            else:
+                frequency_factor = 1.5  # High frequency = high liquidity
+        else:
+            frequency_factor = 1.0
+        
+        # 3. Multi-window stability analysis
+        # Check if price is stable across different time windows
+        stability_scores = []
+        
+        for window_size in [5, 15, 30]:
+            if len(prices) >= window_size:
+                window_prices = prices[-window_size:]
+                window_range = max(window_prices) - min(window_prices)
+                # Smaller range = more stable = higher liquidity
+                window_stability = 1.0 / (1.0 + window_range * 20)
+                stability_scores.append(window_stability)
+        
+        if stability_scores:
+            # Weight recent windows more heavily
+            weights = [0.5, 0.3, 0.2][:len(stability_scores)]
+            total_weight = sum(weights)
+            stability_factor = sum(s * w for s, w in zip(stability_scores, weights)) / total_weight
+        else:
+            stability_factor = 0.5
+        
+        # 4. Recent data weighting
+        # Use last 10 prices for recent volatility, weight it 2x
+        if len(prices) >= 10:
+            recent_prices = prices[-10:]
+            recent_avg = sum(recent_prices) / len(recent_prices)
+            recent_vol = sum(abs(p - recent_avg) for p in recent_prices) / len(recent_prices)
+            
+            if recent_vol > 0:
+                recent_liquidity = 300.0 / (recent_vol * 30)
+            else:
+                recent_liquidity = 1500.0
+        else:
+            recent_liquidity = volatility_liquidity
+        
+        # Combine all factors
+        base_estimate = (volatility_liquidity * 0.3 + recent_liquidity * 0.4) * frequency_factor
+        final_estimate = base_estimate * (0.5 + stability_factor)
+        
+        return max(10.0, min(10000.0, final_estimate))
     
     def check_spread(
         self,

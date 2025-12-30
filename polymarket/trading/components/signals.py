@@ -221,6 +221,15 @@ class FlowAlertSignals(SignalSource):
             # Determine direction
             direction = self._determine_direction(deduped)
             
+            # Extract the original trade price from alert details
+            # Use the most recent alert's price as the reference
+            original_price = None
+            for alert in deduped:
+                details = alert.details or {}
+                if details.get("price"):
+                    original_price = details["price"]
+                    break
+            
             signals.append(Signal(
                 market_id=deduped[0].market_id,
                 token_id=deduped[0].token_id,
@@ -232,6 +241,7 @@ class FlowAlertSignals(SignalSource):
                     "severities": [a.severity for a in deduped],
                     "alert_count": len(deduped),
                     "question": deduped[0].question[:100] if hasattr(deduped[0], 'question') else "",
+                    "price": original_price,  # Original trade price from flow alert
                 }
             ))
         

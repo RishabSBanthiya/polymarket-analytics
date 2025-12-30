@@ -29,8 +29,27 @@
     <div class="col-md-3">
         <div class="card stat-card">
             <div class="card-body">
+                <h5 class="card-title">Realized P&L</h5>
+                <h3 id="realized-pnl" class="mb-0">-</h3>
+                <small class="text-muted">Closed trades</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h5 class="card-title">Unrealized P&L</h5>
+                <h3 id="unrealized-pnl" class="mb-0">-</h3>
+                <small class="text-muted">Open positions</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card" style="border: 2px solid #0d6efd;">
+            <div class="card-body">
                 <h5 class="card-title">Total P&L</h5>
-                <h2 id="total-pnl">-</h2>
+                <h2 id="total-pnl" class="mb-0">-</h2>
+                <small class="text-muted">Realized + Unrealized</small>
             </div>
         </div>
     </div>
@@ -120,27 +139,41 @@
 <script>
 async function loadDashboard() {
     try {
-        // Load stats
-        const statsRes = await fetch('/api/trades/stats');
+        // Load stats (including orphans)
+        const statsRes = await fetch('/api/trades/stats?include_orphans=true');
         const stats = await statsRes.json();
         document.getElementById('total-trades').textContent = stats.total || 0;
         document.getElementById('successful-trades').textContent = stats.successful || 0;
         
-        // Load performance
-        const perfRes = await fetch('/api/performance/overview');
+        // Load performance (including orphans, all-time)
+        const perfRes = await fetch('/api/performance/overview?include_orphans=true&days=0');
         const perf = await perfRes.json();
         const pnl = perf.total_pnl || 0;
+        const realized = perf.realized_pnl || 0;
+        const unrealized = perf.unrealized_pnl || 0;
+        
+        // Show realized P&L
+        document.getElementById('realized-pnl').textContent = 
+            (realized >= 0 ? '+' : '') + '$' + realized.toFixed(2);
+        document.getElementById('realized-pnl').style.color = realized >= 0 ? '#198754' : '#dc3545';
+        
+        // Show unrealized P&L
+        document.getElementById('unrealized-pnl').textContent = 
+            (unrealized >= 0 ? '+' : '') + '$' + unrealized.toFixed(2);
+        document.getElementById('unrealized-pnl').style.color = unrealized >= 0 ? '#198754' : '#dc3545';
+        
+        // Show total P&L
         document.getElementById('total-pnl').textContent = 
             (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(2);
         document.getElementById('total-pnl').style.color = pnl >= 0 ? '#198754' : '#dc3545';
         
-        // Load recent trades
-        const tradesRes = await fetch('/api/trades/?limit=10');
+        // Load recent trades (include orphans from wallet history)
+        const tradesRes = await fetch('/api/trades/?limit=10&include_orphans=true');
         const trades = await tradesRes.json();
         const tradesHtml = trades.length > 0 ? trades.map(t => `
-            <tr>
+            <tr ${t.is_orphan ? 'class="table-warning"' : ''}>
                 <td>${new Date(t.timestamp).toLocaleString()}</td>
-                <td>${t.agent_id}</td>
+                <td>${t.agent_id}${t.is_orphan ? ' <span class="badge bg-warning text-dark">Orphan</span>' : ''}</td>
                 <td>${t.side}</td>
                 <td>${t.shares.toFixed(4)}</td>
                 <td>$${t.filled_price.toFixed(4)}</td>

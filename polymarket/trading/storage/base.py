@@ -259,7 +259,8 @@ class StorageTransaction(ABC):
         agent_id: Optional[str] = None,
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None,
-        wallet_address: Optional[str] = None
+        wallet_address: Optional[str] = None,
+        limit: Optional[int] = None
     ) -> List[dict]:
         """Get execution history with optional filters"""
         pass

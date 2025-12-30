@@ -161,11 +161,19 @@ class Config:
     log_level: str = "INFO"
     
     def __post_init__(self):
-        """Load credentials from environment"""
+        """Load credentials from environment and resolve paths"""
         if self.private_key is None:
             self.private_key = os.getenv("PRIVATE_KEY")
         if self.proxy_address is None:
             self.proxy_address = os.getenv("POLYMARKET_PROXY_ADDRESS")
+        
+        # Make db_path absolute if it's relative
+        if not os.path.isabs(self.db_path):
+            # Find project root (where .env file would be)
+            import pathlib
+            current_file = pathlib.Path(__file__).resolve()
+            project_root = current_file.parent.parent.parent
+            self.db_path = str(project_root / self.db_path)
     
     @classmethod
     def from_env(cls) -> "Config":

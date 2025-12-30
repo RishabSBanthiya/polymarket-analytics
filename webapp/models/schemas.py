@@ -9,7 +9,7 @@ from datetime import datetime
 
 class TradeResponse(BaseModel):
     """Trade execution response"""
-    id: int
+    id: Optional[int] = None
     agent_id: str
     market_id: str
     token_id: str
@@ -22,6 +22,8 @@ class TradeResponse(BaseModel):
     error_message: Optional[str]
     timestamp: datetime
     wallet_address: Optional[str] = None
+    is_orphan: bool = False
+    transaction_type: Optional[str] = "trade"  # "trade", "deposit", "withdrawal"
 
 
 class PositionResponse(BaseModel):
@@ -65,6 +67,8 @@ class PerformanceMetrics(BaseModel):
     failed_trades: int
     win_rate: float
     total_pnl: float
+    realized_pnl: float = 0.0
+    unrealized_pnl: float = 0.0
     avg_trade_size: float
     total_volume: float
 

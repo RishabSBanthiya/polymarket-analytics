@@ -150,40 +150,107 @@ class PolymarketAPI:
         all_markets = []
         offset = 0
         limit = 100
+        consecutive_old_batches = 0  # Track consecutive batches with no valid markets
+        max_consecutive_old = 3  # Stop after 3 consecutive batches with no valid markets
+        
+        logger.info(f"Fetching closed markets from last {days} days (cutoff: {cutoff.isoformat()})")
         
         while True:
             params = {
                 "closed": "true",
                 "limit": limit,
                 "offset": offset,
+                "order": "endDate",       # Sort by end date
+                "ascending": "false",      # Most recent first
             }
             
             data = await self._get(f"{self.config.gamma_api_base}/markets", params)
             if not data:
+                logger.debug(f"No data returned at offset {offset}, stopping")
                 break
+            
+            batch_valid_count = 0
+            batch_old_count = 0
+            batch_no_closed_time = 0
             
             # Filter by closed time
             for market in data:
+                closed_time = None
                 closed_time_str = market.get("closedTime")
+                
+                # Try to parse closedTime first
                 if closed_time_str:
                     try:
-                        closed_time = datetime.fromisoformat(
-                            closed_time_str.replace("Z", "+00:00")
-                        )
-                        if closed_time >= cutoff:
-                            all_markets.append(market)
-                    except ValueError:
-                        continue
+                        # Handle different timestamp formats
+                        closed_time_str = str(closed_time_str).replace("Z", "+00:00")
+                        if " " in closed_time_str and "+" in closed_time_str:
+                            # Format: "2025-12-18 14:14:02+00"
+                            closed_time_str = closed_time_str.replace(" ", "T").replace("+00", "+00:00")
+                        closed_time = datetime.fromisoformat(closed_time_str)
+                    except ValueError as e:
+                        logger.debug(f"Failed to parse closedTime: {closed_time_str}, {e}")
+                        closed_time = None
+                
+                # Fallback to endDate if closedTime is not available
+                if closed_time is None:
+                    end_date_str = (
+                        market.get("end_date_iso") or 
+                        market.get("endDate") or 
+                        market.get("end_date")
+                    )
+                    if end_date_str:
+                        try:
+                            end_date_str = str(end_date_str).replace("Z", "+00:00")
+                            if "T" not in end_date_str:
+                                end_date_str = end_date_str + "T00:00:00+00:00"
+                            closed_time = datetime.fromisoformat(end_date_str)
+                        except ValueError as e:
+                            logger.debug(f"Failed to parse endDate: {end_date_str}, {e}")
+                            closed_time = None
+                
+                # If we have a valid date, check against cutoff
+                if closed_time is not None:
+                    if closed_time >= cutoff:
+                        all_markets.append(market)
+                        batch_valid_count += 1
+                    else:
+                        batch_old_count += 1
+                else:
+                    # No date available - include if marked as closed/resolved
+                    batch_no_closed_time += 1
+                    if market.get("closed", False) or market.get("resolved", False):
+                        all_markets.append(market)
+                        batch_valid_count += 1
+            
+            if offset % 500 == 0:
+                logger.info(
+                    f"Offset {offset}: Found {batch_valid_count} valid, {batch_old_count} old, "
+                    f"{batch_no_closed_time} no closedTime (total: {len(all_markets)})"
+                )
+            
+            # If we found valid markets, reset the consecutive old counter
+            if batch_valid_count > 0:
+                consecutive_old_batches = 0
+            else:
+                consecutive_old_batches += 1
+                # If we've had multiple consecutive batches with no valid markets,
+                # and we're seeing old markets, we've likely passed the cutoff
+                if consecutive_old_batches >= max_consecutive_old and batch_old_count > 0:
+                    logger.info(f"Stopping: {consecutive_old_batches} consecutive batches with no valid markets")
+                    break
             
             if len(data) < limit:
+                logger.debug(f"Received {len(data)} markets (less than limit {limit}), stopping")
                 break
             
             offset += limit
             
-            # Safety limit
-            if offset >= 5000:
+            # Increased safety limit to allow fetching more markets
+            if offset >= 10000:
+                logger.warning(f"Reached safety limit at offset {offset}, stopping")
                 break
         
+        logger.info(f"Fetched {len(all_markets)} closed markets total")
         return all_markets
     
     def parse_market(self, raw_market: dict) -> Optional[Market]:
@@ -258,6 +325,27 @@ class PolymarketAPI:
             except:
                 pass
         
+        # Determine winning outcome from outcomePrices (for resolved markets)
+        # Winner has price = "1" or "1.0", loser has price = "0" or "0.0"
+        winning_outcome = None
+        is_resolved = raw_market.get("resolved", False)
+        
+        if is_resolved:
+            # First check if there's an explicit winningOutcome field
+            winning_outcome = raw_market.get("winningOutcome") or raw_market.get("winning_outcome")
+            
+            # If not, determine from outcomePrices (winner = 1.0, loser = 0.0)
+            if not winning_outcome and prices:
+                for i, price_val in enumerate(prices):
+                    try:
+                        price_float = float(price_val)
+                        # Resolved markets: winning outcome has price >= 0.99
+                        if price_float >= 0.99 and i < len(tokens):
+                            winning_outcome = tokens[i].outcome
+                            break
+                    except (ValueError, TypeError):
+                        continue
+        
         return Market(
             condition_id=raw_market.get("conditionId") or raw_market.get("condition_id") or "",
             question=raw_market.get("question") or "",
@@ -267,7 +355,8 @@ class PolymarketAPI:
             category=raw_market.get("category"),
             tokens=tokens,
             closed=raw_market.get("closed", False),
-            resolved=raw_market.get("resolved", False),
+            resolved=is_resolved,
+            winning_outcome=winning_outcome,
         )
     
     # ==================== ORDERBOOK ====================
@@ -510,11 +599,14 @@ class PolymarketAPI:
     
     # ==================== ACTIVITY FEED ====================
     
-    async def fetch_activity(self, limit: int = 100) -> List[dict]:
-        """Fetch global activity feed"""
+    async def fetch_activity(self, limit: int = 100, user: Optional[str] = None) -> List[dict]:
+        """Fetch activity feed, optionally filtered by user"""
+        params = {"limit": limit}
+        if user:
+            params["user"] = user
         data = await self._get(
             f"{self.config.data_api_base}/activity",
-            {"limit": limit}
+            params
         )
         
         return data if isinstance(data, list) else []
@@ -522,37 +614,308 @@ class PolymarketAPI:
     async def fetch_trades(
         self, 
         token_id: str, 
-        limit: int = 100
+        limit: int = 100,
+        market_id: Optional[str] = None
     ) -> List[Trade]:
-        """Fetch recent trades for a token"""
-        data = await self._get(
-            f"{self.config.clob_host}/trades",
-            {"asset_id": token_id, "limit": limit}
-        )
+        """
+        Fetch recent trades for a token.
         
-        if not data or not isinstance(data, list):
-            return []
+        Uses the public Data API activity endpoint (no auth required).
+        The CLOB /data/trades endpoint requires L2 Header authentication,
+        so we use the public activity feed for unauthenticated requests.
         
+        For authenticated requests with py_clob_client, use get_trades() directly.
+        See: https://docs.polymarket.com/developers/CLOB/trades/trades
+        """
         trades = []
-        for t in data:
-            try:
-                trades.append(Trade(
-                    trade_id=t.get("id", ""),
-                    market_id=t.get("market", ""),
-                    token_id=token_id,
-                    side=Side.BUY if t.get("side", "").upper() == "BUY" else Side.SELL,
-                    shares=float(t.get("size", 0)),
-                    price=float(t.get("price", 0)),
-                    timestamp=datetime.fromisoformat(
-                        t.get("created_at", "").replace("Z", "+00:00")
-                    ) if t.get("created_at") else datetime.now(timezone.utc),
-                    maker_address=t.get("maker_address"),
-                    taker_address=t.get("taker_address"),
-                ))
-            except Exception as e:
-                logger.debug(f"Error parsing trade: {e}")
-                continue
+        
+        # Use Data API activity endpoint (public, no auth required)
+        # The CLOB /data/trades endpoint requires L2 authentication
+        try:
+            params = {"limit": limit}
+            
+            # The activity endpoint filters by condition_id (market), not asset_id directly
+            # But we can filter the results after fetching
+            data = await self._get(
+                f"{self.config.data_api_base}/activity",
+                params
+            )
+            
+            if data and isinstance(data, list):
+                for item in data:
+                    try:
+                        if item.get("type", "").upper() != "TRADE":
+                            continue
+                        
+                        # Filter by token_id if provided
+                        item_asset = str(item.get("asset", ""))
+                        if token_id and item_asset != token_id:
+                            continue
+                        
+                        # Filter by market_id if provided
+                        item_market = item.get("conditionId", "")
+                        if market_id and item_market != market_id:
+                            continue
+                        
+                        # Parse timestamp (Unix timestamp from API)
+                        timestamp = datetime.now(timezone.utc)
+                        ts = item.get("timestamp")
+                        if ts:
+                            if isinstance(ts, (int, float)):
+                                timestamp = datetime.fromtimestamp(ts, tz=timezone.utc)
+                            else:
+                                try:
+                                    timestamp = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+                                except:
+                                    pass
+                        
+                        trades.append(Trade(
+                            trade_id=item.get("transactionHash", ""),
+                            market_id=item.get("conditionId", ""),
+                            token_id=item_asset,
+                            side=Side.BUY if item.get("side", "").upper() == "BUY" else Side.SELL,
+                            shares=float(item.get("size", 0)),
+                            price=float(item.get("price", 0)),
+                            timestamp=timestamp,
+                            maker_address=item.get("proxyWallet"),
+                            taker_address=item.get("proxyWallet"),
+                        ))
+                    except Exception as e:
+                        logger.debug(f"Error parsing activity trade: {e}")
+                        continue
+        except Exception as e:
+            logger.debug(f"Data API activity fetch failed: {e}")
         
         return trades
+    
+    async def fetch_user_trades(
+        self,
+        wallet_address: str,
+        limit: int = 1000
+    ) -> List[dict]:
+        """
+        Fetch all trades for a user from Polymarket.
+        This includes both buy and sell trades.
+        Tries multiple endpoints to get complete trade history.
+        """
+        trades = []
+        
+        # Method 1: Try CLOB API trades endpoint with user filter
+        try:
+            data = await self._get(
+                f"{self.config.clob_host}/trades",
+                {"user": wallet_address, "limit": limit}
+            )
+            
+            if data and isinstance(data, list):
+                for t in data:
+                    try:
+                        # Check if this trade involves our wallet
+                        maker = t.get("maker_address", "").lower()
+                        taker = t.get("taker_address", "").lower()
+                        wallet_lower = wallet_address.lower()
+                        
+                        if maker == wallet_lower or taker == wallet_lower:
+                            trades.append({
+                                "trade_id": t.get("id", ""),
+                                "market_id": t.get("market", ""),
+                                "token_id": t.get("asset_id", "") or t.get("asset", ""),
+                                "side": "SELL" if maker == wallet_lower else "BUY",
+                                "shares": float(t.get("size", 0)),
+                                "price": float(t.get("price", 0)),
+                                "timestamp": datetime.fromisoformat(
+                                    t.get("created_at", "").replace("Z", "+00:00")
+                                ) if t.get("created_at") else datetime.now(timezone.utc),
+                                "maker_address": t.get("maker_address"),
+                                "taker_address": t.get("taker_address"),
+                                "type": "trade"
+                            })
+                    except Exception as e:
+                        logger.debug(f"Error parsing user trade: {e}")
+                        continue
+        except Exception as e:
+            logger.debug(f"CLOB trades endpoint failed: {e}")
+        
+        # Method 2: Try Data API activity feed filtered by user
+        try:
+            activity = await self.fetch_activity(limit=limit, user=wallet_address)
+            for item in activity:
+                item_type = item.get("type", "").lower()
+                if item_type in ["trade", "fill", "order", "fillorder"]:
+                    try:
+                        token_id = item.get("asset") or item.get("tokenId") or item.get("token_id") or item.get("asset_id")
+                        if not token_id:
+                            logger.debug(f"Skipping trade with no token_id: {item.get('id')}")
+                            continue
+                        
+                        side = item.get("side", "").upper()
+                        if not side:
+                            # Determine side from maker/taker
+                            maker = item.get("maker", "").lower() or item.get("maker_address", "").lower()
+                            if maker == wallet_address.lower():
+                                side = "SELL"
+                            else:
+                                side = "BUY"
+                        
+                        shares = float(item.get("size", 0) or item.get("shares", 0) or item.get("amount", 0))
+                        price = float(item.get("price", 0) or item.get("fillPrice", 0) or item.get("fill_price", 0))
+                        
+                        if shares <= 0:
+                            logger.debug(f"Skipping trade with shares <= 0: {shares}")
+                            continue
+                        if price <= 0:
+                            logger.debug(f"Skipping trade with price <= 0: {price}")
+                            continue
+                        
+                        timestamp = datetime.now(timezone.utc)
+                        if item.get("createdAt"):
+                            try:
+                                timestamp = datetime.fromisoformat(
+                                    item.get("createdAt").replace("Z", "+00:00")
+                                )
+                            except:
+                                pass
+                        elif item.get("timestamp"):
+                            try:
+                                ts = item.get("timestamp")
+                                if isinstance(ts, (int, float)):
+                                    # Unix timestamp
+                                    timestamp = datetime.fromtimestamp(ts, tz=timezone.utc)
+                                else:
+                                    # ISO format string
+                                    timestamp = datetime.fromisoformat(
+                                        str(ts).replace("Z", "+00:00")
+                                    )
+                            except:
+                                pass
+                        
+                        trades.append({
+                            "trade_id": item.get("id", ""),
+                            "market_id": item.get("conditionId", "") or item.get("market", ""),
+                            "token_id": token_id,
+                            "side": side,
+                            "shares": shares,
+                            "price": price,
+                            "timestamp": timestamp,
+                            "maker_address": item.get("maker") or item.get("maker_address"),
+                            "taker_address": item.get("taker") or item.get("taker_address"),
+                            "type": "trade"
+                        })
+                    except Exception as e:
+                        logger.debug(f"Error parsing activity trade: {e}")
+                        continue
+        except Exception as e:
+            logger.warning(f"Activity feed failed: {e}")
+        
+        # Remove duplicates based on trade_id or (token_id, timestamp, side, shares, price)
+        seen = set()
+        unique_trades = []
+        for trade in trades:
+            trade_id = trade.get("trade_id")
+            if trade_id:
+                key = trade_id
+            else:
+                # Use a more specific key to avoid false duplicates
+                key = (
+                    trade["token_id"],
+                    trade["timestamp"].isoformat(),
+                    trade["side"],
+                    round(trade["shares"], 4),
+                    round(trade["price"], 6)
+                )
+            
+            if key not in seen:
+                seen.add(key)
+                unique_trades.append(trade)
+        
+        # Sort by timestamp descending
+        unique_trades.sort(key=lambda x: x["timestamp"], reverse=True)
+        
+        return unique_trades
+    
+    async def fetch_user_transactions(
+        self,
+        wallet_address: str,
+        limit: int = 1000
+    ) -> List[dict]:
+        """
+        Fetch complete transaction history for a user including:
+        - Trades (buys and sells)
+        - Deposits
+        - Withdrawals
+        """
+        transactions = []
+        
+        # Fetch trades (includes both buys and sells)
+        try:
+            trades = await self.fetch_user_trades(wallet_address, limit)
+            transactions.extend(trades)
+        except Exception as e:
+            logger.warning(f"Error fetching user trades: {e}")
+        
+        # Try to fetch deposits/withdrawals from activity feed
+        try:
+            activity = await self.fetch_activity(limit=limit, user=wallet_address)
+            for item in activity:
+                item_type = item.get("type", "").lower()
+                if item_type in ["deposit", "withdrawal", "transfer", "withdraw"]:
+                    try:
+                        amount = float(item.get("amount", 0) or item.get("value", 0) or item.get("quantity", 0))
+                        if amount > 0:
+                            timestamp = datetime.now(timezone.utc)
+                            if item.get("createdAt"):
+                                try:
+                                    timestamp = datetime.fromisoformat(
+                                        item.get("createdAt").replace("Z", "+00:00")
+                                    )
+                                except:
+                                    pass
+                            elif item.get("timestamp"):
+                                try:
+                                    ts = item.get("timestamp")
+                                    if isinstance(ts, (int, float)):
+                                        # Unix timestamp
+                                        timestamp = datetime.fromtimestamp(ts, tz=timezone.utc)
+                                    else:
+                                        # ISO format string
+                                        timestamp = datetime.fromisoformat(
+                                            str(ts).replace("Z", "+00:00")
+                                        )
+                                except:
+                                    pass
+                            
+                            side = "DEPOSIT"
+                            if item_type in ["withdrawal", "withdraw"]:
+                                side = "WITHDRAWAL"
+                            elif item_type == "transfer":
+                                # Determine direction from addresses
+                                from_addr = item.get("from", "").lower()
+                                if from_addr == wallet_address.lower():
+                                    side = "WITHDRAWAL"
+                                else:
+                                    side = "DEPOSIT"
+                            
+                            transactions.append({
+                                "trade_id": item.get("id", ""),
+                                "market_id": "",
+                                "token_id": "",
+                                "side": side,
+                                "shares": 0.0,
+                                "price": amount,
+                                "timestamp": timestamp,
+                                "maker_address": None,
+                                "taker_address": wallet_address,
+                                "type": item_type
+                            })
+                    except Exception as e:
+                        logger.debug(f"Error parsing transaction: {e}")
+                        continue
+        except Exception as e:
+            logger.warning(f"Error fetching transactions from activity: {e}")
+        
+        # Sort by timestamp descending
+        transactions.sort(key=lambda x: x["timestamp"], reverse=True)
+        
+        return transactions
 
 

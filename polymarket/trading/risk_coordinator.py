@@ -85,11 +85,15 @@ class RiskCoordinator:
             self.api = PolymarketAPI(self.config)
             await self.api.connect()
         
-        # Register agent
-        with self.storage.transaction() as txn:
-            if not txn.register_agent(agent_id, agent_type, self.wallet_address):
-                logger.error(f"Failed to register agent {agent_id}")
-                return False
+        # Register agent (or restart if already exists)
+        try:
+            with self.storage.transaction() as txn:
+                if not txn.register_agent(agent_id, agent_type, self.wallet_address):
+                    logger.error(f"Failed to register agent {agent_id}")
+                    return False
+        except Exception as e:
+            logger.error(f"Error registering agent {agent_id}: {e}")
+            return False
         
         self._current_agent_id = agent_id
         

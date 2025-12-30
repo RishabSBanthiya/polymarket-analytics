@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 if TYPE_CHECKING:
-    from trading.storage.base import StorageBackend
+    from ..trading.storage.base import StorageBackend
 
 logger = logging.getLogger(__name__)
 

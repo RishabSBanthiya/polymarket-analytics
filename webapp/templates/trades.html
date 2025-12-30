@@ -56,6 +56,7 @@
                                 <th>Filled Price</th>
                                 <th>Signal Score</th>
                                 <th>Status</th>
+                                <th>Type</th>
                             </tr>
                         </thead>
                         <tbody id="trades-table">
@@ -82,23 +83,32 @@ async function loadTrades() {
         if (agentId) params.append('agent_id', agentId);
         if (startDate) params.append('start_time', new Date(startDate).toISOString());
         if (endDate) params.append('end_time', new Date(endDate).toISOString());
+        params.append('include_orphans', 'true');  // Always include orphans in trade history page
         
         const res = await fetch(`/api/trades/?${params.toString()}`);
         const trades = await res.json();
         
-        const html = trades.length > 0 ? trades.map(t => `
-            <tr>
+        const html = trades.length > 0 ? trades.map(t => {
+            const side = t.side || 'UNKNOWN';
+            const sideClass = side === 'BUY' ? 'bg-success' : side === 'SELL' ? 'bg-danger' : side === 'DEPOSIT' ? 'bg-info' : side === 'WITHDRAWAL' ? 'bg-warning text-dark' : 'bg-secondary';
+            const txType = t.transaction_type || 'trade';
+            const isSpecialTx = txType !== 'trade';
+            
+            return `
+            <tr ${t.is_orphan ? 'class="table-warning"' : ''}>
                 <td>${new Date(t.timestamp).toLocaleString()}</td>
                 <td>${t.agent_id}</td>
-                <td><small>${t.market_id.substring(0, 20)}...</small></td>
-                <td><span class="badge ${t.side === 'BUY' ? 'bg-success' : 'bg-danger'}">${t.side}</span></td>
-                <td>${t.shares.toFixed(4)}</td>
-                <td>$${t.price.toFixed(4)}</td>
-                <td>$${t.filled_price.toFixed(4)}</td>
+                <td><small>${t.market_id ? t.market_id.substring(0, 20) + '...' : '-'}</small></td>
+                <td><span class="badge ${sideClass}">${side}</span></td>
+                <td>${isSpecialTx ? '-' : t.shares.toFixed(4)}</td>
+                <td>${isSpecialTx ? '-' : '$' + t.price.toFixed(4)}</td>
+                <td>${isSpecialTx ? '$' + t.filled_price.toFixed(2) : '$' + t.filled_price.toFixed(4)}</td>
                 <td>${t.signal_score ? t.signal_score.toFixed(1) : '-'}</td>
                 <td><span class="badge ${t.success ? 'bg-success' : 'bg-danger'}">${t.success ? 'Success' : 'Failed'}</span></td>
+                <td>${t.is_orphan ? '<span class="badge bg-warning text-dark">Orphan</span>' : '<span class="badge bg-info">Tracked</span>'}</td>
             </tr>
-        `).join('') : '<tr><td colspan="9" class="text-center">No trades found</td></tr>';
+        `;
+        }).join('') : '<tr><td colspan="10" class="text-center">No trades found</td></tr>';
         
         document.getElementById('trades-table').innerHTML = html;
     } catch (error) {

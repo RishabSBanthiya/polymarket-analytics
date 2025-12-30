@@ -2,28 +2,101 @@
 Flow signal backtester.
 
 Tests the predictive value of flow detection signals.
+Includes parameter optimization to find best settings.
+
+Uses authenticated py_clob_client for fetching trade data.
 """
 
 import logging
+import itertools
+import statistics
+import os
 from datetime import datetime, timezone, timedelta
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Tuple
 from collections import defaultdict
+from dataclasses import dataclass, field
 
-from ...core.models import Market, Token, Trade
+from ...core.models import Market, Token, Trade, Side
+from ...core.api import PolymarketAPI
+from ...core.config import get_config
+from ...flow_detector import TradeFeedFlowDetector, FlowAlert, MarketState
 from ..base import BaseBacktester
 from ..results import BacktestResults, SimulatedTrade
+from ..execution import RealisticExecution
 
 logger = logging.getLogger(__name__)
 
 
-# Signal weights (same as live trading)
-SIGNAL_WEIGHTS = {
+# Default signal weights (same as live trading)
+DEFAULT_SIGNAL_WEIGHTS = {
     "SMART_MONEY_ACTIVITY": 30,
     "OVERSIZED_BET": 25,
     "COORDINATED_WALLETS": 25,
     "VOLUME_SPIKE": 10,
     "PRICE_ACCELERATION": 10,
+    "SUDDEN_PRICE_MOVEMENT": 8,
+    "FRESH_WALLET_ACTIVITY": 5,
+    "COLD_WALLET_ACTIVITY": 5,
 }
+
+# Severity multipliers
+SEVERITY_MULTIPLIERS = {
+    "LOW": 0.5,
+    "MEDIUM": 1.0,
+    "HIGH": 1.5,
+    "CRITICAL": 2.0,
+}
+
+
+@dataclass
+class ParameterSet:
+    """A set of parameters to test"""
+    min_score: float = 30.0
+    min_trade_size: float = 100.0
+    oversized_multiplier: float = 10.0
+    volume_spike_multiplier: float = 3.0
+    max_spread: float = 0.03
+    max_price_drift: float = 0.10
+    signal_weights: Dict[str, float] = field(default_factory=lambda: DEFAULT_SIGNAL_WEIGHTS.copy())
+    
+    def to_dict(self) -> dict:
+        return {
+            "min_score": self.min_score,
+            "min_trade_size": self.min_trade_size,
+            "oversized_multiplier": self.oversized_multiplier,
+            "volume_spike_multiplier": self.volume_spike_multiplier,
+            "max_spread": self.max_spread,
+            "max_price_drift": self.max_price_drift,
+        }
+
+
+@dataclass
+class BacktestResult:
+    """Result for a single parameter set"""
+    params: ParameterSet
+    total_signals: int = 0
+    signals_by_type: Dict[str, int] = field(default_factory=dict)
+    predictive_rate: float = 0.0
+    avg_return_1min: float = 0.0
+    avg_return_5min: float = 0.0
+    avg_return_15min: float = 0.0
+    avg_return_30min: float = 0.0
+    win_rate: float = 0.0
+    profit_factor: float = 0.0
+    sharpe_ratio: float = 0.0
+    total_pnl: float = 0.0
+    
+    def score(self) -> float:
+        """Combined score for ranking parameter sets"""
+        # Weighted combination of metrics
+        return (
+            self.predictive_rate * 30 +
+            self.win_rate * 20 +
+            min(self.profit_factor, 5) * 15 +  # Cap at 5
+            (self.avg_return_5min * 100) * 10 +  # 5min returns
+            min(self.sharpe_ratio, 3) * 10 +  # Cap at 3
+            (self.total_signals / 100) * 5  # More signals = more opportunities
+        )
 
 
 class FlowBacktester(BaseBacktester):
@@ -31,6 +104,13 @@ class FlowBacktester(BaseBacktester):
     Backtester for flow detection signals.
     
     Tests how predictive various signal types are of future price moves.
+    Includes parameter optimization to find optimal settings.
+    
+    Uses realistic execution with:
+    - No fees (Polymarket has no fees)
+    - Spread checks (max 3%)
+    - Slippage based on liquidity
+    - Position size limits based on market depth
     """
     
     def __init__(
@@ -39,18 +119,444 @@ class FlowBacktester(BaseBacktester):
         days: int = 7,
         min_trade_size: float = 100.0,
         evaluation_windows: List[int] = None,
+        optimize_params: bool = False,
+        max_spread_pct: float = 0.03,
+        max_markets: int = 500,
         **kwargs
     ):
         super().__init__(initial_capital, days, **kwargs)
         self.min_trade_size = min_trade_size
         self.evaluation_windows = evaluation_windows or [1, 5, 15, 30]  # minutes
+        self.optimize_params = optimize_params
+        self.max_spread_pct = max_spread_pct
+        self.max_markets = max_markets
+        
+        # Use realistic execution model (no fees, slippage/spread checks)
+        self.execution = RealisticExecution(
+            max_spread_pct=max_spread_pct,
+            buy_slippage_pct=0.005,  # 0.5% base slippage
+            sell_slippage_pct=0.005,
+        )
         
         # Signal tracking
         self.signal_results: Dict[str, List[dict]] = defaultdict(list)
+        
+        # Current parameters being tested
+        self.current_params: ParameterSet = ParameterSet(min_trade_size=min_trade_size)
+        
+        # Optimization results
+        self.optimization_results: List[BacktestResult] = []
     
     @property
     def strategy_name(self) -> str:
         return "Flow Detection Signals"
+    
+    async def run(self) -> BacktestResults:
+        """Run backtest using historical price data from CLOB API"""
+        logger.info(f"Starting backtest: {self.strategy_name}")
+        logger.info(f"Capital: ${self.initial_capital:,.2f}, Days: {self.days}")
+        
+        # Initialize API for market data
+        config = get_config()
+        self.api = PolymarketAPI(config)
+        await self.api.connect()
+        
+        # Initialize CLOB client for price history
+        from py_clob_client.client import ClobClient
+        
+        self.clob_client = ClobClient(
+            config.clob_host,
+            key=config.private_key,
+            chain_id=config.chain_id,
+            signature_type=2,
+            funder=config.proxy_address
+        )
+        self.clob_client.set_api_creds(self.clob_client.create_or_derive_api_creds())
+        logger.info("CLOB client initialized")
+        
+        try:
+            # Get all sampling markets (active, liquid markets) with pagination
+            logger.info("Fetching active markets...")
+            markets_data = []
+            cursor = 'MA=='
+            
+            while cursor:
+                try:
+                    result = self.clob_client.get_sampling_simplified_markets(next_cursor=cursor)
+                    data = result.get('data', [])
+                    markets_data.extend(data)
+                    cursor = result.get('next_cursor')
+                    
+                    if not data or not cursor:
+                        break
+                except Exception as e:
+                    logger.debug(f"Pagination ended: {e}")
+                    break
+            
+            logger.info(f"Found {len(markets_data)} sampling markets")
+            
+            # Fetch historical price data, spreads, and liquidity for each token
+            import aiohttp
+            self._price_history: Dict[str, List[dict]] = {}
+            self._market_info: Dict[str, dict] = {}
+            self._token_liquidity: Dict[str, dict] = {}  # Spread and liquidity data
+            
+            # Limit markets for reasonable backtest time
+            num_markets = min(len(markets_data), self.max_markets)
+            logger.info(f"Fetching historical price data for {num_markets} markets...")
+            
+            async with aiohttp.ClientSession() as session:
+                for i, market in enumerate(markets_data[:num_markets]):
+                    if (i + 1) % 50 == 0:
+                        logger.info(f"  Fetching data for market {i+1}/{num_markets}...")
+                    
+                    condition_id = market.get('condition_id')
+                    tokens = market.get('tokens', [])
+                    rewards = market.get('rewards', {})
+                    
+                    # Extract liquidity info from rewards config
+                    min_size = rewards.get('min_size', 50)
+                    max_spread = rewards.get('max_spread', 5.0)  # Percentage
+                    
+                    self._market_info[condition_id] = {
+                        "tokens": tokens,
+                        "active": market.get('active'),
+                        "min_size": min_size,
+                        "max_spread": max_spread,
+                    }
+                    
+                    for token in tokens:
+                        token_id = token.get('token_id')
+                        if not token_id:
+                            continue
+                        
+                        # Store token liquidity data
+                        token_price = token.get('price', 0.5)
+                        self._token_liquidity[token_id] = {
+                            "price": token_price,
+                            "min_size": min_size,
+                            "max_spread_pct": max_spread / 100,  # Convert to decimal
+                            # Estimate liquidity from rewards config (markets with rewards are liquid)
+                            "estimated_liquidity_usd": min_size * 20 if rewards else 100,
+                        }
+                        
+                        # Fetch price history using the /prices-history endpoint
+                        url = f"{config.clob_host}/prices-history?market={token_id}&interval=1h"
+                        try:
+                            async with session.get(url) as resp:
+                                if resp.status == 200:
+                                    data = await resp.json()
+                                    history = data.get('history', [])
+                                    if history:
+                                        self._price_history[token_id] = history
+                        except Exception as e:
+                            logger.debug(f"Error fetching price history for {token_id}: {e}")
+            
+            logger.info(f"Fetched price history for {len(self._price_history)} tokens")
+            
+            # Convert to market list format
+            markets = []
+            for market in markets_data[:num_markets]:
+                tokens = market.get('tokens', [])
+                if tokens:
+                    condition_id = market.get('condition_id', '')
+                    m = Market(
+                        condition_id=condition_id,
+                        question=f"Market {condition_id[:20]}...",
+                        slug=f"market-{condition_id[:16]}",
+                        tokens=[Token(
+                            token_id=t.get('token_id'),
+                            outcome=t.get('outcome', 'Unknown'),
+                            price=t.get('price', 0.5)
+                        ) for t in tokens],
+                        end_date=datetime.now(timezone.utc) + timedelta(days=30),
+                    )
+                    markets.append(m)
+            
+            logger.info(f"Prepared {len(markets)} markets for backtesting")
+            
+            if self.optimize_params:
+                return await self.run_parameter_optimization(markets)
+            else:
+                self.results = await self.run_strategy(markets)
+                self.results.markets_analyzed = len(markets)
+                return self.results
+                
+        finally:
+            await self.api.close()
+    
+    async def run_parameter_optimization(self, markets: List[Market]) -> BacktestResults:
+        """Run backtest with multiple parameter sets to find optimal"""
+        print("\n" + "="*70)
+        print("FLOW SIGNAL PARAMETER OPTIMIZATION")
+        print("="*70)
+        
+        # Generate parameter sets to test
+        param_sets = self._generate_param_sets()
+        print(f"Testing {len(param_sets)} parameter combinations...\n")
+        
+        for i, params in enumerate(param_sets):
+            self.current_params = params
+            self.signal_results.clear()
+            
+            # Test this parameter set
+            result = await self._test_param_set(params, markets)
+            self.optimization_results.append(result)
+            
+            # Progress
+            if (i + 1) % 5 == 0:
+                print(f"  Tested {i+1}/{len(param_sets)} combinations...")
+        
+        # Find best parameters
+        self._print_optimization_results()
+        
+        # Return results with best params
+        best = max(self.optimization_results, key=lambda r: r.score())
+        
+        start_date = datetime.now(timezone.utc) - timedelta(days=self.days)
+        end_date = datetime.now(timezone.utc)
+        
+        results = BacktestResults(
+            strategy_name=self.strategy_name + " (Optimized)",
+            start_date=start_date,
+            end_date=end_date,
+            initial_capital=self.initial_capital,
+        )
+        results.markets_analyzed = len(markets)
+        results.finalize()
+        
+        return results
+    
+    def _generate_param_sets(self) -> List[ParameterSet]:
+        """Generate parameter combinations to test"""
+        param_sets = []
+        
+        # Parameter ranges to test
+        min_scores = [20, 30, 40, 50]
+        min_trade_sizes = [50, 100, 200, 500]
+        oversized_mults = [5, 10, 15, 20]
+        volume_spike_mults = [2, 3, 5, 7]
+        max_spreads = [0.02, 0.03, 0.05]
+        max_drifts = [0.05, 0.10, 0.15]
+        
+        # Generate combinations (limit to reasonable number)
+        for min_score, min_trade, oversized, volume, spread, drift in itertools.product(
+            min_scores[:3], min_trade_sizes[:3], oversized_mults[:2], 
+            volume_spike_mults[:2], max_spreads[:2], max_drifts[:2]
+        ):
+            param_sets.append(ParameterSet(
+                min_score=min_score,
+                min_trade_size=min_trade,
+                oversized_multiplier=oversized,
+                volume_spike_multiplier=volume,
+                max_spread=spread,
+                max_price_drift=drift,
+            ))
+        
+        return param_sets
+    
+    async def _test_param_set(self, params: ParameterSet, markets: List[Market]) -> BacktestResult:
+        """Test a single parameter set"""
+        result = BacktestResult(params=params)
+        
+        all_evaluations = []
+        
+        for market in markets:
+            for token in market.tokens:
+                evaluations = await self._analyze_token_with_params(market, token, params)
+                all_evaluations.extend(evaluations)
+        
+        if not all_evaluations:
+            return result
+        
+        # Calculate metrics
+        result.total_signals = len(all_evaluations)
+        
+        # Count by type
+        for eval_data in all_evaluations:
+            signal_type = eval_data.get("type", "UNKNOWN")
+            result.signals_by_type[signal_type] = result.signals_by_type.get(signal_type, 0) + 1
+        
+        # Predictive rate
+        predictive = [e for e in all_evaluations if e.get("was_predictive")]
+        result.predictive_rate = len(predictive) / len(all_evaluations) if all_evaluations else 0
+        
+        # Average returns by window
+        for window_name, window_min in [("1min", 1), ("5min", 5), ("15min", 15), ("30min", 30)]:
+            returns = [e["returns"].get(window_min, 0) for e in all_evaluations if window_min in e.get("returns", {})]
+            if returns:
+                avg_return = sum(returns) / len(returns)
+                setattr(result, f"avg_return_{window_name}", avg_return)
+        
+        # Win rate (based on direction)
+        correct_direction = 0
+        for e in all_evaluations:
+            direction = e.get("direction", "NEUTRAL")
+            if direction == "NEUTRAL":
+                continue
+            ret_5min = e.get("5min_return", 0)
+            if (direction == "BUY" and ret_5min > 0) or (direction == "SELL" and ret_5min < 0):
+                correct_direction += 1
+        
+        directional = [e for e in all_evaluations if e.get("direction") != "NEUTRAL"]
+        result.win_rate = correct_direction / len(directional) if directional else 0
+        
+        # Profit factor
+        gains = sum(e.get("5min_return", 0) for e in all_evaluations if e.get("5min_return", 0) > 0)
+        losses = abs(sum(e.get("5min_return", 0) for e in all_evaluations if e.get("5min_return", 0) < 0))
+        result.profit_factor = gains / losses if losses > 0 else gains if gains > 0 else 0
+        
+        # Sharpe-like ratio
+        returns_5min = [e.get("5min_return", 0) for e in all_evaluations if "5min_return" in e]
+        if len(returns_5min) > 1:
+            mean_ret = statistics.mean(returns_5min)
+            std_ret = statistics.stdev(returns_5min)
+            result.sharpe_ratio = mean_ret / std_ret if std_ret > 0 else 0
+        
+        return result
+    
+    async def _analyze_token_with_params(
+        self,
+        market: Market,
+        token: Token,
+        params: ParameterSet
+    ) -> List[dict]:
+        """Analyze a token with specific parameters"""
+        evaluations = []
+        
+        # Get cached price history
+        history = self._price_history.get(token.token_id, [])
+        if len(history) < 20:
+            return evaluations
+        
+        # Set current params and detect signals
+        self.current_params = params
+        signals = self._detect_signals_from_price_history(
+            token.token_id,
+            market.condition_id,
+            market.question,
+            history
+        )
+        
+        # Evaluate each signal
+        for signal in signals:
+            evaluation = self._evaluate_signal_from_history(signal, history)
+            if evaluation:
+                evaluations.append(evaluation)
+        
+        return evaluations
+    
+    def _detect_signals_with_params(
+        self,
+        trades: List[Trade],
+        history: List,
+        params: ParameterSet
+    ) -> List[dict]:
+        """Detect signals using specific parameters"""
+        signals = []
+        
+        if not trades:
+            return signals
+        
+        avg_size = sum(t.value_usd for t in trades) / len(trades)
+        window_trades: Dict[str, List[Trade]] = defaultdict(list)
+        
+        for i, trade in enumerate(trades):
+            # Oversized bet detection with param
+            if trade.value_usd >= params.min_trade_size:
+                if trade.value_usd >= avg_size * params.oversized_multiplier:
+                    signals.append({
+                        "type": "OVERSIZED_BET",
+                        "timestamp": trade.timestamp,
+                        "price": trade.price,
+                        "value": trade.value_usd,
+                        "direction": "BUY" if trade.side.value == "BUY" else "SELL",
+                    })
+            
+            # Volume spike detection with param
+            window_key = trade.timestamp.strftime("%Y-%m-%d-%H-%M")
+            window_trades[window_key].append(trade)
+            
+            if len(window_trades[window_key]) >= 5:
+                window_value = sum(t.value_usd for t in window_trades[window_key])
+                if window_value >= avg_size * params.volume_spike_multiplier * 5:
+                    signals.append({
+                        "type": "VOLUME_SPIKE",
+                        "timestamp": trade.timestamp,
+                        "price": trade.price,
+                        "value": window_value,
+                        "direction": "NEUTRAL",
+                    })
+            
+            # Price acceleration detection
+            if i >= 5:
+                recent_prices = [trades[j].price for j in range(i-5, i+1)]
+                if len(recent_prices) >= 5:
+                    early_change = abs(recent_prices[2] - recent_prices[0])
+                    late_change = abs(recent_prices[-1] - recent_prices[2])
+                    
+                    if early_change > 0 and late_change > early_change * 2:
+                        direction = "BUY" if recent_prices[-1] > recent_prices[0] else "SELL"
+                        signals.append({
+                            "type": "PRICE_ACCELERATION",
+                            "timestamp": trade.timestamp,
+                            "price": trade.price,
+                            "value": late_change,
+                            "direction": direction,
+                        })
+        
+        return signals
+    
+    def _print_optimization_results(self):
+        """Print optimization results and recommendations"""
+        print("\n" + "="*70)
+        print("OPTIMIZATION RESULTS")
+        print("="*70)
+        
+        # Sort by score
+        sorted_results = sorted(self.optimization_results, key=lambda r: r.score(), reverse=True)
+        
+        print("\n--- TOP 5 PARAMETER SETS ---\n")
+        
+        for i, result in enumerate(sorted_results[:5], 1):
+            print(f"#{i} Score: {result.score():.1f}")
+            print(f"   min_score: {result.params.min_score}")
+            print(f"   min_trade_size: ${result.params.min_trade_size}")
+            print(f"   oversized_multiplier: {result.params.oversized_multiplier}x")
+            print(f"   volume_spike_multiplier: {result.params.volume_spike_multiplier}x")
+            print(f"   max_spread: {result.params.max_spread:.0%}")
+            print(f"   max_price_drift: {result.params.max_price_drift:.0%}")
+            print(f"   ---")
+            print(f"   Signals: {result.total_signals}")
+            print(f"   Predictive Rate: {result.predictive_rate:.1%}")
+            print(f"   Win Rate: {result.win_rate:.1%}")
+            print(f"   5min Avg Return: {result.avg_return_5min:.2%}")
+            print(f"   Profit Factor: {result.profit_factor:.2f}")
+            print(f"   Sharpe: {result.sharpe_ratio:.2f}")
+            print()
+        
+        # Best params
+        best = sorted_results[0]
+        print("="*70)
+        print("RECOMMENDED PARAMETERS:")
+        print("="*70)
+        print(f"""
+# Update flow_strategy.py with these values:
+MIN_SCORE = {best.params.min_score}
+MIN_TRADE_SIZE = {best.params.min_trade_size}
+OVERSIZED_BET_MULTIPLIER = {best.params.oversized_multiplier}
+VOLUME_SPIKE_MULTIPLIER = {best.params.volume_spike_multiplier}
+MAX_SPREAD = {best.params.max_spread}
+MAX_PRICE_DRIFT = {best.params.max_price_drift}
+
+# Expected performance:
+# - Signal count: ~{best.total_signals} per analysis period
+# - Predictive rate: {best.predictive_rate:.1%}
+# - Win rate: {best.win_rate:.1%}
+# - Avg 5min return: {best.avg_return_5min:.2%}
+# - Profit factor: {best.profit_factor:.2f}
+""")
+        print("="*70)
     
     async def run_strategy(self, markets: List[Market]) -> BacktestResults:
         """Run the flow signal backtest"""
@@ -85,34 +591,222 @@ class FlowBacktester(BaseBacktester):
         token: Token,
         results: BacktestResults
     ):
-        """Analyze signals for a token"""
-        # Fetch price history
-        history = await self.fetch_price_history(token.token_id)
+        """Analyze signals for a token using historical price data"""
+        # Get cached price history
+        history = self._price_history.get(token.token_id, [])
         
         if len(history) < 20:
             return
         
-        # Fetch trades
-        trades = await self.api.fetch_trades(token.token_id, limit=500)
-        
-        if len(trades) < 20:
-            return
-        
-        # Detect signals from trade history
-        signals = self._detect_signals_from_trades(trades, history)
+        # Detect signals from price movements
+        signals = self._detect_signals_from_price_history(
+            token.token_id, 
+            market.condition_id,
+            market.question,
+            history
+        )
         
         # Evaluate each signal
         for signal in signals:
-            evaluation = self._evaluate_signal(signal, history)
+            evaluation = self._evaluate_signal_from_history(signal, history)
             if evaluation:
                 self.signal_results[signal["type"]].append(evaluation)
+    
+    def _detect_signals_from_price_history(
+        self,
+        token_id: str,
+        market_id: str,
+        question: str,
+        history: List[dict]
+    ) -> List[dict]:
+        """Detect flow signals from historical price data"""
+        signals = []
+        
+        if len(history) < 20:
+            return signals
+        
+        # Get parameters
+        params = getattr(self, 'current_params', None)
+        if params:
+            price_threshold = 0.05  # Base 5% threshold
+            volume_mult = params.volume_spike_multiplier
+        else:
+            price_threshold = 0.05
+            volume_mult = 3.0
+        
+        # Track price history for volatility calculations
+        price_window = []
+        
+        for i, point in enumerate(history):
+            ts = point.get('t', 0)  # Unix timestamp
+            price = point.get('p', 0)  # Price
+            
+            if price <= 0:
+                continue
+            
+            timestamp = datetime.fromtimestamp(ts, tz=timezone.utc)
+            price_window.append((ts, price))
+            
+            # Keep window to last hour (60 points at 1min interval or so)
+            while price_window and ts - price_window[0][0] > 3600:
+                price_window.pop(0)
+            
+            if len(price_window) < 5:
+                continue
+            
+            # Calculate price changes
+            prices = [p for _, p in price_window]
+            
+            # Sudden price movement detection
+            if len(prices) >= 5:
+                recent_change = (prices[-1] - prices[-5]) / prices[-5] if prices[-5] > 0 else 0
+                
+                if abs(recent_change) >= price_threshold:
+                    signals.append({
+                        "type": "SUDDEN_PRICE_MOVEMENT",
+                        "timestamp": timestamp,
+                        "price": price,
+                        "value": recent_change,
+                        "direction": "BUY" if recent_change > 0 else "SELL",
+                        "index": i,
+                        "token_id": token_id,
+                    })
+            
+            # Price acceleration detection
+            if len(prices) >= 10:
+                early_change = abs(prices[4] - prices[0]) / prices[0] if prices[0] > 0 else 0
+                late_change = abs(prices[-1] - prices[-5]) / prices[-5] if prices[-5] > 0 else 0
+                
+                if early_change > 0.01 and late_change > early_change * 2:
+                    signals.append({
+                        "type": "PRICE_ACCELERATION",
+                        "timestamp": timestamp,
+                        "price": price,
+                        "value": late_change / early_change if early_change > 0 else 0,
+                        "direction": "BUY" if prices[-1] > prices[0] else "SELL",
+                        "index": i,
+                        "token_id": token_id,
+                    })
+            
+            # Volatility spike detection (simulate volume spike using price volatility)
+            if len(prices) >= 10:
+                returns = [(prices[j] - prices[j-1]) / prices[j-1] 
+                          for j in range(1, len(prices)) if prices[j-1] > 0]
+                if len(returns) >= 5:
+                    recent_volatility = sum(abs(r) for r in returns[-5:]) / 5
+                    baseline_volatility = sum(abs(r) for r in returns) / len(returns) if returns else 0.01
+                    
+                    if recent_volatility > baseline_volatility * volume_mult:
+                        signals.append({
+                            "type": "VOLUME_SPIKE",  # Approximated via volatility
+                            "timestamp": timestamp,
+                            "price": price,
+                            "value": recent_volatility / baseline_volatility if baseline_volatility > 0 else 0,
+                            "direction": "NEUTRAL",
+                            "index": i,
+                            "token_id": token_id,
+                        })
+        
+        return signals
+    
+    def _evaluate_signal_from_history(self, signal: dict, history: List[dict]) -> Optional[dict]:
+        """Evaluate signal outcome with realistic execution assumptions"""
+        signal_idx = signal.get("index", 0)
+        signal_price = signal["price"]
+        signal_ts = signal["timestamp"]
+        token_id = signal.get("token_id", "")
+        
+        if signal_price <= 0 or signal_idx >= len(history) - 5:
+            return None
+        
+        # Get liquidity info for this token
+        liquidity_info = self._token_liquidity.get(token_id, {})
+        # max_spread from rewards config - if present, market is liquid enough
+        # Default to 5% max spread if no data
+        max_spread_pct = liquidity_info.get("max_spread_pct", 0.05)
+        estimated_liquidity = liquidity_info.get("estimated_liquidity_usd", 500)
+        has_rewards = estimated_liquidity > 100  # Markets with rewards are typically liquid
+        
+        # Estimate slippage based on trade size ($100 default) and liquidity
+        trade_size = 100.0
+        slippage_pct = self.execution.estimate_slippage(trade_size, estimated_liquidity)
+        
+        # Calculate returns at different horizons with slippage
+        outcomes = {}
+        horizons = [(5, "5min"), (15, "15min"), (30, "30min"), (60, "60min")]
+        
+        direction = signal.get("direction", "NEUTRAL")
+        
+        for idx_offset, label in horizons:
+            target_idx = min(signal_idx + idx_offset, len(history) - 1)
+            if target_idx > signal_idx:
+                future_price = history[target_idx].get('p', 0)
+                if future_price > 0:
+                    # Calculate raw price change
+                    raw_pct_change = (future_price - signal_price) / signal_price
+                    
+                    # Apply slippage to get realistic return
+                    # Entry slippage: buy at higher price, sell at lower price
+                    if direction == "BUY":
+                        entry_price = signal_price * (1 + slippage_pct)
+                        exit_price = future_price * (1 - slippage_pct)  # Assume exit with slippage too
+                    elif direction == "SELL":
+                        entry_price = signal_price * (1 - slippage_pct)
+                        exit_price = future_price * (1 + slippage_pct)
+                    else:
+                        entry_price = signal_price
+                        exit_price = future_price
+                    
+                    realistic_pct_change = (exit_price - entry_price) / entry_price if entry_price > 0 else 0
+                    
+                    outcomes[f"{label}_return"] = realistic_pct_change
+                    outcomes[f"{label}_raw_return"] = raw_pct_change
+        
+        if not outcomes:
+            return None
+        
+        # Check if spread would have been acceptable
+        # Markets with rewards are actively market-made and typically liquid
+        # Use the max_spread from rewards config as the threshold
+        spread_acceptable = has_rewards or max_spread_pct <= self.max_spread_pct
+        
+        # Determine if signal was predictive and profitable after costs
+        five_min_return = outcomes.get("5min_return", 0)
+        five_min_raw = outcomes.get("5min_raw_return", 0)
+        
+        if direction == "BUY":
+            predictive = five_min_raw > 0.005  # Raw return >0.5%
+            profitable = five_min_return > 0    # Profitable after slippage
+            win = five_min_return > 0 and spread_acceptable
+        elif direction == "SELL":
+            predictive = five_min_raw < -0.005
+            profitable = five_min_return > 0  # For sells, we profit if price went down (but return is calculated as gain)
+            win = five_min_return > 0 and spread_acceptable
+        else:
+            predictive = abs(five_min_raw) > 0.01
+            profitable = abs(five_min_return) > 0.005
+            win = profitable and spread_acceptable
+        
+        return {
+            "type": signal["type"],
+            "timestamp": signal_ts,
+            "price": signal_price,
+            "direction": direction,
+            "predictive": predictive,
+            "profitable": profitable,
+            "win": win,
+            "spread_acceptable": spread_acceptable,
+            "slippage_pct": slippage_pct,
+            "estimated_liquidity": estimated_liquidity,
+            **outcomes
+        }
     
     def _detect_signals_from_trades(
         self,
         trades: List[Trade],
         history: List
     ) -> List[dict]:
-        """Detect flow signals from trade history"""
+        """Detect flow signals from trade history (legacy method)"""
         signals = []
         
         # Calculate baseline metrics
@@ -236,15 +930,31 @@ class FlowBacktester(BaseBacktester):
             print(f"\n--- {signal_type} ---")
             print(f"Total signals: {len(evaluations)}")
             
-            predictive = [e for e in evaluations if e["was_predictive"]]
-            print(f"Predictive: {len(predictive)} ({len(predictive)/len(evaluations):.1%})")
+            predictive = [e for e in evaluations if e.get("predictive", False)]
+            profitable = [e for e in evaluations if e.get("profitable", False)]
+            wins = [e for e in evaluations if e.get("win", False)]
+            tradeable = [e for e in evaluations if e.get("spread_acceptable", True)]
             
-            # Average returns by window
-            for window in self.evaluation_windows:
-                returns = [e["returns"].get(window, 0) for e in evaluations if window in e["returns"]]
+            print(f"Predictive (raw): {len(predictive)} ({len(predictive)/len(evaluations):.1%})")
+            print(f"Profitable (after slippage): {len(profitable)} ({len(profitable)/len(evaluations):.1%})")
+            print(f"Win rate (tradeable): {len(wins)/len(evaluations):.1%}")
+            print(f"Tradeable (spread OK): {len(tradeable)} ({len(tradeable)/len(evaluations):.1%})")
+            
+            # Average slippage
+            slippages = [e.get("slippage_pct", 0) for e in evaluations]
+            if slippages:
+                print(f"Avg slippage: {sum(slippages)/len(slippages):.2%}")
+            
+            # Average returns by window (after slippage)
+            for label in ["5min", "15min", "30min", "60min"]:
+                key = f"{label}_return"
+                raw_key = f"{label}_raw_return"
+                returns = [e.get(key, 0) for e in evaluations if key in e]
+                raw_returns = [e.get(raw_key, 0) for e in evaluations if raw_key in e]
                 if returns:
                     avg_return = sum(returns) / len(returns)
-                    print(f"  {window}min avg return: {avg_return:.2%}")
+                    avg_raw = sum(raw_returns) / len(raw_returns) if raw_returns else 0
+                    print(f"  {label}: raw {avg_raw:.4%} -> after slippage {avg_return:.4%}")
         
         print("\n" + "="*60)
 

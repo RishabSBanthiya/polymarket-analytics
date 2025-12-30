@@ -104,12 +104,15 @@ class SQLiteTransaction(StorageTransaction):
     # ==================== AGENTS ====================
     
     def register_agent(self, agent_id: str, agent_type: str, wallet_address: str) -> bool:
-        """Register a new agent"""
-        # Check if agent already exists and is active
+        """Register a new agent or restart an existing one"""
+        # Check if agent already exists
         existing = self.get_agent(agent_id)
-        if existing and existing.status == AgentStatus.ACTIVE:
-            logger.warning(f"Agent {agent_id} already active")
-            return False
+        if existing:
+            if existing.status == AgentStatus.ACTIVE:
+                # Agent is being restarted - this is okay
+                logger.info(f"Agent {agent_id} was already active, restarting...")
+            else:
+                logger.info(f"Agent {agent_id} was {existing.status.value}, restarting...")
         
         now = datetime.now(timezone.utc).isoformat()
         
@@ -655,7 +658,8 @@ class SQLiteTransaction(StorageTransaction):
         agent_id: Optional[str] = None,
         start_time: Optional[datetime] = None,
         end_time: Optional[datetime] = None,
-        wallet_address: Optional[str] = None
+        wallet_address: Optional[str] = None,
+        limit: Optional[int] = None
     ) -> List[dict]:
         """Get execution history"""
         from ...core.models import Side
@@ -680,11 +684,13 @@ class SQLiteTransaction(StorageTransaction):
         if end_time:
             conditions.append("e.timestamp <= ?")
             params.append(end_time.isoformat())
-        
+
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
-        
+
         query += " ORDER BY e.timestamp DESC"
+        if limit:
+            query += f" LIMIT {limit}"
         
         rows = self._fetchall(query, tuple(params))
         return [

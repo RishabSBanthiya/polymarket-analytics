@@ -35,7 +35,8 @@ class ExecutionEngine(ABC):
         side: Side,
         size_usd: float,
         price: float,
-        orderbook: Optional[OrderbookSnapshot] = None
+        orderbook: Optional[OrderbookSnapshot] = None,
+        original_signal_price: Optional[float] = None
     ) -> ExecutionResult:
         """
         Execute a trade.
@@ -47,6 +48,7 @@ class ExecutionEngine(ABC):
             size_usd: Target size in USD
             price: Target price
             orderbook: Current orderbook state (optional)
+            original_signal_price: Original price from signal/alert (for drift check)
         
         Returns:
             ExecutionResult with fill details
@@ -68,14 +70,40 @@ class AggressiveExecutor(ExecutionEngine):
     For SELL: Takes best bid (immediate fill)
     
     Prioritizes fill over price.
+    
+    Includes safety checks:
+    - Max spread check (default 3%): Reject if bid-ask spread is too wide
+    - Max price slippage from signal (default 10%): Reject if price moved too much
     """
     
-    def __init__(self, max_slippage: float = 0.02):
+    def __init__(
+        self, 
+        max_slippage: float = 0.02,
+        max_spread: float = 0.03,  # 3% max spread
+        max_price_drift: float = 0.10  # 10% max price drift from original signal
+    ):
         self.max_slippage = max_slippage
+        self.max_spread = max_spread
+        self.max_price_drift = max_price_drift
     
     @property
     def name(self) -> str:
         return "aggressive"
+    
+    def _calculate_spread(self, best_bid: Optional[float], best_ask: Optional[float]) -> Optional[float]:
+        """Calculate bid-ask spread as a percentage"""
+        if best_bid is None or best_ask is None:
+            return None
+        if best_bid <= 0:
+            return None
+        
+        # Spread = (ask - bid) / midpoint
+        midpoint = (best_ask + best_bid) / 2
+        if midpoint <= 0:
+            return None
+        
+        spread = (best_ask - best_bid) / midpoint
+        return spread
     
     async def execute(
         self,
@@ -84,7 +112,8 @@ class AggressiveExecutor(ExecutionEngine):
         side: Side,
         size_usd: float,
         price: float,
-        orderbook: Optional[OrderbookSnapshot] = None
+        orderbook: Optional[OrderbookSnapshot] = None,
+        original_signal_price: Optional[float] = None  # Price from original flow alert
     ) -> ExecutionResult:
         """Execute aggressively at best available price"""
         from py_clob_client.clob_types import OrderArgs, OrderType
@@ -106,6 +135,36 @@ class AggressiveExecutor(ExecutionEngine):
                 best_ask = orderbook.best_ask
                 best_bid = orderbook.best_bid
             
+            # ============ SPREAD CHECK ============
+            # Reject if bid-ask spread is too wide (poor liquidity)
+            spread = self._calculate_spread(best_bid, best_ask)
+            if spread is not None and spread > self.max_spread:
+                logger.warning(
+                    f"Spread too wide: {spread:.1%} > {self.max_spread:.1%} max. "
+                    f"Bid: ${best_bid:.4f}, Ask: ${best_ask:.4f}"
+                )
+                return ExecutionResult(
+                    success=False,
+                    error_message=f"Spread too wide: {spread:.1%} (max {self.max_spread:.1%})"
+                )
+            
+            # ============ PRICE DRIFT CHECK ============
+            # Reject if price has moved too much from original signal
+            if original_signal_price is not None and original_signal_price > 0:
+                current_price = best_ask if side == Side.BUY else best_bid
+                if current_price:
+                    price_drift = abs(current_price - original_signal_price) / original_signal_price
+                    if price_drift > self.max_price_drift:
+                        logger.warning(
+                            f"Price drifted too much from signal: {price_drift:.1%} > {self.max_price_drift:.1%} max. "
+                            f"Original: ${original_signal_price:.4f}, Current: ${current_price:.4f}"
+                        )
+                        return ExecutionResult(
+                            success=False,
+                            requested_price=original_signal_price,
+                            error_message=f"Price drifted {price_drift:.1%} from signal (max {self.max_price_drift:.1%})"
+                        )
+            
             # Determine execution price
             if side == Side.BUY:
                 if best_ask is None:
@@ -124,7 +183,7 @@ class AggressiveExecutor(ExecutionEngine):
                 exec_price = best_bid
                 clob_side = SELL
             
-            # Check slippage
+            # Check slippage from target price
             if price > 0:
                 slippage = abs(exec_price - price) / price
                 if slippage > self.max_slippage:
@@ -229,7 +288,8 @@ class LimitOrderExecutor(ExecutionEngine):
         side: Side,
         size_usd: float,
         price: float,
-        orderbook: Optional[OrderbookSnapshot] = None
+        orderbook: Optional[OrderbookSnapshot] = None,
+        original_signal_price: Optional[float] = None
     ) -> ExecutionResult:
         """Execute with limit order at or near target price"""
         from py_clob_client.clob_types import OrderArgs, OrderType
@@ -356,7 +416,8 @@ class DryRunExecutor(ExecutionEngine):
         side: Side,
         size_usd: float,
         price: float,
-        orderbook: Optional[OrderbookSnapshot] = None
+        orderbook: Optional[OrderbookSnapshot] = None,
+        original_signal_price: Optional[float] = None
     ) -> ExecutionResult:
         """Simulate execution without placing real orders"""
         import random

@@ -30,11 +30,10 @@ class TradeStorage:
                 agent_id=agent_id,
                 start_time=start_time,
                 end_time=end_time,
-                wallet_address=wallet_address
+                wallet_address=wallet_address,
+                limit=limit
             )
         
-        if limit:
-            return executions[:limit]
         return executions
     
     def get_execution(self, execution_id: int) -> Optional[dict]:

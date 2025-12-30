@@ -55,6 +55,8 @@ async def run_flow_backtest(args):
         days=args.days,
         min_trade_size=args.min_trade_size,
         verbose=args.verbose,
+        optimize_params=getattr(args, 'optimize', False),
+        max_markets=getattr(args, 'max_markets', 500),
     )
     
     results = await backtester.run()
@@ -91,6 +93,8 @@ Examples:
     flow_parser.add_argument("--days", type=int, default=7, help="Days to backtest")
     flow_parser.add_argument("--min-trade-size", type=float, default=100.0, help="Min trade size")
     flow_parser.add_argument("--verbose", action="store_true", help="Verbose output")
+    flow_parser.add_argument("--optimize", action="store_true", help="Run parameter optimization")
+    flow_parser.add_argument("--max-markets", type=int, default=500, help="Max markets to analyze (default: 500)")
     
     # Global args
     parser.add_argument("--output", "-o", type=str, default=None, help="Output JSON file")

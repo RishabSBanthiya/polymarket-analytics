@@ -2,15 +2,23 @@
 Bond strategy backtester.
 
 Tests the expiring market strategy on historical data.
+
+Uses realistic execution with:
+- No fees (Polymarket has no fees)
+- Spread checks
+- Slippage based on liquidity
+- Position size limits
 """
 
 import logging
 from datetime import datetime, timezone, timedelta
-from typing import List, Optional
+from typing import List, Optional, Dict
+from collections import defaultdict
 
 from ...core.models import Market, Token, HistoricalPrice
 from ..base import BaseBacktester
 from ..results import BacktestResults
+from ..execution import RealisticExecution
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +26,11 @@ logger = logging.getLogger(__name__)
 class BondBacktester(BaseBacktester):
     """
     Backtester for the bond (expiring market) strategy.
+    
+    Uses realistic execution:
+    - No transaction fees
+    - Slippage modeling based on liquidity
+    - Spread checks before trading
     """
     
     def __init__(
@@ -28,6 +41,7 @@ class BondBacktester(BaseBacktester):
         max_price: float = 0.98,
         min_seconds_left: int = 60,
         max_seconds_left: int = 1800,
+        max_spread_pct: float = 0.02,  # 2% max spread for bonds
         **kwargs
     ):
         super().__init__(initial_capital, days, **kwargs)
@@ -35,6 +49,17 @@ class BondBacktester(BaseBacktester):
         self.max_price = max_price
         self.min_seconds_left = min_seconds_left
         self.max_seconds_left = max_seconds_left
+        self.max_spread_pct = max_spread_pct
+        
+        # Use realistic execution (no fees, slippage/spread checks)
+        self.execution = RealisticExecution(
+            max_spread_pct=max_spread_pct,
+            buy_slippage_pct=0.003,  # Lower slippage for near-expiry markets
+            sell_slippage_pct=0.003,
+        )
+        
+        # Track liquidity estimates
+        self._liquidity_cache: Dict[str, float] = {}
     
     @property
     def strategy_name(self) -> str:
@@ -90,9 +115,13 @@ class BondBacktester(BaseBacktester):
         history: List[HistoricalPrice],
         results: BacktestResults
     ) -> Optional[object]:
-        """Find and simulate a trade opportunity"""
+        """Find and simulate a trade opportunity with realistic execution"""
         if len(history) < 10:
             return None
+        
+        # Estimate liquidity from price stability
+        liquidity_estimate = self.estimate_liquidity(history, self.min_price)
+        self._liquidity_cache[token.token_id] = liquidity_estimate
         
         # Look for entry points
         for i, point in enumerate(history):
@@ -106,6 +135,20 @@ class BondBacktester(BaseBacktester):
             if position_ratio < 0.8:  # Only trade in last 20% of market life
                 continue
             
+            # Estimate spread from price volatility
+            recent_prices = [p.price for p in history[max(0, i-10):i+1]]
+            if len(recent_prices) >= 2:
+                price_range = max(recent_prices) - min(recent_prices)
+                estimated_spread = price_range / point.price if point.price > 0 else 0.10
+            else:
+                estimated_spread = 0.02  # Default 2%
+            
+            # Check spread acceptability
+            if estimated_spread > self.max_spread_pct:
+                if self.verbose:
+                    logger.debug(f"  Skipped: spread {estimated_spread:.1%} > {self.max_spread_pct:.1%}")
+                continue
+            
             # Check if we have capital
             if self.cash < self.config.risk.min_trade_value_usd:
                 break
@@ -116,39 +159,56 @@ class BondBacktester(BaseBacktester):
             if position_dollars <= 0:
                 continue
             
-            # Simulate execution
+            # Cap position by estimated liquidity (max 10% of available)
+            max_position = liquidity_estimate * 0.10
+            position_dollars = min(position_dollars, max_position)
+            
+            if position_dollars < self.config.risk.min_trade_value_usd:
+                continue
+            
+            # Simulate execution with liquidity-based slippage
             exec_price, filled_shares, fee = self.execution.execute_buy(
                 point.price,
                 position_dollars / point.price,
-                None
+                None,
+                liquidity_usd=liquidity_estimate
             )
             
             if filled_shares <= 0:
                 continue
             
-            cost = filled_shares * exec_price + fee
+            cost = filled_shares * exec_price  # No fee
             
             if cost > self.cash:
                 continue
             
             # Execute trade
             self.cash -= cost
-            results.total_fees += fee
             
             # Find exit (end of history = resolution)
             exit_price = history[-1].price
             exit_time = history[-1].datetime
             entry_time = point.datetime
             
-            # Exit simulation
-            _, exit_shares, exit_fee = self.execution.execute_sell(
-                exit_price,
-                filled_shares,
-                None
-            )
+            # Exit simulation (resolved markets have no slippage at $1.00)
+            if exit_price > 0.99:
+                # Resolved to YES - get $1.00 per share
+                actual_exit_price = 1.0
+                exit_shares = filled_shares
+            elif exit_price < 0.01:
+                # Resolved to NO - get $0.00 per share
+                actual_exit_price = 0.0
+                exit_shares = filled_shares
+            else:
+                # Still trading - apply exit slippage
+                actual_exit_price, exit_shares, _ = self.execution.execute_sell(
+                    exit_price,
+                    filled_shares,
+                    None,
+                    liquidity_usd=liquidity_estimate
+                )
             
-            results.total_fees += exit_fee
-            proceeds = exit_shares * exit_price - exit_fee
+            proceeds = exit_shares * actual_exit_price
             self.cash += proceeds
             
             # Record trade
@@ -161,15 +221,15 @@ class BondBacktester(BaseBacktester):
                 shares=filled_shares,
                 cost=cost,
                 exit_time=exit_time,
-                exit_price=exit_price,
-                reason=f"Bond trade @ {point.price:.2%}"
+                exit_price=actual_exit_price,
+                reason=f"Bond @ {point.price:.2%} (spread: {estimated_spread:.1%})"
             )
             
             if self.verbose:
                 pnl = proceeds - cost
                 logger.info(
                     f"  Trade: {token.outcome} {filled_shares:.2f} @ ${exec_price:.4f} -> "
-                    f"${exit_price:.4f} P&L: ${pnl:.2f}"
+                    f"${actual_exit_price:.4f} P&L: ${pnl:.2f} (liq: ${liquidity_estimate:.0f})"
                 )
             
             return results.trades[-1]
