@@ -1,0 +1,1909 @@
+2025-12-29 15:39:26 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:26 | INFO     | strategies.flow_strategy | 🌊 FLOW COPY STRATEGY CONFIGURATION
+2025-12-29 15:39:26 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:26 | INFO     | strategies.flow_strategy |   Agent ID:       flow-bot
+2025-12-29 15:39:26 | INFO     | strategies.flow_strategy |   Mode:           💸 LIVE TRADING
+2025-12-29 15:39:26 | INFO     | strategies.flow_strategy |   Min Score:      30
+2025-12-29 15:39:26 | INFO     | strategies.flow_strategy |   Min Trade Size: $100
+2025-12-29 15:39:26 | INFO     | strategies.flow_strategy |   Category:       ALL
+2025-12-29 15:39:26 | INFO     | strategies.flow_strategy |   Position Size:  2% base, up to 3x for high scores
+2025-12-29 15:39:26 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:26 | INFO     | strategies.flow_strategy |   Signal Weights:
+2025-12-29 15:39:26 | INFO     | strategies.flow_strategy |     📊 SMART_MONEY_ACTIVITY: 30.0x
+2025-12-29 15:39:26 | INFO     | strategies.flow_strategy |     📊 OVERSIZED_BET: 25.0x
+2025-12-29 15:39:26 | INFO     | strategies.flow_strategy |     📊 COORDINATED_WALLETS: 25.0x
+2025-12-29 15:39:26 | INFO     | strategies.flow_strategy |     📊 VOLUME_SPIKE: 10.0x
+2025-12-29 15:39:26 | INFO     | strategies.flow_strategy |     📊 PRICE_ACCELERATION: 10.0x
+2025-12-29 15:39:26 | INFO     | strategies.flow_strategy |     📊 SUDDEN_PRICE_MOVEMENT: 8.0x
+2025-12-29 15:39:26 | INFO     | strategies.flow_strategy |     📊 FRESH_WALLET_ACTIVITY: 5.0x
+2025-12-29 15:39:26 | INFO     | strategies.flow_strategy |     📊 COLD_WALLET_ACTIVITY: 5.0x
+2025-12-29 15:39:26 | INFO     | strategies.flow_strategy |     📊 LOW_ACTIVITY_WALLET: 3.0x
+2025-12-29 15:39:26 | INFO     | strategies.flow_strategy |     📊 CORRELATED_MOVEMENT: 5.0x
+2025-12-29 15:39:26 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:26 | INFO     | trading.bot | ============================================================
+2025-12-29 15:39:26 | INFO     | trading.bot | 🚀 STARTING TRADING BOT
+2025-12-29 15:39:26 | INFO     | trading.bot | ============================================================
+2025-12-29 15:39:26 | INFO     | trading.bot |   Agent ID:   flow-bot
+2025-12-29 15:39:26 | INFO     | trading.bot |   Type:       flow
+2025-12-29 15:39:26 | INFO     | trading.bot |   Mode:       💸 LIVE
+2025-12-29 15:39:26 | INFO     | trading.bot |   ✅ Credentials validated
+2025-12-29 15:39:26 | INFO     | trading.bot |   ✅ API connected
+2025-12-29 15:39:27 | INFO     | trading.bot |   ✅ CLOB client initialized
+2025-12-29 15:39:27 | INFO     | trading.storage.sqlite | SQLite storage initialized: data/risk_state.db
+2025-12-29 15:39:27 | INFO     | trading.storage.sqlite | Registered agent flow-bot (flow)
+2025-12-29 15:39:27 | INFO     | trading.risk_coordinator | ============================================================
+2025-12-29 15:39:27 | INFO     | trading.risk_coordinator | 🔄 RECONCILING STATE WITH ON-CHAIN...
+2025-12-29 15:39:27 | INFO     | trading.risk_coordinator | ============================================================
+2025-12-29 15:39:27 | INFO     | trading.risk_coordinator |   Wallet: 0xf54f4FF134f2A96E7E63674e561Cde110dE4f282
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |   📡 API returned: 15 positions, $552.44 USDC
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |   📦 Positions from API:
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |       - 92017981406808384305... | 76.6500 shares @ $0.9865 = $75.62
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |       - 38799348442724633229... | 42.6100 shares @ $0.9850 = $41.97
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |       - 64438803144617060812... | 41.2600 shares @ $0.9710 = $40.06
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |       - 88933989741847491097... | 37.2100 shares @ $0.9500 = $35.35
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |       - 57250582726141352031... | 26.0900 shares @ $0.9850 = $25.70
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |       - 14805424610556521493... | 20.1400 shares @ $0.9755 = $19.65
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |       - 82617212581795024039... | 18.5100 shares @ $0.9880 = $18.29
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |       - 15023754393998281560... | 15.2100 shares @ $0.9575 = $14.56
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |       - 62907314912118087699... | 14.0600 shares @ $0.9780 = $13.75
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |       - 69066581937470837277... | 13.6200 shares @ $0.9755 = $13.29
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |       - 10194940612355593823... | 10.0000 shares @ $0.9840 = $9.84
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |       - 11095693793658442691... | 7.9800 shares @ $0.9860 = $7.87
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |       - 32915172045130582917... | 7.8000 shares @ $0.9590 = $7.48
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |       - 43577760886052680570... | 5.3000 shares @ $0.9835 = $5.21
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |       - 75858118176847938138... | 1.7700 shares @ $0.9750 = $1.73
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |   💰 Total API positions value: $330.36
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |   💾 DB state: 0 open, 15 orphan
+2025-12-29 15:39:28 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 92017981406808384305... | 76.6500 shares @ $0.9865 = $75.62
+2025-12-29 15:39:28 | INFO     | trading.storage.sqlite | Updated existing orphan position 73: 76.6500 shares @ $0.9865
+2025-12-29 15:39:28 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 38799348442724633229... | 42.6100 shares @ $0.9850 = $41.97
+2025-12-29 15:39:28 | INFO     | trading.storage.sqlite | Updated existing orphan position 74: 42.6100 shares @ $0.9850
+2025-12-29 15:39:28 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 64438803144617060812... | 41.2600 shares @ $0.9710 = $40.06
+2025-12-29 15:39:28 | INFO     | trading.storage.sqlite | Updated existing orphan position 75: 41.2600 shares @ $0.9710
+2025-12-29 15:39:28 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 88933989741847491097... | 37.2100 shares @ $0.9500 = $35.35
+2025-12-29 15:39:28 | INFO     | trading.storage.sqlite | Updated existing orphan position 76: 37.2100 shares @ $0.9500
+2025-12-29 15:39:28 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 57250582726141352031... | 26.0900 shares @ $0.9850 = $25.70
+2025-12-29 15:39:28 | INFO     | trading.storage.sqlite | Updated existing orphan position 77: 26.0900 shares @ $0.9850
+2025-12-29 15:39:28 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 14805424610556521493... | 20.1400 shares @ $0.9755 = $19.65
+2025-12-29 15:39:28 | INFO     | trading.storage.sqlite | Updated existing orphan position 78: 20.1400 shares @ $0.9755
+2025-12-29 15:39:28 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 82617212581795024039... | 18.5100 shares @ $0.9880 = $18.29
+2025-12-29 15:39:28 | INFO     | trading.storage.sqlite | Updated existing orphan position 79: 18.5100 shares @ $0.9880
+2025-12-29 15:39:28 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 15023754393998281560... | 15.2100 shares @ $0.9575 = $14.56
+2025-12-29 15:39:28 | INFO     | trading.storage.sqlite | Updated existing orphan position 80: 15.2100 shares @ $0.9575
+2025-12-29 15:39:28 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 62907314912118087699... | 14.0600 shares @ $0.9780 = $13.75
+2025-12-29 15:39:28 | INFO     | trading.storage.sqlite | Updated existing orphan position 81: 14.0600 shares @ $0.9780
+2025-12-29 15:39:28 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 69066581937470837277... | 13.6200 shares @ $0.9755 = $13.29
+2025-12-29 15:39:28 | INFO     | trading.storage.sqlite | Updated existing orphan position 82: 13.6200 shares @ $0.9755
+2025-12-29 15:39:28 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 10194940612355593823... | 10.0000 shares @ $0.9840 = $9.84
+2025-12-29 15:39:28 | INFO     | trading.storage.sqlite | Updated existing orphan position 83: 10.0000 shares @ $0.9840
+2025-12-29 15:39:28 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 11095693793658442691... | 7.9800 shares @ $0.9860 = $7.87
+2025-12-29 15:39:28 | INFO     | trading.storage.sqlite | Updated existing orphan position 84: 7.9800 shares @ $0.9860
+2025-12-29 15:39:28 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 32915172045130582917... | 7.8000 shares @ $0.9590 = $7.48
+2025-12-29 15:39:28 | INFO     | trading.storage.sqlite | Updated existing orphan position 85: 7.8000 shares @ $0.9590
+2025-12-29 15:39:28 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 43577760886052680570... | 5.3000 shares @ $0.9835 = $5.21
+2025-12-29 15:39:28 | INFO     | trading.storage.sqlite | Updated existing orphan position 86: 5.3000 shares @ $0.9835
+2025-12-29 15:39:28 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 75858118176847938138... | 1.7700 shares @ $0.9750 = $1.73
+2025-12-29 15:39:28 | INFO     | trading.storage.sqlite | Updated existing orphan position 87: 1.7700 shares @ $0.9750
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator | ============================================================
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator | ✅ RECONCILIATION COMPLETE
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |   Positions: 15 on-chain
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |   Orphans added: 15
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |   Ghosts removed: 0
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |   USDC Balance: $552.44
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator |   Positions Value: $330.36
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator | ============================================================
+2025-12-29 15:39:28 | INFO     | trading.risk_coordinator | RiskCoordinator started for agent flow-bot (flow)
+2025-12-29 15:39:28 | INFO     | trading.bot |   ✅ Risk coordinator started
+2025-12-29 15:39:28 | INFO     | trading.safety | Drawdown limits manually reset: equity $882.80
+2025-12-29 15:39:28 | INFO     | trading.bot | ============================================================
+2025-12-29 15:39:28 | INFO     | trading.bot | 💰 WALLET STATE
+2025-12-29 15:39:28 | INFO     | trading.bot | ============================================================
+2025-12-29 15:39:28 | INFO     | trading.bot |   USDC Balance:    $552.44
+2025-12-29 15:39:28 | INFO     | trading.bot |   Positions Value: $330.36
+2025-12-29 15:39:28 | INFO     | trading.bot |   Total Equity:    $882.80
+2025-12-29 15:39:28 | INFO     | trading.bot |   Available:       $552.44
+2025-12-29 15:39:28 | INFO     | trading.bot | ============================================================
+2025-12-29 15:39:28 | INFO     | trading.bot | ✅ Bot ready and running!
+2025-12-29 15:39:28 | INFO     | strategies.flow_strategy | 🔌 Flow detector connected to Polymarket WebSocket
+2025-12-29 15:39:28 | INFO     | strategies.flow_strategy |    Monitoring trades >= $100
+2025-12-29 15:39:28 | INFO     | trading.bot | Starting main loop (interval=2.0s)
+2025-12-29 15:39:36 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: OVERSIZED_BET | HIGH | 
+2025-12-29 15:39:36 | INFO     | strategies.flow_strategy |    📌 Lighter Market Cap Fdv One Day After Launch
+2025-12-29 15:39:37 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: OVERSIZED_BET | HIGH | 
+2025-12-29 15:39:37 | INFO     | strategies.flow_strategy |    📌 Lighter Market Cap Fdv One Day After Launch
+2025-12-29 15:39:38 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:38 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:39:38 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:38 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:39:38 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 36.9 | Token: 5657083518501318...
+2025-12-29 15:39:38 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:39:38 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:39:38 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 36.6 | Token: 1080545920608084...
+2025-12-29 15:39:38 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:39:38 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:38 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:39:38 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:39:38 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:39:40 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:40 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:39:40 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:40 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:39:40 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 35.9 | Token: 5657083518501318...
+2025-12-29 15:39:40 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:39:40 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:39:40 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 35.7 | Token: 1080545920608084...
+2025-12-29 15:39:40 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:39:40 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:40 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:39:40 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:39:40 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:39:42 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:42 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:39:42 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:42 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:39:42 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 35.0 | Token: 5657083518501318...
+2025-12-29 15:39:42 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:39:42 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:39:42 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 34.8 | Token: 1080545920608084...
+2025-12-29 15:39:42 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:39:42 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:42 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:39:42 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:39:42 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:39:44 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:44 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:39:44 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:44 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:39:44 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 34.1 | Token: 5657083518501318...
+2025-12-29 15:39:44 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:39:44 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:39:44 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 33.9 | Token: 1080545920608084...
+2025-12-29 15:39:44 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:39:44 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:44 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:39:44 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:39:45 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:39:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:47 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:39:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:47 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:39:47 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 33.3 | Token: 5657083518501318...
+2025-12-29 15:39:47 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:39:47 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:39:47 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 33.0 | Token: 1080545920608084...
+2025-12-29 15:39:47 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:39:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:47 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:39:47 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:39:47 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:39:49 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:49 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:39:49 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:49 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:39:49 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 32.4 | Token: 5657083518501318...
+2025-12-29 15:39:49 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:39:49 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:39:49 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 32.2 | Token: 1080545920608084...
+2025-12-29 15:39:49 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:39:49 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:49 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:39:49 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:39:49 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:39:51 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:51 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:39:51 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:51 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:39:51 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 31.6 | Token: 5657083518501318...
+2025-12-29 15:39:51 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:39:51 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:39:51 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 31.4 | Token: 1080545920608084...
+2025-12-29 15:39:51 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:39:51 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:51 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:39:51 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:39:51 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:39:53 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:53 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:39:53 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:53 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:39:53 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 30.8 | Token: 5657083518501318...
+2025-12-29 15:39:53 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:39:53 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:39:53 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 30.6 | Token: 1080545920608084...
+2025-12-29 15:39:53 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:39:53 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:53 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:39:53 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:39:53 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:39:55 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:55 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:39:55 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:55 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:39:55 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 30.0 | Token: 5657083518501318...
+2025-12-29 15:39:55 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:39:55 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:39:55 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:39:56 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:40:06 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | HIGH | 
+2025-12-29 15:40:06 | INFO     | strategies.flow_strategy |    📌 Bitcoin Up Or Down On December 29
+2025-12-29 15:40:17 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: OVERSIZED_BET | HIGH | 
+2025-12-29 15:40:17 | INFO     | strategies.flow_strategy |    📌 Bitcoin Above On December 29
+2025-12-29 15:40:18 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:18 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:40:18 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:18 | INFO     | strategies.flow_strategy |   [1] Bitcoin Above On December 29...
+2025-12-29 15:40:18 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 36.9 | Token: 5745606973001025...
+2025-12-29 15:40:18 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:40:18 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:18 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:40:18 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:40:20 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:20 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:40:20 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:20 | INFO     | strategies.flow_strategy |   [1] Bitcoin Above On December 29...
+2025-12-29 15:40:20 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 36.0 | Token: 5745606973001025...
+2025-12-29 15:40:20 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:40:20 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:20 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:40:20 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:40:22 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:22 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:40:22 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:22 | INFO     | strategies.flow_strategy |   [1] Bitcoin Above On December 29...
+2025-12-29 15:40:22 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 35.1 | Token: 5745606973001025...
+2025-12-29 15:40:22 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:40:22 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:22 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:40:22 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:40:24 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | MEDIUM | 
+2025-12-29 15:40:24 | INFO     | strategies.flow_strategy |    📌 Acn Ang Egy 2025 12 29
+2025-12-29 15:40:24 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:24 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:40:24 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:24 | INFO     | strategies.flow_strategy |   [1] Bitcoin Above On December 29...
+2025-12-29 15:40:24 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 34.3 | Token: 5745606973001025...
+2025-12-29 15:40:24 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:40:24 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:24 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:40:24 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:40:26 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: OVERSIZED_BET | HIGH | 
+2025-12-29 15:40:26 | INFO     | strategies.flow_strategy |    📌 Fed Decision In January
+2025-12-29 15:40:26 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:26 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:40:26 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:26 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:40:26 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 37.2 | Token: 7147885279027909...
+2025-12-29 15:40:26 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:40:26 | INFO     | strategies.flow_strategy |   [2] Bitcoin Above On December 29...
+2025-12-29 15:40:26 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 33.5 | Token: 5745606973001025...
+2025-12-29 15:40:26 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:40:26 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:26 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:40:26 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:40:26 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:40:28 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:28 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:40:28 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:28 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:40:28 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 36.3 | Token: 7147885279027909...
+2025-12-29 15:40:28 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:40:28 | INFO     | strategies.flow_strategy |   [2] Bitcoin Above On December 29...
+2025-12-29 15:40:28 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 32.6 | Token: 5745606973001025...
+2025-12-29 15:40:28 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:40:28 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:28 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:40:28 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:40:28 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:40:30 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:30 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:40:30 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:30 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:40:30 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 35.4 | Token: 7147885279027909...
+2025-12-29 15:40:30 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:40:30 | INFO     | strategies.flow_strategy |   [2] Bitcoin Above On December 29...
+2025-12-29 15:40:30 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 31.8 | Token: 5745606973001025...
+2025-12-29 15:40:30 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:40:30 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:30 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:40:31 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:40:31 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:40:33 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:33 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:40:33 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:33 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:40:33 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 34.5 | Token: 7147885279027909...
+2025-12-29 15:40:33 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:40:33 | INFO     | strategies.flow_strategy |   [2] Bitcoin Above On December 29...
+2025-12-29 15:40:33 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 31.0 | Token: 5745606973001025...
+2025-12-29 15:40:33 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:40:33 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:33 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:40:33 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:40:33 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:40:35 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:35 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:40:35 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:35 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:40:35 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 33.6 | Token: 7147885279027909...
+2025-12-29 15:40:35 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:40:35 | INFO     | strategies.flow_strategy |   [2] Bitcoin Above On December 29...
+2025-12-29 15:40:35 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 30.2 | Token: 5745606973001025...
+2025-12-29 15:40:35 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:40:35 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:35 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:40:35 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:40:35 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:40:37 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:37 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:40:37 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:37 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:40:37 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 32.8 | Token: 7147885279027909...
+2025-12-29 15:40:37 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:40:37 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:37 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:40:37 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:40:39 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:39 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:40:39 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:39 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:40:39 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 32.0 | Token: 7147885279027909...
+2025-12-29 15:40:39 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:40:39 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:39 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:40:39 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:40:41 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:41 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:40:41 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:41 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:40:41 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 31.2 | Token: 7147885279027909...
+2025-12-29 15:40:41 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:40:41 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:41 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:40:41 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:40:43 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:43 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:40:43 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:43 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:40:43 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 30.5 | Token: 7147885279027909...
+2025-12-29 15:40:43 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:40:43 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:40:43 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:40:43 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:40:54 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | HIGH | 
+2025-12-29 15:40:54 | INFO     | strategies.flow_strategy |    📌 Lighter Airdop By
+2025-12-29 15:41:00 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SMART_MONEY_ACTIVITY | HIGH | 
+2025-12-29 15:41:00 | INFO     | strategies.flow_strategy |    📌 Lighter Market Cap Fdv One Day After Launch
+2025-12-29 15:41:01 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: OVERSIZED_BET | CRITICAL | 
+2025-12-29 15:41:01 | INFO     | strategies.flow_strategy |    📌 Fed Decision In January
+2025-12-29 15:41:02 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:02 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:41:02 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:02 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:41:02 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 49.7 | Token: 4213984992957404...
+2025-12-29 15:41:02 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:41:02 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:41:02 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 44.1 | Token: 1080545920608084...
+2025-12-29 15:41:02 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:41:02 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:02 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:41:02 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:41:02 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:41:03 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | HIGH | 
+2025-12-29 15:41:03 | INFO     | strategies.flow_strategy |    📌 Btc Updown 15M 1767019500
+2025-12-29 15:41:04 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:04 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:41:04 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:04 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:41:04 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 48.4 | Token: 4213984992957404...
+2025-12-29 15:41:04 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:41:04 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:41:04 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 42.9 | Token: 1080545920608084...
+2025-12-29 15:41:04 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:41:04 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:04 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:41:04 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:41:04 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:41:06 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:06 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:41:06 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:06 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:41:06 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 47.2 | Token: 4213984992957404...
+2025-12-29 15:41:06 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:41:06 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:41:06 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 41.9 | Token: 1080545920608084...
+2025-12-29 15:41:06 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:41:06 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:06 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:41:06 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:41:06 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:41:08 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:08 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:41:08 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:08 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:41:08 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 46.0 | Token: 4213984992957404...
+2025-12-29 15:41:08 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:41:08 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:41:08 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 40.8 | Token: 1080545920608084...
+2025-12-29 15:41:08 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:41:08 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:08 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:41:08 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:41:08 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:41:10 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:10 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:41:10 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:10 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:41:10 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 44.8 | Token: 4213984992957404...
+2025-12-29 15:41:10 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:41:10 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:41:10 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 39.8 | Token: 1080545920608084...
+2025-12-29 15:41:10 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:41:10 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:10 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:41:11 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:41:11 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:41:13 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:13 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:41:13 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:13 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:41:13 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 43.7 | Token: 4213984992957404...
+2025-12-29 15:41:13 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:41:13 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:41:13 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 38.8 | Token: 1080545920608084...
+2025-12-29 15:41:13 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:41:13 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:13 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:41:13 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:41:13 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:41:15 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:15 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:41:15 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:15 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:41:15 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 42.6 | Token: 4213984992957404...
+2025-12-29 15:41:15 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:41:15 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:41:15 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 37.8 | Token: 1080545920608084...
+2025-12-29 15:41:15 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:41:15 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:15 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:41:15 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:41:15 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:41:17 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:17 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:41:17 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:17 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:41:17 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 41.5 | Token: 4213984992957404...
+2025-12-29 15:41:17 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:41:17 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:41:17 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 36.9 | Token: 1080545920608084...
+2025-12-29 15:41:17 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:41:17 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:17 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:41:17 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:41:17 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:41:19 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:19 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:41:19 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:19 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:41:19 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 40.5 | Token: 4213984992957404...
+2025-12-29 15:41:19 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:41:19 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:41:19 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 35.9 | Token: 1080545920608084...
+2025-12-29 15:41:19 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:41:19 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:19 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:41:19 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:41:19 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:41:21 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:21 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:41:21 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:21 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:41:21 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 39.5 | Token: 4213984992957404...
+2025-12-29 15:41:21 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:41:21 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:41:21 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 35.0 | Token: 1080545920608084...
+2025-12-29 15:41:21 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:41:21 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:21 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:41:22 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:41:22 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:41:24 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:24 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:41:24 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:24 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:41:24 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 38.5 | Token: 4213984992957404...
+2025-12-29 15:41:24 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:41:24 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:41:24 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 34.2 | Token: 1080545920608084...
+2025-12-29 15:41:24 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:41:24 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:24 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:41:24 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:41:24 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:41:26 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:26 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:41:26 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:26 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:41:26 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 37.5 | Token: 4213984992957404...
+2025-12-29 15:41:26 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:41:26 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:41:26 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 33.3 | Token: 1080545920608084...
+2025-12-29 15:41:26 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:41:26 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:26 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:41:26 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:41:26 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:41:28 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: CORRELATED_MOVEMENT | MEDIUM | 
+2025-12-29 15:41:28 | INFO     | strategies.flow_strategy |    📌 3 markets moving UP together
+2025-12-29 15:41:28 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:28 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:41:28 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:28 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:41:28 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 36.6 | Token: 4213984992957404...
+2025-12-29 15:41:28 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:41:28 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:41:28 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 32.5 | Token: 1080545920608084...
+2025-12-29 15:41:28 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:41:28 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:28 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:41:28 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:41:28 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:41:30 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:30 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:41:30 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:30 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:41:30 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 35.7 | Token: 4213984992957404...
+2025-12-29 15:41:30 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:41:30 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:41:30 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:41:30 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:41:52 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | HIGH | 
+2025-12-29 15:41:52 | INFO     | strategies.flow_strategy |    📌 Bitcoin Up Or Down On December 29
+2025-12-29 15:41:58 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: CORRELATED_MOVEMENT | MEDIUM | 
+2025-12-29 15:41:58 | INFO     | strategies.flow_strategy |    📌 3 markets moving DOWN together
+2025-12-29 15:42:03 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | HIGH | 
+2025-12-29 15:42:03 | INFO     | strategies.flow_strategy |    📌 Nba Orl Tor 2025 12 29
+2025-12-29 15:42:11 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | HIGH | 
+2025-12-29 15:42:11 | INFO     | strategies.flow_strategy |    📌 Sol Updown 15M 1767018600
+2025-12-29 15:42:54 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | MEDIUM | 
+2025-12-29 15:42:54 | INFO     | strategies.flow_strategy |    📌 Lighter Airdop By
+2025-12-29 15:42:59 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | HIGH | 
+2025-12-29 15:42:59 | INFO     | strategies.flow_strategy |    📌 Xrp Updown 15M 1767018600
+2025-12-29 15:43:28 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: CORRELATED_MOVEMENT | MEDIUM | 
+2025-12-29 15:43:28 | INFO     | strategies.flow_strategy |    📌 3 markets moving UP together
+2025-12-29 15:44:12 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | HIGH | 
+2025-12-29 15:44:12 | INFO     | strategies.flow_strategy |    📌 Lighter Market Cap Fdv One Day After Launch
+2025-12-29 15:44:27 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:27 | INFO     | strategies.flow_strategy | 📊 FLOW DETECTOR STATS (Last 5 min)
+2025-12-29 15:44:27 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:27 | INFO     | strategies.flow_strategy |   Total Alerts:  19
+2025-12-29 15:44:27 | INFO     | strategies.flow_strategy |   Signals Made:  62
+2025-12-29 15:44:27 | INFO     | strategies.flow_strategy |   Alert Types:
+2025-12-29 15:44:27 | INFO     | strategies.flow_strategy |     📊 SUDDEN_PRICE_MOVEMENT: 10
+2025-12-29 15:44:27 | INFO     | strategies.flow_strategy |     📊 OVERSIZED_BET: 5
+2025-12-29 15:44:27 | INFO     | strategies.flow_strategy |     📊 CORRELATED_MOVEMENT: 3
+2025-12-29 15:44:27 | INFO     | strategies.flow_strategy |     📊 SMART_MONEY_ACTIVITY: 1
+2025-12-29 15:44:27 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:45 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: OVERSIZED_BET | HIGH | 
+2025-12-29 15:44:45 | INFO     | strategies.flow_strategy |    📌 Will Satoshi Move Any Bitcoin In 2025
+2025-12-29 15:44:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:47 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:44:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:47 | INFO     | strategies.flow_strategy |   [1] Will Satoshi Move Any Bitcoin In 2025...
+2025-12-29 15:44:47 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 36.9 | Token: 2049090383879527...
+2025-12-29 15:44:47 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:44:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:47 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:44:47 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:44:49 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:49 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:44:49 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:49 | INFO     | strategies.flow_strategy |   [1] Will Satoshi Move Any Bitcoin In 2025...
+2025-12-29 15:44:49 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 36.0 | Token: 2049090383879527...
+2025-12-29 15:44:49 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:44:49 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:49 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:44:49 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:44:50 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | CRITICAL | 
+2025-12-29 15:44:50 | INFO     | strategies.flow_strategy |    📌 Bitcoin Price On December 29
+2025-12-29 15:44:50 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | CRITICAL | 
+2025-12-29 15:44:50 | INFO     | strategies.flow_strategy |    📌 Acn Ang Egy 2025 12 29
+2025-12-29 15:44:51 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:51 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:44:51 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:51 | INFO     | strategies.flow_strategy |   [1] Will Satoshi Move Any Bitcoin In 2025...
+2025-12-29 15:44:51 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 35.1 | Token: 2049090383879527...
+2025-12-29 15:44:51 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:44:51 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:51 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:44:51 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:44:53 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:53 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:44:53 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:53 | INFO     | strategies.flow_strategy |   [1] Will Satoshi Move Any Bitcoin In 2025...
+2025-12-29 15:44:53 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 34.3 | Token: 2049090383879527...
+2025-12-29 15:44:53 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:44:53 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:53 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:44:53 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:44:55 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:55 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:44:55 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:55 | INFO     | strategies.flow_strategy |   [1] Will Satoshi Move Any Bitcoin In 2025...
+2025-12-29 15:44:55 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 33.5 | Token: 2049090383879527...
+2025-12-29 15:44:55 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:44:55 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:55 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:44:55 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:44:57 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:57 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:44:57 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:57 | INFO     | strategies.flow_strategy |   [1] Will Satoshi Move Any Bitcoin In 2025...
+2025-12-29 15:44:57 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 32.7 | Token: 2049090383879527...
+2025-12-29 15:44:57 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:44:57 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:57 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:44:57 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:44:58 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | HIGH | 
+2025-12-29 15:44:58 | INFO     | strategies.flow_strategy |    📌 Btc Updown 15M 1767019500
+2025-12-29 15:44:59 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:59 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:44:59 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:59 | INFO     | strategies.flow_strategy |   [1] Will Satoshi Move Any Bitcoin In 2025...
+2025-12-29 15:44:59 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 31.9 | Token: 2049090383879527...
+2025-12-29 15:44:59 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:44:59 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:44:59 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:45:00 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:45:02 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:02 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:45:02 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:02 | INFO     | strategies.flow_strategy |   [1] Will Satoshi Move Any Bitcoin In 2025...
+2025-12-29 15:45:02 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 31.1 | Token: 2049090383879527...
+2025-12-29 15:45:02 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:45:02 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:02 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:45:02 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:45:04 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:04 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:45:04 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:04 | INFO     | strategies.flow_strategy |   [1] Will Satoshi Move Any Bitcoin In 2025...
+2025-12-29 15:45:04 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 30.4 | Token: 2049090383879527...
+2025-12-29 15:45:04 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:45:04 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:04 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:45:04 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:45:14 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | HIGH | 
+2025-12-29 15:45:14 | INFO     | strategies.flow_strategy |    📌 Eth Updown 15M 1767019500
+2025-12-29 15:45:14 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | CRITICAL | 
+2025-12-29 15:45:14 | INFO     | strategies.flow_strategy |    📌 Ethereum Above On December 29
+2025-12-29 15:45:28 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: CORRELATED_MOVEMENT | MEDIUM | 
+2025-12-29 15:45:28 | INFO     | strategies.flow_strategy |    📌 4 markets moving UP together
+2025-12-29 15:45:33 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | MEDIUM | 
+2025-12-29 15:45:33 | INFO     | strategies.flow_strategy |    📌 Lighter Market Cap Fdv One Day After Launch
+2025-12-29 15:45:37 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | CRITICAL | 
+2025-12-29 15:45:37 | INFO     | strategies.flow_strategy |    📌 Btc Updown 15M 1767019500
+2025-12-29 15:45:37 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | CRITICAL | 
+2025-12-29 15:45:37 | INFO     | strategies.flow_strategy |    📌 Btc Updown 15M 1767019500
+2025-12-29 15:45:38 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:38 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:45:38 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:38 | INFO     | strategies.flow_strategy |   [1] Btc Updown 15M 1767019500...
+2025-12-29 15:45:38 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 35.6 | Token: 1680005233887585...
+2025-12-29 15:45:38 | INFO     | strategies.flow_strategy |       Factors: 📊 SUDDEN_PRICE_MOVEMENT, 📊 VOLUME_SPIKE
+2025-12-29 15:45:38 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:38 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:45:38 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:45:38 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: PRICE_ACCELERATION | HIGH | 
+2025-12-29 15:45:38 | INFO     | strategies.flow_strategy |    📌 Btc Updown 15M 1767019500
+2025-12-29 15:45:38 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | HIGH | 
+2025-12-29 15:45:38 | INFO     | strategies.flow_strategy |    📌 Lighter Airdop By
+2025-12-29 15:45:39 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | CRITICAL | 
+2025-12-29 15:45:39 | INFO     | strategies.flow_strategy |    📌 Lighter Airdop By
+2025-12-29 15:45:40 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:40 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:45:40 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:40 | INFO     | strategies.flow_strategy |   [1] Btc Updown 15M 1767019500...
+2025-12-29 15:45:40 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 34.7 | Token: 1680005233887585...
+2025-12-29 15:45:40 | INFO     | strategies.flow_strategy |       Factors: 📊 SUDDEN_PRICE_MOVEMENT, 📊 VOLUME_SPIKE
+2025-12-29 15:45:40 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:40 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:45:40 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:45:40 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | CRITICAL | 
+2025-12-29 15:45:40 | INFO     | strategies.flow_strategy |    📌 What Day Will The Lighter Airdrop Be
+2025-12-29 15:45:41 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | HIGH | 
+2025-12-29 15:45:41 | INFO     | strategies.flow_strategy |    📌 What Day Will The Lighter Airdrop Be
+2025-12-29 15:45:41 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | HIGH | 
+2025-12-29 15:45:41 | INFO     | strategies.flow_strategy |    📌 What Day Will The Lighter Airdrop Be
+2025-12-29 15:45:42 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | CRITICAL | 
+2025-12-29 15:45:42 | INFO     | strategies.flow_strategy |    📌 Lighter Market Cap Fdv One Day After Launch
+2025-12-29 15:45:42 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:42 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:45:42 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:42 | INFO     | strategies.flow_strategy |   [1] Btc Updown 15M 1767019500...
+2025-12-29 15:45:42 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 33.9 | Token: 1680005233887585...
+2025-12-29 15:45:42 | INFO     | strategies.flow_strategy |       Factors: 📊 SUDDEN_PRICE_MOVEMENT, 📊 VOLUME_SPIKE
+2025-12-29 15:45:42 | INFO     | strategies.flow_strategy |   [2] What Day Will The Lighter Airdrop Be...
+2025-12-29 15:45:42 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 31.4 | Token: 4451967599593825...
+2025-12-29 15:45:42 | INFO     | strategies.flow_strategy |       Factors: 📊 VOLUME_SPIKE, 📊 SUDDEN_PRICE_MOVEMENT
+2025-12-29 15:45:42 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:42 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:45:42 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:45:42 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:45:42 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | CRITICAL | 
+2025-12-29 15:45:42 | INFO     | strategies.flow_strategy |    📌 Lighter Market Cap Fdv One Day After Launch
+2025-12-29 15:45:44 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:44 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:45:44 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:44 | INFO     | strategies.flow_strategy |   [1] Btc Updown 15M 1767019500...
+2025-12-29 15:45:44 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 33.1 | Token: 1680005233887585...
+2025-12-29 15:45:44 | INFO     | strategies.flow_strategy |       Factors: 📊 SUDDEN_PRICE_MOVEMENT, 📊 VOLUME_SPIKE
+2025-12-29 15:45:44 | INFO     | strategies.flow_strategy |   [2] What Day Will The Lighter Airdrop Be...
+2025-12-29 15:45:44 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 30.6 | Token: 4451967599593825...
+2025-12-29 15:45:44 | INFO     | strategies.flow_strategy |       Factors: 📊 VOLUME_SPIKE, 📊 SUDDEN_PRICE_MOVEMENT
+2025-12-29 15:45:44 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:44 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:45:44 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:45:45 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:45:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:47 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:45:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:47 | INFO     | strategies.flow_strategy |   [1] Btc Updown 15M 1767019500...
+2025-12-29 15:45:47 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 32.2 | Token: 1680005233887585...
+2025-12-29 15:45:47 | INFO     | strategies.flow_strategy |       Factors: 📊 SUDDEN_PRICE_MOVEMENT, 📊 VOLUME_SPIKE
+2025-12-29 15:45:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:47 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:45:47 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:45:48 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | HIGH | 
+2025-12-29 15:45:48 | INFO     | strategies.flow_strategy |    📌 Lighter Market Cap Fdv One Day After Launch
+2025-12-29 15:45:49 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:49 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:45:49 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:49 | INFO     | strategies.flow_strategy |   [1] Btc Updown 15M 1767019500...
+2025-12-29 15:45:49 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 31.4 | Token: 1680005233887585...
+2025-12-29 15:45:49 | INFO     | strategies.flow_strategy |       Factors: 📊 SUDDEN_PRICE_MOVEMENT, 📊 VOLUME_SPIKE
+2025-12-29 15:45:49 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:49 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:45:49 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:45:51 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:51 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:45:51 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:51 | INFO     | strategies.flow_strategy |   [1] Btc Updown 15M 1767019500...
+2025-12-29 15:45:51 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 30.7 | Token: 1680005233887585...
+2025-12-29 15:45:51 | INFO     | strategies.flow_strategy |       Factors: 📊 SUDDEN_PRICE_MOVEMENT, 📊 VOLUME_SPIKE
+2025-12-29 15:45:51 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:45:51 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:45:51 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:45:58 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: CORRELATED_MOVEMENT | MEDIUM | 
+2025-12-29 15:45:58 | INFO     | strategies.flow_strategy |    📌 4 markets moving DOWN together
+2025-12-29 15:46:00 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | HIGH | 
+2025-12-29 15:46:00 | INFO     | strategies.flow_strategy |    📌 Elon Musk Of Tweets December 23 December 30
+2025-12-29 15:46:01 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | CRITICAL | 
+2025-12-29 15:46:01 | INFO     | strategies.flow_strategy |    📌 Will Polymarket Mindshare Hit 70
+2025-12-29 15:46:09 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | HIGH | 
+2025-12-29 15:46:09 | INFO     | strategies.flow_strategy |    📌 Btc Updown 15M 1767019500
+2025-12-29 15:46:11 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | HIGH | 
+2025-12-29 15:46:11 | INFO     | strategies.flow_strategy |    📌 Acn Ang Egy 2025 12 29
+2025-12-29 15:46:16 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | CRITICAL | 
+2025-12-29 15:46:16 | INFO     | strategies.flow_strategy |    📌 Bitcoin Above On December 29
+2025-12-29 15:46:16 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | CRITICAL | 
+2025-12-29 15:46:16 | INFO     | strategies.flow_strategy |    📌 Bitcoin Above On December 29
+2025-12-29 15:46:23 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | HIGH | 
+2025-12-29 15:46:23 | INFO     | strategies.flow_strategy |    📌 Acn Ang Egy 2025 12 29
+2025-12-29 15:46:23 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | MEDIUM | 
+2025-12-29 15:46:23 | INFO     | strategies.flow_strategy |    📌 Acn Ang Egy 2025 12 29
+2025-12-29 15:46:28 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: CORRELATED_MOVEMENT | MEDIUM | 
+2025-12-29 15:46:28 | INFO     | strategies.flow_strategy |    📌 4 markets moving UP together
+2025-12-29 15:46:33 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | CRITICAL | 
+2025-12-29 15:46:33 | INFO     | strategies.flow_strategy |    📌 What Day Will The Lighter Airdrop Be
+2025-12-29 15:46:34 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | HIGH | 
+2025-12-29 15:46:34 | INFO     | strategies.flow_strategy |    📌 What Day Will The Lighter Airdrop Be
+2025-12-29 15:47:10 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | CRITICAL | 
+2025-12-29 15:47:10 | INFO     | strategies.flow_strategy |    📌 Nhl Nyi Chi 2025 12 30
+2025-12-29 15:47:26 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | MEDIUM | 
+2025-12-29 15:47:26 | INFO     | strategies.flow_strategy |    📌 Elon Musk Of Tweets December 23 December 30
+2025-12-29 15:47:29 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | CRITICAL | 
+2025-12-29 15:47:29 | INFO     | strategies.flow_strategy |    📌 Bitcoin Above On December 29
+2025-12-29 15:47:30 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | CRITICAL | 
+2025-12-29 15:47:30 | INFO     | strategies.flow_strategy |    📌 Nhl Nyi Chi 2025 12 30
+2025-12-29 15:47:32 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: OVERSIZED_BET | HIGH | 
+2025-12-29 15:47:32 | INFO     | strategies.flow_strategy |    📌 Fed Decision In January
+2025-12-29 15:47:32 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | CRITICAL | 
+2025-12-29 15:47:32 | INFO     | strategies.flow_strategy |    📌 Fed Decision In January
+2025-12-29 15:47:33 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:33 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:47:33 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:33 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:47:33 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 56.8 | Token: 7147885279027909...
+2025-12-29 15:47:33 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET, 📊 VOLUME_SPIKE
+2025-12-29 15:47:33 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:33 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:47:33 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:47:34 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | MEDIUM | 
+2025-12-29 15:47:34 | INFO     | strategies.flow_strategy |    📌 Elon Musk Of Tweets December 23 December 30
+2025-12-29 15:47:34 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | MEDIUM | 
+2025-12-29 15:47:34 | INFO     | strategies.flow_strategy |    📌 Elon Musk Of Tweets December 23 December 30
+2025-12-29 15:47:35 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:35 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:47:35 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:35 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:47:35 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 55.4 | Token: 7147885279027909...
+2025-12-29 15:47:35 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET, 📊 VOLUME_SPIKE
+2025-12-29 15:47:35 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:35 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:47:35 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:47:37 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:37 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:47:37 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:37 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:47:37 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 54.0 | Token: 7147885279027909...
+2025-12-29 15:47:37 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET, 📊 VOLUME_SPIKE
+2025-12-29 15:47:37 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:37 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:47:37 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:47:39 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:39 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:47:39 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:39 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:47:39 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 52.7 | Token: 7147885279027909...
+2025-12-29 15:47:39 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET, 📊 VOLUME_SPIKE
+2025-12-29 15:47:39 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:39 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:47:40 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:47:42 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:42 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:47:42 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:42 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:47:42 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 51.5 | Token: 7147885279027909...
+2025-12-29 15:47:42 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET, 📊 VOLUME_SPIKE
+2025-12-29 15:47:42 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:42 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:47:42 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:47:44 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:44 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:47:44 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:44 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:47:44 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 50.2 | Token: 7147885279027909...
+2025-12-29 15:47:44 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET, 📊 VOLUME_SPIKE
+2025-12-29 15:47:44 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:44 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:47:44 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:47:46 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:46 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:47:46 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:46 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:47:46 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 49.0 | Token: 7147885279027909...
+2025-12-29 15:47:46 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET, 📊 VOLUME_SPIKE
+2025-12-29 15:47:46 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:46 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:47:46 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:47:48 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:48 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:47:48 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:48 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:47:48 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 47.8 | Token: 7147885279027909...
+2025-12-29 15:47:48 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET, 📊 VOLUME_SPIKE
+2025-12-29 15:47:48 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:48 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:47:48 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:47:50 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:50 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:47:50 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:50 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:47:50 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 46.7 | Token: 7147885279027909...
+2025-12-29 15:47:50 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET, 📊 VOLUME_SPIKE
+2025-12-29 15:47:50 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:50 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:47:50 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:47:52 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:52 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:47:52 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:52 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:47:52 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 45.6 | Token: 7147885279027909...
+2025-12-29 15:47:52 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET, 📊 VOLUME_SPIKE
+2025-12-29 15:47:52 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:52 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:47:52 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:47:54 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:54 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:47:54 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:54 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:47:54 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 44.5 | Token: 7147885279027909...
+2025-12-29 15:47:54 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET, 📊 VOLUME_SPIKE
+2025-12-29 15:47:54 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:54 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:47:54 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:47:56 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:56 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:47:56 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:56 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:47:56 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 43.4 | Token: 7147885279027909...
+2025-12-29 15:47:56 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET, 📊 VOLUME_SPIKE
+2025-12-29 15:47:56 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:56 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:47:56 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:47:58 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: CORRELATED_MOVEMENT | MEDIUM | 
+2025-12-29 15:47:58 | INFO     | strategies.flow_strategy |    📌 3 markets moving DOWN together
+2025-12-29 15:47:58 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:58 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:47:58 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:58 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:47:58 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 42.4 | Token: 7147885279027909...
+2025-12-29 15:47:58 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET, 📊 VOLUME_SPIKE
+2025-12-29 15:47:58 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:47:58 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:47:59 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:48:01 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:01 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:48:01 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:01 | INFO     | strategies.flow_strategy |   [1] Fed Decision In January...
+2025-12-29 15:48:01 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 41.3 | Token: 7147885279027909...
+2025-12-29 15:48:01 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET, 📊 VOLUME_SPIKE
+2025-12-29 15:48:01 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:01 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:48:01 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 15:48:04 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | CRITICAL | 
+2025-12-29 15:48:04 | INFO     | strategies.flow_strategy |    📌 Bitcoin Up Or Down December 29 9Am Et
+2025-12-29 15:48:09 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | CRITICAL | 
+2025-12-29 15:48:09 | INFO     | strategies.flow_strategy |    📌 Lighter Market Cap Fdv One Day After Launch
+2025-12-29 15:48:36 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | HIGH | 
+2025-12-29 15:48:36 | INFO     | strategies.flow_strategy |    📌 Russia X Ukraine Ceasefire By January 31 2026
+2025-12-29 15:48:36 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | CRITICAL | 
+2025-12-29 15:48:36 | INFO     | strategies.flow_strategy |    📌 Russia X Ukraine Ceasefire By January 31 2026
+2025-12-29 15:48:45 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: OVERSIZED_BET | HIGH | 
+2025-12-29 15:48:45 | INFO     | strategies.flow_strategy |    📌 Lighter Market Cap Fdv One Day After Launch
+2025-12-29 15:48:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:47 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:48:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:47 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:48:47 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 36.5 | Token: 5657083518501318...
+2025-12-29 15:48:47 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:48:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:47 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:48:47 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:48:49 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:49 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:48:49 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:49 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:48:49 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 35.6 | Token: 5657083518501318...
+2025-12-29 15:48:49 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:48:49 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:49 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:48:49 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:48:51 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:51 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:48:51 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:51 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:48:51 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 34.8 | Token: 5657083518501318...
+2025-12-29 15:48:51 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:48:51 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:51 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:48:51 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:48:53 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:53 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:48:53 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:53 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:48:53 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 33.9 | Token: 5657083518501318...
+2025-12-29 15:48:53 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:48:53 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:53 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:48:53 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:48:55 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:55 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:48:55 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:55 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:48:55 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 33.1 | Token: 5657083518501318...
+2025-12-29 15:48:55 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:48:55 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:55 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:48:55 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:48:57 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:57 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:48:57 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:57 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:48:57 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 32.3 | Token: 5657083518501318...
+2025-12-29 15:48:57 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:48:57 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:57 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:48:57 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:48:59 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:59 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:48:59 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:59 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:48:59 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 31.6 | Token: 5657083518501318...
+2025-12-29 15:48:59 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:48:59 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:48:59 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:49:00 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:01 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | CRITICAL | 
+2025-12-29 15:49:01 | INFO     | strategies.flow_strategy |    📌 What Day Will The Lighter Airdrop Be
+2025-12-29 15:49:01 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | CRITICAL | 
+2025-12-29 15:49:01 | INFO     | strategies.flow_strategy |    📌 What Day Will The Lighter Airdrop Be
+2025-12-29 15:49:02 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:02 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:49:02 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:02 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:02 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 30.8 | Token: 5657083518501318...
+2025-12-29 15:49:02 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:49:02 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:02 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:49:02 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:04 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:04 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:49:04 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:04 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:04 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 30.1 | Token: 5657083518501318...
+2025-12-29 15:49:04 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:49:04 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:04 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:49:04 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:15 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SMART_MONEY_ACTIVITY | HIGH | 
+2025-12-29 15:49:15 | INFO     | strategies.flow_strategy |    📌 Lighter Market Cap Fdv One Day After Launch
+2025-12-29 15:49:15 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | MEDIUM | 
+2025-12-29 15:49:15 | INFO     | strategies.flow_strategy |    📌 Lighter Market Cap Fdv One Day After Launch
+2025-12-29 15:49:15 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: OVERSIZED_BET | HIGH | 
+2025-12-29 15:49:15 | INFO     | strategies.flow_strategy |    📌 Lighter Market Cap Fdv One Day After Launch
+2025-12-29 15:49:15 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SMART_MONEY_ACTIVITY | HIGH | 
+2025-12-29 15:49:15 | INFO     | strategies.flow_strategy |    📌 Lighter Market Cap Fdv One Day After Launch
+2025-12-29 15:49:16 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | CRITICAL | 
+2025-12-29 15:49:16 | INFO     | strategies.flow_strategy |    📌 Elon Musk Of Tweets December 23 December 30
+2025-12-29 15:49:16 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:16 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:49:16 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:16 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:16 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 88.7 | Token: 1080545920608084...
+2025-12-29 15:49:16 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY, 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:16 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:16 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 46.9 | Token: 1080545920608084...
+2025-12-29 15:49:16 | INFO     | strategies.flow_strategy |       Factors: 📊 VOLUME_SPIKE, 📊 OVERSIZED_BET
+2025-12-29 15:49:16 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:16 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:49:16 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:16 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:18 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:18 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:49:18 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:18 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:18 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 86.5 | Token: 1080545920608084...
+2025-12-29 15:49:18 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY, 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:18 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:18 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 45.7 | Token: 1080545920608084...
+2025-12-29 15:49:18 | INFO     | strategies.flow_strategy |       Factors: 📊 VOLUME_SPIKE, 📊 OVERSIZED_BET
+2025-12-29 15:49:18 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:18 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:49:18 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:18 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:20 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:20 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:49:20 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:20 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:20 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 84.3 | Token: 1080545920608084...
+2025-12-29 15:49:20 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY, 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:20 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:20 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 44.6 | Token: 1080545920608084...
+2025-12-29 15:49:20 | INFO     | strategies.flow_strategy |       Factors: 📊 VOLUME_SPIKE, 📊 OVERSIZED_BET
+2025-12-29 15:49:20 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:20 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:49:20 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:21 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:23 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:23 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:49:23 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:23 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:23 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 82.2 | Token: 1080545920608084...
+2025-12-29 15:49:23 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY, 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:23 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:23 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 43.4 | Token: 1080545920608084...
+2025-12-29 15:49:23 | INFO     | strategies.flow_strategy |       Factors: 📊 VOLUME_SPIKE, 📊 OVERSIZED_BET
+2025-12-29 15:49:23 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:23 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:49:23 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:23 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:25 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:25 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:49:25 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:25 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:25 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 80.1 | Token: 1080545920608084...
+2025-12-29 15:49:25 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY, 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:25 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:25 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 42.3 | Token: 1080545920608084...
+2025-12-29 15:49:25 | INFO     | strategies.flow_strategy |       Factors: 📊 VOLUME_SPIKE, 📊 OVERSIZED_BET
+2025-12-29 15:49:25 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:25 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:49:25 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:25 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | CRITICAL | 
+2025-12-29 15:49:25 | INFO     | strategies.flow_strategy |    📌 Trump Imposes Tariff On Semiconductors By December 31
+2025-12-29 15:49:25 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:26 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | HIGH | 
+2025-12-29 15:49:26 | INFO     | strategies.flow_strategy |    📌 Btc Updown 4H 1767013200
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 78.1 | Token: 1080545920608084...
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY, 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 41.3 | Token: 1080545920608084...
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy |       Factors: 📊 VOLUME_SPIKE, 📊 OVERSIZED_BET
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy | 📊 FLOW DETECTOR STATS (Last 5 min)
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy |   Total Alerts:  54
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy |   Signals Made:  53
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy |   Alert Types:
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy |     📊 VOLUME_SPIKE: 30
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy |     📊 SUDDEN_PRICE_MOVEMENT: 13
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy |     📊 OVERSIZED_BET: 4
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy |     📊 CORRELATED_MOVEMENT: 4
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy |     📊 SMART_MONEY_ACTIVITY: 2
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy |     📊 PRICE_ACCELERATION: 1
+2025-12-29 15:49:27 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:27 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:49:27 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:27 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:28 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: CORRELATED_MOVEMENT | MEDIUM | 
+2025-12-29 15:49:28 | INFO     | strategies.flow_strategy |    📌 3 markets moving UP together
+2025-12-29 15:49:28 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: CORRELATED_MOVEMENT | MEDIUM | 
+2025-12-29 15:49:28 | INFO     | strategies.flow_strategy |    📌 4 markets moving DOWN together
+2025-12-29 15:49:29 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:29 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:49:29 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:29 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:29 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 76.2 | Token: 1080545920608084...
+2025-12-29 15:49:29 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY, 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:29 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:29 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 40.3 | Token: 1080545920608084...
+2025-12-29 15:49:29 | INFO     | strategies.flow_strategy |       Factors: 📊 VOLUME_SPIKE, 📊 OVERSIZED_BET
+2025-12-29 15:49:29 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:29 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:49:29 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:29 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:31 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:31 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:49:31 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:31 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:31 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 74.3 | Token: 1080545920608084...
+2025-12-29 15:49:31 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY, 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:31 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:31 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 39.2 | Token: 1080545920608084...
+2025-12-29 15:49:31 | INFO     | strategies.flow_strategy |       Factors: 📊 VOLUME_SPIKE, 📊 OVERSIZED_BET
+2025-12-29 15:49:31 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:31 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:49:31 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:32 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:34 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:34 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:49:34 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:34 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:34 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 72.4 | Token: 1080545920608084...
+2025-12-29 15:49:34 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY, 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:34 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:34 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 38.3 | Token: 1080545920608084...
+2025-12-29 15:49:34 | INFO     | strategies.flow_strategy |       Factors: 📊 VOLUME_SPIKE, 📊 OVERSIZED_BET
+2025-12-29 15:49:34 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:34 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:49:34 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:34 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:34 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SMART_MONEY_ACTIVITY | HIGH | 
+2025-12-29 15:49:34 | INFO     | strategies.flow_strategy |    📌 Lighter Market Cap Fdv One Day After Launch
+2025-12-29 15:49:36 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:36 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 3
+2025-12-29 15:49:36 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:36 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:36 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 70.6 | Token: 1080545920608084...
+2025-12-29 15:49:36 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY, 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:36 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:36 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 44.3 | Token: 3999051906907805...
+2025-12-29 15:49:36 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:36 | INFO     | strategies.flow_strategy |   [3] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:36 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 37.3 | Token: 1080545920608084...
+2025-12-29 15:49:36 | INFO     | strategies.flow_strategy |       Factors: 📊 VOLUME_SPIKE, 📊 OVERSIZED_BET
+2025-12-29 15:49:36 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:36 | INFO     | trading.bot | Got 3 signals
+2025-12-29 15:49:36 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:36 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:36 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:38 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:38 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 3
+2025-12-29 15:49:38 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:38 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:38 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 68.7 | Token: 1080545920608084...
+2025-12-29 15:49:38 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY, 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:38 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:38 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 43.1 | Token: 3999051906907805...
+2025-12-29 15:49:38 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:38 | INFO     | strategies.flow_strategy |   [3] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:38 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 36.3 | Token: 1080545920608084...
+2025-12-29 15:49:38 | INFO     | strategies.flow_strategy |       Factors: 📊 VOLUME_SPIKE, 📊 OVERSIZED_BET
+2025-12-29 15:49:38 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:38 | INFO     | trading.bot | Got 3 signals
+2025-12-29 15:49:38 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:38 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:38 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:39 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: OVERSIZED_BET | HIGH | 
+2025-12-29 15:49:39 | INFO     | strategies.flow_strategy |    📌 Btc Updown 15M 1767019500
+2025-12-29 15:49:40 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:40 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 4
+2025-12-29 15:49:40 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:40 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:40 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 66.9 | Token: 1080545920608084...
+2025-12-29 15:49:40 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY, 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:40 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:40 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 42.0 | Token: 3999051906907805...
+2025-12-29 15:49:40 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:40 | INFO     | strategies.flow_strategy |   [3] Btc Updown 15M 1767019500...
+2025-12-29 15:49:40 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 36.7 | Token: 4233124350239521...
+2025-12-29 15:49:40 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:49:40 | INFO     | strategies.flow_strategy |   [4] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:40 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 35.4 | Token: 1080545920608084...
+2025-12-29 15:49:40 | INFO     | strategies.flow_strategy |       Factors: 📊 VOLUME_SPIKE, 📊 OVERSIZED_BET
+2025-12-29 15:49:40 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:40 | INFO     | trading.bot | Got 4 signals
+2025-12-29 15:49:40 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:41 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:41 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:41 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:43 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:43 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 4
+2025-12-29 15:49:43 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:43 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:43 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 65.1 | Token: 1080545920608084...
+2025-12-29 15:49:43 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY, 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:43 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:43 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 40.8 | Token: 3999051906907805...
+2025-12-29 15:49:43 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:43 | INFO     | strategies.flow_strategy |   [3] Btc Updown 15M 1767019500...
+2025-12-29 15:49:43 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 35.7 | Token: 4233124350239521...
+2025-12-29 15:49:43 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:49:43 | INFO     | strategies.flow_strategy |   [4] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:43 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 34.4 | Token: 1080545920608084...
+2025-12-29 15:49:43 | INFO     | strategies.flow_strategy |       Factors: 📊 VOLUME_SPIKE, 📊 OVERSIZED_BET
+2025-12-29 15:49:43 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:43 | INFO     | trading.bot | Got 4 signals
+2025-12-29 15:49:43 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:43 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:43 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:43 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:45 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:45 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:49:45 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:45 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:45 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 39.7 | Token: 3999051906907805...
+2025-12-29 15:49:45 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:45 | INFO     | strategies.flow_strategy |   [2] Btc Updown 15M 1767019500...
+2025-12-29 15:49:45 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 34.7 | Token: 4233124350239521...
+2025-12-29 15:49:45 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:49:45 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:45 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:49:45 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:45 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:47 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:49:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:47 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:47 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 38.7 | Token: 3999051906907805...
+2025-12-29 15:49:47 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:47 | INFO     | strategies.flow_strategy |   [2] Btc Updown 15M 1767019500...
+2025-12-29 15:49:47 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 33.8 | Token: 4233124350239521...
+2025-12-29 15:49:47 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:49:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:47 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:49:48 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:48 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:50 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:50 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:49:50 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:50 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:50 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 37.7 | Token: 3999051906907805...
+2025-12-29 15:49:50 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:50 | INFO     | strategies.flow_strategy |   [2] Btc Updown 15M 1767019500...
+2025-12-29 15:49:50 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 32.9 | Token: 4233124350239521...
+2025-12-29 15:49:50 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:49:50 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:50 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:49:50 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:50 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:52 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:52 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:49:52 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:52 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:52 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 36.8 | Token: 3999051906907805...
+2025-12-29 15:49:52 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:52 | INFO     | strategies.flow_strategy |   [2] Btc Updown 15M 1767019500...
+2025-12-29 15:49:52 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 32.1 | Token: 4233124350239521...
+2025-12-29 15:49:52 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:49:52 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:52 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:49:52 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:52 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:54 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:54 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:49:54 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:54 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:54 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 35.8 | Token: 3999051906907805...
+2025-12-29 15:49:54 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:54 | INFO     | strategies.flow_strategy |   [2] Btc Updown 15M 1767019500...
+2025-12-29 15:49:54 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 31.3 | Token: 4233124350239521...
+2025-12-29 15:49:54 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:49:54 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:54 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:49:54 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:54 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:56 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:56 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 15:49:56 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:56 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:56 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 34.9 | Token: 3999051906907805...
+2025-12-29 15:49:56 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:56 | INFO     | strategies.flow_strategy |   [2] Btc Updown 15M 1767019500...
+2025-12-29 15:49:56 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 30.5 | Token: 4233124350239521...
+2025-12-29 15:49:56 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 15:49:56 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:56 | INFO     | trading.bot | Got 2 signals
+2025-12-29 15:49:56 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:56 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:49:59 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:59 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:49:59 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:59 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:49:59 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 34.1 | Token: 3999051906907805...
+2025-12-29 15:49:59 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:49:59 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:49:59 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:49:59 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:50:01 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:50:01 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:50:01 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:50:01 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:50:01 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 33.2 | Token: 3999051906907805...
+2025-12-29 15:50:01 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:50:01 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:50:01 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:50:01 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:50:03 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:50:03 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 15:50:03 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:50:03 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 15:50:03 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 32.4 | Token: 3999051906907805...
+2025-12-29 15:50:03 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 15:50:03 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:50:03 | INFO     | trading.bot | Got 1 signals
+2025-12-29 15:50:03 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 15:54:27 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:54:27 | INFO     | strategies.flow_strategy | 📊 FLOW DETECTOR STATS (Last 5 min)
+2025-12-29 15:54:27 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:54:27 | INFO     | strategies.flow_strategy |   Total Alerts:  4
+2025-12-29 15:54:27 | INFO     | strategies.flow_strategy |   Signals Made:  35
+2025-12-29 15:54:27 | INFO     | strategies.flow_strategy |   Alert Types:
+2025-12-29 15:54:27 | INFO     | strategies.flow_strategy |     📊 CORRELATED_MOVEMENT: 2
+2025-12-29 15:54:27 | INFO     | strategies.flow_strategy |     📊 SMART_MONEY_ACTIVITY: 1
+2025-12-29 15:54:27 | INFO     | strategies.flow_strategy |     📊 OVERSIZED_BET: 1
+2025-12-29 15:54:27 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 15:59:28 | INFO     | strategies.flow_strategy | 📊 Flow Stats: No alerts received in last 5 minutes
+2025-12-29 16:04:29 | INFO     | strategies.flow_strategy | 📊 Flow Stats: No alerts received in last 5 minutes
+2025-12-29 16:09:29 | INFO     | strategies.flow_strategy | 📊 Flow Stats: No alerts received in last 5 minutes
+2025-12-29 16:14:30 | INFO     | strategies.flow_strategy | 📊 Flow Stats: No alerts received in last 5 minutes
+2025-12-29 16:30:33 | INFO     | strategies.flow_strategy | 📊 Flow Stats: No alerts received in last 5 minutes
+2025-12-29 16:31:33 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: OVERSIZED_BET | HIGH | 
+2025-12-29 16:31:33 | INFO     | strategies.flow_strategy |    📌 Elon Musk Of Tweets December 23 December 30
+2025-12-29 16:31:33 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 16:31:33 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 16:31:33 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 16:31:33 | INFO     | strategies.flow_strategy |   [1] Elon Musk Of Tweets December 23 December 30...
+2025-12-29 16:31:33 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 37.4 | Token: 1151331274587348...
+2025-12-29 16:31:33 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 16:31:33 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 16:31:33 | INFO     | trading.bot | Got 1 signals
+2025-12-29 16:48:56 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 16:48:56 | INFO     | strategies.flow_strategy | 📊 FLOW DETECTOR STATS (Last 5 min)
+2025-12-29 16:48:56 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 16:48:56 | INFO     | strategies.flow_strategy |   Total Alerts:  1
+2025-12-29 16:48:56 | INFO     | strategies.flow_strategy |   Signals Made:  1
+2025-12-29 16:48:56 | INFO     | strategies.flow_strategy |   Alert Types:
+2025-12-29 16:48:56 | INFO     | strategies.flow_strategy |     📊 OVERSIZED_BET: 1
+2025-12-29 16:48:56 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:04:20 | INFO     | strategies.flow_strategy | 📊 Flow Stats: No alerts received in last 5 minutes
+2025-12-29 17:23:42 | INFO     | strategies.flow_strategy | 📊 Flow Stats: No alerts received in last 5 minutes
+2025-12-29 17:24:32 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | HIGH | 
+2025-12-29 17:24:32 | INFO     | strategies.flow_strategy |    📌 Btc Updown 15M 1767024900
+2025-12-29 17:24:36 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: OVERSIZED_BET | HIGH | 
+2025-12-29 17:24:36 | INFO     | strategies.flow_strategy |    📌 What Price Will Solana Hit Before 2026
+2025-12-29 17:24:37 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:37 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:24:37 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:37 | INFO     | strategies.flow_strategy |   [1] What Price Will Solana Hit Before 2026...
+2025-12-29 17:24:37 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 37.0 | Token: 5591517158110038...
+2025-12-29 17:24:37 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:24:37 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:37 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:24:37 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:24:39 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:39 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:24:39 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:39 | INFO     | strategies.flow_strategy |   [1] What Price Will Solana Hit Before 2026...
+2025-12-29 17:24:39 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 36.0 | Token: 5591517158110038...
+2025-12-29 17:24:39 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:24:39 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:39 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:24:39 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:24:41 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:41 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:24:41 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:41 | INFO     | strategies.flow_strategy |   [1] What Price Will Solana Hit Before 2026...
+2025-12-29 17:24:41 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 35.2 | Token: 5591517158110038...
+2025-12-29 17:24:41 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:24:41 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:41 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:24:41 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:24:43 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:43 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:24:43 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:43 | INFO     | strategies.flow_strategy |   [1] What Price Will Solana Hit Before 2026...
+2025-12-29 17:24:43 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 34.3 | Token: 5591517158110038...
+2025-12-29 17:24:43 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:24:43 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:43 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:24:43 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:24:45 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:45 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:24:45 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:45 | INFO     | strategies.flow_strategy |   [1] What Price Will Solana Hit Before 2026...
+2025-12-29 17:24:45 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 33.5 | Token: 5591517158110038...
+2025-12-29 17:24:45 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:24:45 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:45 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:24:45 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:24:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:47 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:24:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:47 | INFO     | strategies.flow_strategy |   [1] What Price Will Solana Hit Before 2026...
+2025-12-29 17:24:47 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 32.7 | Token: 5591517158110038...
+2025-12-29 17:24:47 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:24:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:47 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:24:47 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:24:49 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:49 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:24:49 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:49 | INFO     | strategies.flow_strategy |   [1] What Price Will Solana Hit Before 2026...
+2025-12-29 17:24:49 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 31.9 | Token: 5591517158110038...
+2025-12-29 17:24:49 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:24:49 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:49 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:24:49 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:24:51 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:51 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:24:51 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:51 | INFO     | strategies.flow_strategy |   [1] What Price Will Solana Hit Before 2026...
+2025-12-29 17:24:51 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 31.2 | Token: 5591517158110038...
+2025-12-29 17:24:51 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:24:51 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:51 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:24:52 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:24:54 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:54 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:24:54 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:54 | INFO     | strategies.flow_strategy |   [1] What Price Will Solana Hit Before 2026...
+2025-12-29 17:24:54 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 30.4 | Token: 5591517158110038...
+2025-12-29 17:24:54 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:24:54 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:24:54 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:24:54 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:25:03 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: OVERSIZED_BET | HIGH | 
+2025-12-29 17:25:03 | INFO     | strategies.flow_strategy |    📌 Xi Jinping Out In 2025
+2025-12-29 17:25:04 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:04 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:25:04 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:04 | INFO     | strategies.flow_strategy |   [1] Xi Jinping Out In 2025...
+2025-12-29 17:25:04 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 36.6 | Token: 1127448826747870...
+2025-12-29 17:25:04 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:25:04 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:04 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:25:04 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:25:05 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: VOLUME_SPIKE | MEDIUM | 
+2025-12-29 17:25:05 | INFO     | strategies.flow_strategy |    📌 Israel X Iran Ceasefire Broken By
+2025-12-29 17:25:06 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:06 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:25:06 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:06 | INFO     | strategies.flow_strategy |   [1] Xi Jinping Out In 2025...
+2025-12-29 17:25:06 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 35.7 | Token: 1127448826747870...
+2025-12-29 17:25:06 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:25:06 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:06 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:25:06 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:25:08 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:08 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:25:08 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:08 | INFO     | strategies.flow_strategy |   [1] Xi Jinping Out In 2025...
+2025-12-29 17:25:08 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 34.8 | Token: 1127448826747870...
+2025-12-29 17:25:08 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:25:08 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:08 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:25:08 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:25:10 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:10 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:25:10 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:10 | INFO     | strategies.flow_strategy |   [1] Xi Jinping Out In 2025...
+2025-12-29 17:25:10 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 34.0 | Token: 1127448826747870...
+2025-12-29 17:25:10 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:25:10 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:10 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:25:10 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:25:12 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:12 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:25:12 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:12 | INFO     | strategies.flow_strategy |   [1] Xi Jinping Out In 2025...
+2025-12-29 17:25:12 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 33.1 | Token: 1127448826747870...
+2025-12-29 17:25:12 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:25:12 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:12 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:25:12 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:25:14 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:14 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:25:14 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:14 | INFO     | strategies.flow_strategy |   [1] Xi Jinping Out In 2025...
+2025-12-29 17:25:14 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 32.3 | Token: 1127448826747870...
+2025-12-29 17:25:14 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:25:14 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:14 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:25:14 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:25:16 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:16 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:25:16 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:16 | INFO     | strategies.flow_strategy |   [1] Xi Jinping Out In 2025...
+2025-12-29 17:25:16 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 31.6 | Token: 1127448826747870...
+2025-12-29 17:25:16 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:25:16 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:16 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:25:17 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:25:19 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:19 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:25:19 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:19 | INFO     | strategies.flow_strategy |   [1] Xi Jinping Out In 2025...
+2025-12-29 17:25:19 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 30.8 | Token: 1127448826747870...
+2025-12-29 17:25:19 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:25:19 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:19 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:25:19 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:25:21 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:21 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:25:21 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:21 | INFO     | strategies.flow_strategy |   [1] Xi Jinping Out In 2025...
+2025-12-29 17:25:21 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 30.1 | Token: 1127448826747870...
+2025-12-29 17:25:21 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:25:21 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:21 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:25:21 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:25:40 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SMART_MONEY_ACTIVITY | HIGH | 
+2025-12-29 17:25:40 | INFO     | strategies.flow_strategy |    📌 Lighter Market Cap Fdv One Day After Launch
+2025-12-29 17:25:41 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:41 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:25:41 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:41 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 17:25:41 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 44.3 | Token: 3999051906907805...
+2025-12-29 17:25:41 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:25:41 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:41 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:25:41 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:25:43 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:43 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:25:43 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:43 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 17:25:43 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 43.2 | Token: 3999051906907805...
+2025-12-29 17:25:43 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:25:43 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:43 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:25:43 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:25:45 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:45 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:25:45 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:45 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 17:25:45 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 42.1 | Token: 3999051906907805...
+2025-12-29 17:25:45 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:25:45 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:45 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:25:45 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:25:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:47 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:25:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:47 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 17:25:47 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 41.1 | Token: 3999051906907805...
+2025-12-29 17:25:47 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:25:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:47 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:25:47 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:25:49 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:49 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:25:49 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:49 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 17:25:49 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 40.1 | Token: 3999051906907805...
+2025-12-29 17:25:49 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:25:49 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:49 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:25:49 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:25:51 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:51 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:25:51 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:51 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 17:25:51 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 39.2 | Token: 3999051906907805...
+2025-12-29 17:25:51 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:25:51 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:51 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:25:52 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:25:54 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:54 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:25:54 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:54 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 17:25:54 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 38.2 | Token: 3999051906907805...
+2025-12-29 17:25:54 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:25:54 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:54 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:25:54 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:25:56 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:56 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:25:56 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:56 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 17:25:56 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 37.3 | Token: 3999051906907805...
+2025-12-29 17:25:56 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:25:56 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:56 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:25:56 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:25:58 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:58 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:25:58 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:58 | INFO     | strategies.flow_strategy |   [1] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 17:25:58 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 36.4 | Token: 3999051906907805...
+2025-12-29 17:25:58 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:25:58 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:25:58 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:25:58 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:26:00 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: OVERSIZED_BET | HIGH | 
+2025-12-29 17:26:00 | INFO     | strategies.flow_strategy |    📌 Elon Musk Of Tweets December 23 December 30
+2025-12-29 17:26:00 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:00 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 17:26:00 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:00 | INFO     | strategies.flow_strategy |   [1] Elon Musk Of Tweets December 23 December 30...
+2025-12-29 17:26:00 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 37.4 | Token: 8692815017878831...
+2025-12-29 17:26:00 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:26:00 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 17:26:00 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 35.5 | Token: 3999051906907805...
+2025-12-29 17:26:00 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:26:00 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:00 | INFO     | trading.bot | Got 2 signals
+2025-12-29 17:26:00 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:26:00 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:26:02 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:02 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 17:26:02 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:02 | INFO     | strategies.flow_strategy |   [1] Elon Musk Of Tweets December 23 December 30...
+2025-12-29 17:26:02 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 36.4 | Token: 8692815017878831...
+2025-12-29 17:26:02 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:26:02 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 17:26:02 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 34.6 | Token: 3999051906907805...
+2025-12-29 17:26:02 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:26:02 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:02 | INFO     | trading.bot | Got 2 signals
+2025-12-29 17:26:02 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:26:02 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:26:04 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:04 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 17:26:04 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:04 | INFO     | strategies.flow_strategy |   [1] Elon Musk Of Tweets December 23 December 30...
+2025-12-29 17:26:04 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 35.5 | Token: 8692815017878831...
+2025-12-29 17:26:04 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:26:04 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 17:26:04 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 33.8 | Token: 3999051906907805...
+2025-12-29 17:26:04 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:26:04 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:04 | INFO     | trading.bot | Got 2 signals
+2025-12-29 17:26:04 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:26:05 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:26:07 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:07 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 17:26:07 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:07 | INFO     | strategies.flow_strategy |   [1] Elon Musk Of Tweets December 23 December 30...
+2025-12-29 17:26:07 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 34.6 | Token: 8692815017878831...
+2025-12-29 17:26:07 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:26:07 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 17:26:07 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 32.9 | Token: 3999051906907805...
+2025-12-29 17:26:07 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:26:07 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:07 | INFO     | trading.bot | Got 2 signals
+2025-12-29 17:26:07 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:26:07 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:26:09 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:09 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 2
+2025-12-29 17:26:09 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:09 | INFO     | strategies.flow_strategy |   [1] Elon Musk Of Tweets December 23 December 30...
+2025-12-29 17:26:09 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 33.7 | Token: 8692815017878831...
+2025-12-29 17:26:09 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:26:09 | INFO     | strategies.flow_strategy |   [2] Lighter Market Cap Fdv One Day After Launch...
+2025-12-29 17:26:09 | INFO     | strategies.flow_strategy |       📈 BUY | Score: 32.1 | Token: 3999051906907805...
+2025-12-29 17:26:09 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:26:09 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:09 | INFO     | trading.bot | Got 2 signals
+2025-12-29 17:26:09 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:26:09 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:26:11 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:11 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:26:11 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:11 | INFO     | strategies.flow_strategy |   [1] Elon Musk Of Tweets December 23 December 30...
+2025-12-29 17:26:11 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 32.9 | Token: 8692815017878831...
+2025-12-29 17:26:11 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:26:11 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:11 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:26:11 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:26:12 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | HIGH | 
+2025-12-29 17:26:12 | INFO     | strategies.flow_strategy |    📌 Bitcoin Up Or Down On December 29
+2025-12-29 17:26:13 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:13 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:26:13 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:13 | INFO     | strategies.flow_strategy |   [1] Elon Musk Of Tweets December 23 December 30...
+2025-12-29 17:26:13 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 32.1 | Token: 8692815017878831...
+2025-12-29 17:26:13 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:26:13 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:13 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:26:13 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:26:15 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:15 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:26:15 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:15 | INFO     | strategies.flow_strategy |   [1] Elon Musk Of Tweets December 23 December 30...
+2025-12-29 17:26:15 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 31.3 | Token: 8692815017878831...
+2025-12-29 17:26:15 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:26:15 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:15 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:26:15 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:26:17 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:17 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:26:17 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:17 | INFO     | strategies.flow_strategy |   [1] Elon Musk Of Tweets December 23 December 30...
+2025-12-29 17:26:17 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 30.6 | Token: 8692815017878831...
+2025-12-29 17:26:17 | INFO     | strategies.flow_strategy |       Factors: 📊 OVERSIZED_BET
+2025-12-29 17:26:17 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:17 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:26:17 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (99800.0% > 3.0%)
+2025-12-29 17:26:46 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SMART_MONEY_ACTIVITY | HIGH | 
+2025-12-29 17:26:46 | INFO     | strategies.flow_strategy |    📌 Bitcoin Up Or Down On December 29
+2025-12-29 17:26:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:47 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:26:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:47 | INFO     | strategies.flow_strategy |   [1] Bitcoin Up Or Down On December 29...
+2025-12-29 17:26:47 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 44.5 | Token: 9672112920855501...
+2025-12-29 17:26:47 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:26:47 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:47 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:26:48 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:26:50 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:50 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:26:50 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:50 | INFO     | strategies.flow_strategy |   [1] Bitcoin Up Or Down On December 29...
+2025-12-29 17:26:50 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 43.4 | Token: 9672112920855501...
+2025-12-29 17:26:50 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:26:50 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:50 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:26:50 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:26:52 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:52 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:26:52 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:52 | INFO     | strategies.flow_strategy |   [1] Bitcoin Up Or Down On December 29...
+2025-12-29 17:26:52 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 42.3 | Token: 9672112920855501...
+2025-12-29 17:26:52 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:26:52 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:52 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:26:52 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:26:54 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:54 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:26:54 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:54 | INFO     | strategies.flow_strategy |   [1] Bitcoin Up Or Down On December 29...
+2025-12-29 17:26:54 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 41.3 | Token: 9672112920855501...
+2025-12-29 17:26:54 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:26:54 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:54 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:26:54 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:26:54 | INFO     | strategies.flow_strategy | ⚪ 📊 ALERT: SUDDEN_PRICE_MOVEMENT | CRITICAL | 
+2025-12-29 17:26:54 | INFO     | strategies.flow_strategy |    📌 Bitcoin Up Or Down December 29 11Am Et
+2025-12-29 17:26:56 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:56 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:26:56 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:56 | INFO     | strategies.flow_strategy |   [1] Bitcoin Up Or Down On December 29...
+2025-12-29 17:26:56 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 40.3 | Token: 9672112920855501...
+2025-12-29 17:26:56 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:26:56 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:56 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:26:56 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:26:58 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:58 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:26:58 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:58 | INFO     | strategies.flow_strategy |   [1] Bitcoin Up Or Down On December 29...
+2025-12-29 17:26:58 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 39.4 | Token: 9672112920855501...
+2025-12-29 17:26:58 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:26:58 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:26:58 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:26:58 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:27:00 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:00 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:27:00 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:00 | INFO     | strategies.flow_strategy |   [1] Bitcoin Up Or Down On December 29...
+2025-12-29 17:27:00 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 38.4 | Token: 9672112920855501...
+2025-12-29 17:27:00 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:27:00 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:00 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:27:00 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:27:02 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:02 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:27:02 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:02 | INFO     | strategies.flow_strategy |   [1] Bitcoin Up Or Down On December 29...
+2025-12-29 17:27:02 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 37.5 | Token: 9672112920855501...
+2025-12-29 17:27:02 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:27:02 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:02 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:27:02 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:27:04 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:04 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:27:04 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:04 | INFO     | strategies.flow_strategy |   [1] Bitcoin Up Or Down On December 29...
+2025-12-29 17:27:04 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 36.6 | Token: 9672112920855501...
+2025-12-29 17:27:04 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:27:04 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:04 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:27:04 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:27:06 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:06 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:27:06 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:06 | INFO     | strategies.flow_strategy |   [1] Bitcoin Up Or Down On December 29...
+2025-12-29 17:27:06 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 35.7 | Token: 9672112920855501...
+2025-12-29 17:27:06 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:27:06 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:06 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:27:07 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:27:09 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:09 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:27:09 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:09 | INFO     | strategies.flow_strategy |   [1] Bitcoin Up Or Down On December 29...
+2025-12-29 17:27:09 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 34.9 | Token: 9672112920855501...
+2025-12-29 17:27:09 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:27:09 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:09 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:27:09 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:27:11 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:11 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:27:11 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:11 | INFO     | strategies.flow_strategy |   [1] Bitcoin Up Or Down On December 29...
+2025-12-29 17:27:11 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 34.0 | Token: 9672112920855501...
+2025-12-29 17:27:11 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:27:11 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:11 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:27:11 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:27:13 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:13 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:27:13 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:13 | INFO     | strategies.flow_strategy |   [1] Bitcoin Up Or Down On December 29...
+2025-12-29 17:27:13 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 33.2 | Token: 9672112920855501...
+2025-12-29 17:27:13 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:27:13 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:13 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:27:13 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:27:15 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:15 | INFO     | strategies.flow_strategy | 🎯 FLOW SIGNALS READY TO TRADE: 1
+2025-12-29 17:27:15 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:15 | INFO     | strategies.flow_strategy |   [1] Bitcoin Up Or Down On December 29...
+2025-12-29 17:27:15 | INFO     | strategies.flow_strategy |       📉 SELL | Score: 32.4 | Token: 9672112920855501...
+2025-12-29 17:27:15 | INFO     | strategies.flow_strategy |       Factors: 📊 SMART_MONEY_ACTIVITY
+2025-12-29 17:27:15 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:27:15 | INFO     | trading.bot | Got 1 signals
+2025-12-29 17:27:15 | INFO     | trading.bot | ⏭️  Skip: Spread too wide (9800.0% > 3.0%)
+2025-12-29 17:28:43 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:28:43 | INFO     | strategies.flow_strategy | 📊 FLOW DETECTOR STATS (Last 5 min)
+2025-12-29 17:28:43 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:28:43 | INFO     | strategies.flow_strategy |   Total Alerts:  9
+2025-12-29 17:28:43 | INFO     | strategies.flow_strategy |   Signals Made:  55
+2025-12-29 17:28:43 | INFO     | strategies.flow_strategy |   Alert Types:
+2025-12-29 17:28:43 | INFO     | strategies.flow_strategy |     📊 SUDDEN_PRICE_MOVEMENT: 3
+2025-12-29 17:28:43 | INFO     | strategies.flow_strategy |     📊 OVERSIZED_BET: 3
+2025-12-29 17:28:43 | INFO     | strategies.flow_strategy |     📊 SMART_MONEY_ACTIVITY: 2
+2025-12-29 17:28:43 | INFO     | strategies.flow_strategy |     📊 VOLUME_SPIKE: 1
+2025-12-29 17:28:43 | INFO     | strategies.flow_strategy | ============================================================
+2025-12-29 17:33:43 | INFO     | strategies.flow_strategy | 📊 Flow Stats: No alerts received in last 5 minutes
+2025-12-29 17:38:44 | INFO     | strategies.flow_strategy | 📊 Flow Stats: No alerts received in last 5 minutes
+2025-12-29 17:43:45 | INFO     | strategies.flow_strategy | 📊 Flow Stats: No alerts received in last 5 minutes

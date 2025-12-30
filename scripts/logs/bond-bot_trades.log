@@ -1,0 +1,109 @@
+2025-12-29 17:44:32 | INFO     | polymarket.strategies.bond_strategy | ============================================================
+2025-12-29 17:44:32 | INFO     | polymarket.strategies.bond_strategy | 🏦 BOND STRATEGY CONFIGURATION
+2025-12-29 17:44:32 | INFO     | polymarket.strategies.bond_strategy | ============================================================
+2025-12-29 17:44:32 | INFO     | polymarket.strategies.bond_strategy |   Agent ID:      bond-bot
+2025-12-29 17:44:32 | INFO     | polymarket.strategies.bond_strategy |   Mode:          💸 LIVE TRADING
+2025-12-29 17:44:32 | INFO     | polymarket.strategies.bond_strategy |   Price Range:   $0.95 - $0.98
+2025-12-29 17:44:32 | INFO     | polymarket.strategies.bond_strategy |   Time Window:   60s - 1800s (30 min)
+2025-12-29 17:44:32 | INFO     | polymarket.strategies.bond_strategy |   Position Size: Half-Kelly (max 25%)
+2025-12-29 17:44:32 | INFO     | polymarket.strategies.bond_strategy |   Expected Returns: +2.0% to +5.3%
+2025-12-29 17:44:32 | INFO     | polymarket.strategies.bond_strategy | ============================================================
+2025-12-29 17:44:32 | INFO     | polymarket.trading.bot | ============================================================
+2025-12-29 17:44:32 | INFO     | polymarket.trading.bot | 🚀 STARTING TRADING BOT
+2025-12-29 17:44:32 | INFO     | polymarket.trading.bot | ============================================================
+2025-12-29 17:44:32 | INFO     | polymarket.trading.bot |   Agent ID:   bond-bot
+2025-12-29 17:44:32 | INFO     | polymarket.trading.bot |   Type:       bond
+2025-12-29 17:44:32 | INFO     | polymarket.trading.bot |   Mode:       💸 LIVE
+2025-12-29 17:44:32 | INFO     | polymarket.trading.bot |   ✅ Credentials validated
+2025-12-29 17:44:32 | INFO     | polymarket.trading.bot |   ✅ API connected
+2025-12-29 17:44:32 | INFO     | polymarket.trading.bot |   ✅ CLOB client initialized
+2025-12-29 17:44:32 | INFO     | polymarket.trading.storage.sqlite | SQLite storage initialized: data/risk_state.db
+2025-12-29 17:44:32 | INFO     | polymarket.trading.storage.sqlite | Registered agent bond-bot (bond)
+2025-12-29 17:44:32 | INFO     | polymarket.trading.risk_coordinator | ============================================================
+2025-12-29 17:44:32 | INFO     | polymarket.trading.risk_coordinator | 🔄 RECONCILING STATE WITH ON-CHAIN...
+2025-12-29 17:44:32 | INFO     | polymarket.trading.risk_coordinator | ============================================================
+2025-12-29 17:44:32 | INFO     | polymarket.trading.risk_coordinator |   Wallet: 0xf54f4FF134f2A96E7E63674e561Cde110dE4f282
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |   📡 API returned: 15 positions, $552.44 USDC
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |   📦 Positions from API:
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |       - 92017981406808384305... | 76.6500 shares @ $0.9850 = $75.50
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |       - 38799348442724633229... | 42.6100 shares @ $0.9885 = $42.12
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |       - 64438803144617060812... | 41.2600 shares @ $0.9705 = $40.04
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |       - 88933989741847491097... | 37.2100 shares @ $0.9500 = $35.35
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |       - 57250582726141352031... | 26.0900 shares @ $0.9855 = $25.71
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |       - 14805424610556521493... | 20.1400 shares @ $0.9675 = $19.49
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |       - 82617212581795024039... | 18.5100 shares @ $0.9890 = $18.31
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |       - 15023754393998281560... | 15.2100 shares @ $0.9660 = $14.69
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |       - 62907314912118087699... | 14.0600 shares @ $0.9785 = $13.76
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |       - 69066581937470837277... | 13.6200 shares @ $0.9600 = $13.08
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |       - 10194940612355593823... | 10.0000 shares @ $0.9835 = $9.84
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |       - 11095693793658442691... | 7.9800 shares @ $0.9865 = $7.87
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |       - 32915172045130582917... | 7.8000 shares @ $0.9590 = $7.48
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |       - 43577760886052680570... | 5.3000 shares @ $0.9835 = $5.21
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |       - 75858118176847938138... | 1.7700 shares @ $0.9770 = $1.73
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |   💰 Total API positions value: $330.17
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |   💾 DB state: 0 open, 0 orphan
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.risk_coordinator |   🔍 ORPHAN FOUND: 92017981406808384305... | 76.6500 shares @ $0.9850 = $75.50
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.storage.sqlite | Added orphan position 1: 76.65 shares
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.risk_coordinator |   🔍 ORPHAN FOUND: 38799348442724633229... | 42.6100 shares @ $0.9885 = $42.12
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.storage.sqlite | Added orphan position 2: 42.61 shares
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.risk_coordinator |   🔍 ORPHAN FOUND: 64438803144617060812... | 41.2600 shares @ $0.9705 = $40.04
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.storage.sqlite | Added orphan position 3: 41.26 shares
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.risk_coordinator |   🔍 ORPHAN FOUND: 88933989741847491097... | 37.2100 shares @ $0.9500 = $35.35
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.storage.sqlite | Added orphan position 4: 37.21 shares
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.risk_coordinator |   🔍 ORPHAN FOUND: 57250582726141352031... | 26.0900 shares @ $0.9855 = $25.71
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.storage.sqlite | Added orphan position 5: 26.09 shares
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.risk_coordinator |   🔍 ORPHAN FOUND: 14805424610556521493... | 20.1400 shares @ $0.9675 = $19.49
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.storage.sqlite | Added orphan position 6: 20.14 shares
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.risk_coordinator |   🔍 ORPHAN FOUND: 82617212581795024039... | 18.5100 shares @ $0.9890 = $18.31
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.storage.sqlite | Added orphan position 7: 18.51 shares
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.risk_coordinator |   🔍 ORPHAN FOUND: 15023754393998281560... | 15.2100 shares @ $0.9660 = $14.69
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.storage.sqlite | Added orphan position 8: 15.21 shares
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.risk_coordinator |   🔍 ORPHAN FOUND: 62907314912118087699... | 14.0600 shares @ $0.9785 = $13.76
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.storage.sqlite | Added orphan position 9: 14.06 shares
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.risk_coordinator |   🔍 ORPHAN FOUND: 69066581937470837277... | 13.6200 shares @ $0.9600 = $13.08
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.storage.sqlite | Added orphan position 10: 13.62 shares
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.risk_coordinator |   🔍 ORPHAN FOUND: 10194940612355593823... | 10.0000 shares @ $0.9835 = $9.84
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.storage.sqlite | Added orphan position 11: 10.00 shares
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.risk_coordinator |   🔍 ORPHAN FOUND: 11095693793658442691... | 7.9800 shares @ $0.9865 = $7.87
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.storage.sqlite | Added orphan position 12: 7.98 shares
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.risk_coordinator |   🔍 ORPHAN FOUND: 32915172045130582917... | 7.8000 shares @ $0.9590 = $7.48
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.storage.sqlite | Added orphan position 13: 7.80 shares
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.risk_coordinator |   🔍 ORPHAN FOUND: 43577760886052680570... | 5.3000 shares @ $0.9835 = $5.21
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.storage.sqlite | Added orphan position 14: 5.30 shares
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.risk_coordinator |   🔍 ORPHAN FOUND: 75858118176847938138... | 1.7700 shares @ $0.9770 = $1.73
+2025-12-29 17:44:33 | WARNING  | polymarket.trading.storage.sqlite | Added orphan position 15: 1.77 shares
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator | ============================================================
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator | ✅ RECONCILIATION COMPLETE
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |   Positions: 15 on-chain
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |   Orphans added: 15
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |   Ghosts removed: 0
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |   USDC Balance: $552.44
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator |   Positions Value: $330.17
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator | ============================================================
+2025-12-29 17:44:33 | INFO     | polymarket.trading.risk_coordinator | RiskCoordinator started for agent bond-bot (bond)
+2025-12-29 17:44:33 | INFO     | polymarket.trading.bot |   ✅ Risk coordinator started
+2025-12-29 17:44:33 | INFO     | polymarket.trading.safety | Drawdown limits manually reset: equity $882.61
+2025-12-29 17:44:33 | INFO     | polymarket.trading.bot | ============================================================
+2025-12-29 17:44:33 | INFO     | polymarket.trading.bot | 💰 WALLET STATE
+2025-12-29 17:44:33 | INFO     | polymarket.trading.bot | ============================================================
+2025-12-29 17:44:33 | INFO     | polymarket.trading.bot |   USDC Balance:    $552.44
+2025-12-29 17:44:33 | INFO     | polymarket.trading.bot |   Positions Value: $330.17
+2025-12-29 17:44:33 | INFO     | polymarket.trading.bot |   Total Equity:    $882.61
+2025-12-29 17:44:33 | INFO     | polymarket.trading.bot |   Available:       $552.44
+2025-12-29 17:44:33 | INFO     | polymarket.trading.bot | ============================================================
+2025-12-29 17:44:33 | INFO     | polymarket.trading.bot | ✅ Bot ready and running!
+2025-12-29 17:44:33 | INFO     | polymarket.trading.bot | Starting main loop (interval=5.0s)
+2025-12-29 17:44:33 | INFO     | polymarket.strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 17:44:35 | INFO     | polymarket.strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 17:45:05 | INFO     | polymarket.strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 17:45:06 | INFO     | polymarket.strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 17:45:36 | INFO     | polymarket.strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 17:45:38 | INFO     | polymarket.strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 17:46:08 | INFO     | polymarket.strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 17:46:09 | INFO     | polymarket.strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 17:46:40 | INFO     | polymarket.strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 17:46:41 | INFO     | polymarket.strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 17:47:11 | INFO     | polymarket.strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 17:47:13 | INFO     | polymarket.strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 17:47:43 | INFO     | polymarket.strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 17:47:44 | INFO     | polymarket.strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)

@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Polymarket Analytics{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Dashboard</h1>
+    </div>
+</div>
+
+<div class="row" id="stats-row">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h5 class="card-title">Total Trades</h5>
+                <h2 id="total-trades">-</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card success">
+            <div class="card-body">
+                <h5 class="card-title">Successful</h5>
+                <h2 id="successful-trades">-</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h5 class="card-title">Total P&L</h5>
+                <h2 id="total-pnl">-</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card warning">
+            <div class="card-body">
+                <h5 class="card-title">Recent Alerts</h5>
+                <h2 id="recent-alerts">-</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Recent Trades</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Agent</th>
+                                <th>Side</th>
+                                <th>Shares</th>
+                                <th>Price</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-trades">
+                            <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Open Positions</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Agent</th>
+                                <th>Token</th>
+                                <th>Shares</th>
+                                <th>Entry</th>
+                                <th>Current</th>
+                                <th>P&L</th>
+                            </tr>
+                        </thead>
+                        <tbody id="open-positions">
+                            <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Recent Alerts</h5>
+            </div>
+            <div class="card-body">
+                <div id="recent-alerts-list">
+                    <p class="text-center">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function loadDashboard() {
+    try {
+        // Load stats
+        const statsRes = await fetch('/api/trades/stats');
+        const stats = await statsRes.json();
+        document.getElementById('total-trades').textContent = stats.total || 0;
+        document.getElementById('successful-trades').textContent = stats.successful || 0;
+        
+        // Load performance
+        const perfRes = await fetch('/api/performance/overview');
+        const perf = await perfRes.json();
+        const pnl = perf.total_pnl || 0;
+        document.getElementById('total-pnl').textContent = 
+            (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(2);
+        document.getElementById('total-pnl').style.color = pnl >= 0 ? '#198754' : '#dc3545';
+        
+        // Load recent trades
+        const tradesRes = await fetch('/api/trades/?limit=10');
+        const trades = await tradesRes.json();
+        const tradesHtml = trades.length > 0 ? trades.map(t => `
+            <tr>
+                <td>${new Date(t.timestamp).toLocaleString()}</td>
+                <td>${t.agent_id}</td>
+                <td>${t.side}</td>
+                <td>${t.shares.toFixed(4)}</td>
+                <td>$${t.filled_price.toFixed(4)}</td>
+                <td><span class="badge ${t.success ? 'bg-success' : 'bg-danger'}">${t.success ? 'Success' : 'Failed'}</span></td>
+            </tr>
+        `).join('') : '<tr><td colspan="6" class="text-center">No trades</td></tr>';
+        document.getElementById('recent-trades').innerHTML = tradesHtml;
+        
+        // Load positions
+        const posRes = await fetch('/api/positions/?status=open');
+        const positions = await posRes.json();
+        const posHtml = positions.length > 0 ? positions.map(p => {
+            const isOrphan = p.status === 'orphan';
+            const agentDisplay = isOrphan ? '<span class="badge bg-warning">Orphan</span>' : p.agent_id;
+            return `
+            <tr ${isOrphan ? 'class="table-warning"' : ''}>
+                <td>${agentDisplay}</td>
+                <td>${p.token_id.substring(0, 12)}...</td>
+                <td>${p.shares.toFixed(4)}</td>
+                <td>$${p.entry_price.toFixed(4)}</td>
+                <td>$${(p.current_price || 0).toFixed(4)}</td>
+                <td style="color: ${p.unrealized_pnl >= 0 ? '#198754' : '#dc3545'}">
+                    ${p.unrealized_pnl >= 0 ? '+' : ''}$${p.unrealized_pnl.toFixed(2)}
+                </td>
+            </tr>
+        `;
+        }).join('') : '<tr><td colspan="6" class="text-center">No open positions</td></tr>';
+        document.getElementById('open-positions').innerHTML = posHtml;
+        
+        // Load recent alerts
+        const alertsRes = await fetch('/api/alerts/recent?hours=24&limit=10');
+        const alerts = await alertsRes.json();
+        document.getElementById('recent-alerts').textContent = alerts.length || 0;
+        const alertsHtml = alerts.length > 0 ? alerts.map(a => `
+            <div class="alert alert-${a.severity === 'CRITICAL' ? 'danger' : a.severity === 'HIGH' ? 'warning' : 'info'} alert-dismissible">
+                <strong>${a.alert_type}</strong>: ${a.question.substring(0, 60)}...
+                <small class="text-muted">${new Date(a.timestamp).toLocaleString()}</small>
+            </div>
+        `).join('') : '<p class="text-center">No recent alerts</p>';
+        document.getElementById('recent-alerts-list').innerHTML = alertsHtml;
+        
+    } catch (error) {
+        console.error('Error loading dashboard:', error);
+    }
+}
+
+loadDashboard();
+setInterval(loadDashboard, 30000); // Refresh every 30 seconds
+</script>
+{% endblock %}
+

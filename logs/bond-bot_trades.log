@@ -1,0 +1,564 @@
+2025-12-29 15:31:27 | INFO     | strategies.bond_strategy | ============================================================
+2025-12-29 15:31:27 | INFO     | strategies.bond_strategy | 🏦 BOND STRATEGY CONFIGURATION
+2025-12-29 15:31:27 | INFO     | strategies.bond_strategy | ============================================================
+2025-12-29 15:31:27 | INFO     | strategies.bond_strategy |   Agent ID:      bond-bot
+2025-12-29 15:31:27 | INFO     | strategies.bond_strategy |   Mode:          💸 LIVE TRADING
+2025-12-29 15:31:27 | INFO     | strategies.bond_strategy |   Price Range:   $0.95 - $0.98
+2025-12-29 15:31:27 | INFO     | strategies.bond_strategy |   Time Window:   60s - 1800s (30 min)
+2025-12-29 15:31:27 | INFO     | strategies.bond_strategy |   Position Size: Half-Kelly (max 25%)
+2025-12-29 15:31:27 | INFO     | strategies.bond_strategy |   Expected Returns: +2.0% to +5.3%
+2025-12-29 15:31:27 | INFO     | strategies.bond_strategy | ============================================================
+2025-12-29 15:31:27 | INFO     | trading.bot | ============================================================
+2025-12-29 15:31:27 | INFO     | trading.bot | 🚀 STARTING TRADING BOT
+2025-12-29 15:31:27 | INFO     | trading.bot | ============================================================
+2025-12-29 15:31:27 | INFO     | trading.bot |   Agent ID:   bond-bot
+2025-12-29 15:31:27 | INFO     | trading.bot |   Type:       bond
+2025-12-29 15:31:27 | INFO     | trading.bot |   Mode:       💸 LIVE
+2025-12-29 15:31:27 | INFO     | trading.bot |   ✅ Credentials validated
+2025-12-29 15:31:27 | INFO     | trading.bot |   ✅ API connected
+2025-12-29 15:31:28 | INFO     | trading.bot |   ✅ CLOB client initialized
+2025-12-29 15:31:28 | INFO     | trading.storage.sqlite | SQLite storage initialized: data/risk_state.db
+2025-12-29 15:31:28 | INFO     | trading.storage.sqlite | Registered agent bond-bot (bond)
+2025-12-29 15:31:28 | INFO     | trading.risk_coordinator | Reconciling state with on-chain...
+2025-12-29 15:31:29 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 92017981406808384305... (76.65 shares)
+2025-12-29 15:31:29 | WARNING  | trading.storage.sqlite | Added orphan position 43: 76.65 shares
+2025-12-29 15:31:29 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 38799348442724633229... (42.61 shares)
+2025-12-29 15:31:29 | WARNING  | trading.storage.sqlite | Added orphan position 44: 42.61 shares
+2025-12-29 15:31:29 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 64438803144617060812... (41.26 shares)
+2025-12-29 15:31:29 | WARNING  | trading.storage.sqlite | Added orphan position 45: 41.26 shares
+2025-12-29 15:31:29 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 88933989741847491097... (37.21 shares)
+2025-12-29 15:31:29 | WARNING  | trading.storage.sqlite | Added orphan position 46: 37.21 shares
+2025-12-29 15:31:29 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 57250582726141352031... (26.09 shares)
+2025-12-29 15:31:29 | WARNING  | trading.storage.sqlite | Added orphan position 47: 26.09 shares
+2025-12-29 15:31:29 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 14805424610556521493... (20.14 shares)
+2025-12-29 15:31:29 | WARNING  | trading.storage.sqlite | Added orphan position 48: 20.14 shares
+2025-12-29 15:31:29 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 82617212581795024039... (18.51 shares)
+2025-12-29 15:31:29 | WARNING  | trading.storage.sqlite | Added orphan position 49: 18.51 shares
+2025-12-29 15:31:29 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 15023754393998281560... (15.21 shares)
+2025-12-29 15:31:29 | WARNING  | trading.storage.sqlite | Added orphan position 50: 15.21 shares
+2025-12-29 15:31:29 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 62907314912118087699... (14.06 shares)
+2025-12-29 15:31:29 | WARNING  | trading.storage.sqlite | Added orphan position 51: 14.06 shares
+2025-12-29 15:31:29 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 69066581937470837277... (13.62 shares)
+2025-12-29 15:31:29 | WARNING  | trading.storage.sqlite | Added orphan position 52: 13.62 shares
+2025-12-29 15:31:29 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 10194940612355593823... (10.00 shares)
+2025-12-29 15:31:29 | WARNING  | trading.storage.sqlite | Added orphan position 53: 10.00 shares
+2025-12-29 15:31:29 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 11095693793658442691... (7.98 shares)
+2025-12-29 15:31:29 | WARNING  | trading.storage.sqlite | Added orphan position 54: 7.98 shares
+2025-12-29 15:31:29 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 32915172045130582917... (7.80 shares)
+2025-12-29 15:31:29 | WARNING  | trading.storage.sqlite | Added orphan position 55: 7.80 shares
+2025-12-29 15:31:29 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 43577760886052680570... (5.30 shares)
+2025-12-29 15:31:29 | WARNING  | trading.storage.sqlite | Added orphan position 56: 5.30 shares
+2025-12-29 15:31:29 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 75858118176847938138... (1.77 shares)
+2025-12-29 15:31:29 | WARNING  | trading.storage.sqlite | Added orphan position 57: 1.77 shares
+2025-12-29 15:31:29 | INFO     | trading.risk_coordinator | Reconciliation complete: 15 positions, $552.44 USDC
+2025-12-29 15:31:29 | INFO     | trading.risk_coordinator | RiskCoordinator started for agent bond-bot (bond)
+2025-12-29 15:31:29 | INFO     | trading.bot |   ✅ Risk coordinator started
+2025-12-29 15:31:29 | INFO     | trading.safety | Drawdown limits manually reset: equity $552.44
+2025-12-29 15:31:29 | INFO     | trading.bot | ============================================================
+2025-12-29 15:31:29 | INFO     | trading.bot | 💰 WALLET STATE
+2025-12-29 15:31:29 | INFO     | trading.bot | ============================================================
+2025-12-29 15:31:29 | INFO     | trading.bot |   USDC Balance:    $552.44
+2025-12-29 15:31:29 | INFO     | trading.bot |   Positions Value: $0.00
+2025-12-29 15:31:29 | INFO     | trading.bot |   Total Equity:    $552.44
+2025-12-29 15:31:29 | INFO     | trading.bot |   Available:       $552.44
+2025-12-29 15:31:29 | INFO     | trading.bot | ============================================================
+2025-12-29 15:31:29 | INFO     | trading.bot | ✅ Bot ready and running!
+2025-12-29 15:31:29 | INFO     | trading.bot | Starting main loop (interval=5.0s)
+2025-12-29 15:31:29 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:31:31 | INFO     | strategies.bond_strategy | 📥 Loaded 9375 active markets (skipped: 215 expired, 0 closed)
+2025-12-29 15:31:31 | INFO     | strategies.bond_strategy | ⏰ 3 markets expiring in 60-1800s window
+2025-12-29 15:32:01 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:32:03 | INFO     | strategies.bond_strategy | 📥 Loaded 9375 active markets (skipped: 215 expired, 0 closed)
+2025-12-29 15:32:03 | INFO     | strategies.bond_strategy | ⏰ 3 markets expiring in 60-1800s window
+2025-12-29 15:32:28 | INFO     | strategies.bond_strategy | 📊 Scan #12: 3 expiring markets, 0 in price range $0.95-$0.98
+2025-12-29 15:32:33 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:32:35 | INFO     | strategies.bond_strategy | 📥 Loaded 9375 active markets (skipped: 215 expired, 0 closed)
+2025-12-29 15:32:35 | INFO     | strategies.bond_strategy | ⏰ 3 markets expiring in 60-1800s window
+2025-12-29 15:33:05 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:33:06 | INFO     | strategies.bond_strategy | 📥 Loaded 9375 active markets (skipped: 215 expired, 0 closed)
+2025-12-29 15:33:06 | INFO     | strategies.bond_strategy | ⏰ 3 markets expiring in 60-1800s window
+2025-12-29 15:33:31 | INFO     | trading.bot | ============================================================
+2025-12-29 15:33:31 | INFO     | trading.bot | 🛑 STOPPING BOT: bond-bot
+2025-12-29 15:33:31 | INFO     | trading.bot | ============================================================
+2025-12-29 15:33:31 | INFO     | trading.risk_coordinator | RiskCoordinator shutdown complete
+2025-12-29 15:33:31 | INFO     | trading.bot |   ✅ Risk coordinator stopped
+2025-12-29 15:33:31 | INFO     | trading.bot |   ✅ API disconnected
+2025-12-29 15:33:31 | INFO     | trading.bot | ============================================================
+2025-12-29 15:33:31 | INFO     | trading.bot | 👋 Bot stopped cleanly
+2025-12-29 15:33:31 | INFO     | trading.bot | ============================================================
+2025-12-29 15:33:33 | INFO     | strategies.bond_strategy | ============================================================
+2025-12-29 15:33:33 | INFO     | strategies.bond_strategy | 🏦 BOND STRATEGY CONFIGURATION
+2025-12-29 15:33:33 | INFO     | strategies.bond_strategy | ============================================================
+2025-12-29 15:33:33 | INFO     | strategies.bond_strategy |   Agent ID:      bond-bot
+2025-12-29 15:33:33 | INFO     | strategies.bond_strategy |   Mode:          💸 LIVE TRADING
+2025-12-29 15:33:33 | INFO     | strategies.bond_strategy |   Price Range:   $0.95 - $0.98
+2025-12-29 15:33:33 | INFO     | strategies.bond_strategy |   Time Window:   60s - 1800s (30 min)
+2025-12-29 15:33:33 | INFO     | strategies.bond_strategy |   Position Size: Half-Kelly (max 25%)
+2025-12-29 15:33:33 | INFO     | strategies.bond_strategy |   Expected Returns: +2.0% to +5.3%
+2025-12-29 15:33:33 | INFO     | strategies.bond_strategy | ============================================================
+2025-12-29 15:33:33 | INFO     | trading.bot | ============================================================
+2025-12-29 15:33:33 | INFO     | trading.bot | 🚀 STARTING TRADING BOT
+2025-12-29 15:33:33 | INFO     | trading.bot | ============================================================
+2025-12-29 15:33:33 | INFO     | trading.bot |   Agent ID:   bond-bot
+2025-12-29 15:33:33 | INFO     | trading.bot |   Type:       bond
+2025-12-29 15:33:33 | INFO     | trading.bot |   Mode:       💸 LIVE
+2025-12-29 15:33:33 | INFO     | trading.bot |   ✅ Credentials validated
+2025-12-29 15:33:33 | INFO     | trading.bot |   ✅ API connected
+2025-12-29 15:33:34 | INFO     | trading.bot |   ✅ CLOB client initialized
+2025-12-29 15:33:34 | INFO     | trading.storage.sqlite | SQLite storage initialized: data/risk_state.db
+2025-12-29 15:33:34 | INFO     | trading.storage.sqlite | Registered agent bond-bot (bond)
+2025-12-29 15:33:34 | INFO     | trading.risk_coordinator | Reconciling state with on-chain...
+2025-12-29 15:33:35 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 92017981406808384305... (76.65 shares)
+2025-12-29 15:33:35 | WARNING  | trading.storage.sqlite | Added orphan position 58: 76.65 shares
+2025-12-29 15:33:35 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 38799348442724633229... (42.61 shares)
+2025-12-29 15:33:35 | WARNING  | trading.storage.sqlite | Added orphan position 59: 42.61 shares
+2025-12-29 15:33:35 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 64438803144617060812... (41.26 shares)
+2025-12-29 15:33:35 | WARNING  | trading.storage.sqlite | Added orphan position 60: 41.26 shares
+2025-12-29 15:33:35 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 88933989741847491097... (37.21 shares)
+2025-12-29 15:33:35 | WARNING  | trading.storage.sqlite | Added orphan position 61: 37.21 shares
+2025-12-29 15:33:35 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 57250582726141352031... (26.09 shares)
+2025-12-29 15:33:35 | WARNING  | trading.storage.sqlite | Added orphan position 62: 26.09 shares
+2025-12-29 15:33:35 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 14805424610556521493... (20.14 shares)
+2025-12-29 15:33:35 | WARNING  | trading.storage.sqlite | Added orphan position 63: 20.14 shares
+2025-12-29 15:33:35 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 82617212581795024039... (18.51 shares)
+2025-12-29 15:33:35 | WARNING  | trading.storage.sqlite | Added orphan position 64: 18.51 shares
+2025-12-29 15:33:35 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 15023754393998281560... (15.21 shares)
+2025-12-29 15:33:35 | WARNING  | trading.storage.sqlite | Added orphan position 65: 15.21 shares
+2025-12-29 15:33:35 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 62907314912118087699... (14.06 shares)
+2025-12-29 15:33:35 | WARNING  | trading.storage.sqlite | Added orphan position 66: 14.06 shares
+2025-12-29 15:33:35 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 69066581937470837277... (13.62 shares)
+2025-12-29 15:33:35 | WARNING  | trading.storage.sqlite | Added orphan position 67: 13.62 shares
+2025-12-29 15:33:35 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 10194940612355593823... (10.00 shares)
+2025-12-29 15:33:35 | WARNING  | trading.storage.sqlite | Added orphan position 68: 10.00 shares
+2025-12-29 15:33:35 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 11095693793658442691... (7.98 shares)
+2025-12-29 15:33:35 | WARNING  | trading.storage.sqlite | Added orphan position 69: 7.98 shares
+2025-12-29 15:33:35 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 32915172045130582917... (7.80 shares)
+2025-12-29 15:33:35 | WARNING  | trading.storage.sqlite | Added orphan position 70: 7.80 shares
+2025-12-29 15:33:35 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 43577760886052680570... (5.30 shares)
+2025-12-29 15:33:35 | WARNING  | trading.storage.sqlite | Added orphan position 71: 5.30 shares
+2025-12-29 15:33:35 | WARNING  | trading.risk_coordinator | ORPHAN POSITION FOUND: 75858118176847938138... (1.77 shares)
+2025-12-29 15:33:35 | WARNING  | trading.storage.sqlite | Added orphan position 72: 1.77 shares
+2025-12-29 15:33:35 | INFO     | trading.risk_coordinator | Reconciliation complete: 15 positions, $552.44 USDC
+2025-12-29 15:33:35 | INFO     | trading.risk_coordinator | RiskCoordinator started for agent bond-bot (bond)
+2025-12-29 15:33:35 | INFO     | trading.bot |   ✅ Risk coordinator started
+2025-12-29 15:33:35 | INFO     | trading.safety | Drawdown limits manually reset: equity $552.44
+2025-12-29 15:33:35 | INFO     | trading.bot | ============================================================
+2025-12-29 15:33:35 | INFO     | trading.bot | 💰 WALLET STATE
+2025-12-29 15:33:35 | INFO     | trading.bot | ============================================================
+2025-12-29 15:33:35 | INFO     | trading.bot |   USDC Balance:    $552.44
+2025-12-29 15:33:35 | INFO     | trading.bot |   Positions Value: $0.00
+2025-12-29 15:33:35 | INFO     | trading.bot |   Total Equity:    $552.44
+2025-12-29 15:33:35 | INFO     | trading.bot |   Available:       $552.44
+2025-12-29 15:33:35 | INFO     | trading.bot | ============================================================
+2025-12-29 15:33:35 | INFO     | trading.bot | ✅ Bot ready and running!
+2025-12-29 15:33:35 | INFO     | trading.bot | Starting main loop (interval=5.0s)
+2025-12-29 15:33:35 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:33:37 | INFO     | strategies.bond_strategy | 📥 Loaded 9375 active markets (skipped: 215 expired, 0 closed)
+2025-12-29 15:33:37 | INFO     | strategies.bond_strategy | ⏰ 3 markets expiring in 60-1800s window
+2025-12-29 15:34:07 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:34:08 | INFO     | strategies.bond_strategy | 📥 Loaded 9375 active markets (skipped: 215 expired, 0 closed)
+2025-12-29 15:34:38 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:34:40 | INFO     | strategies.bond_strategy | 📥 Loaded 9375 active markets (skipped: 215 expired, 0 closed)
+2025-12-29 15:35:10 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:35:11 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:35:36 | INFO     | trading.bot | ============================================================
+2025-12-29 15:35:36 | INFO     | trading.bot | 🛑 STOPPING BOT: bond-bot
+2025-12-29 15:35:36 | INFO     | trading.bot | ============================================================
+2025-12-29 15:35:36 | INFO     | trading.risk_coordinator | RiskCoordinator shutdown complete
+2025-12-29 15:35:36 | INFO     | trading.bot |   ✅ Risk coordinator stopped
+2025-12-29 15:35:36 | INFO     | trading.bot |   ✅ API disconnected
+2025-12-29 15:35:36 | INFO     | trading.bot | ============================================================
+2025-12-29 15:35:36 | INFO     | trading.bot | 👋 Bot stopped cleanly
+2025-12-29 15:35:36 | INFO     | trading.bot | ============================================================
+2025-12-29 15:35:38 | INFO     | strategies.bond_strategy | ============================================================
+2025-12-29 15:35:38 | INFO     | strategies.bond_strategy | 🏦 BOND STRATEGY CONFIGURATION
+2025-12-29 15:35:38 | INFO     | strategies.bond_strategy | ============================================================
+2025-12-29 15:35:38 | INFO     | strategies.bond_strategy |   Agent ID:      bond-bot
+2025-12-29 15:35:38 | INFO     | strategies.bond_strategy |   Mode:          💸 LIVE TRADING
+2025-12-29 15:35:38 | INFO     | strategies.bond_strategy |   Price Range:   $0.95 - $0.98
+2025-12-29 15:35:38 | INFO     | strategies.bond_strategy |   Time Window:   60s - 1800s (30 min)
+2025-12-29 15:35:38 | INFO     | strategies.bond_strategy |   Position Size: Half-Kelly (max 25%)
+2025-12-29 15:35:38 | INFO     | strategies.bond_strategy |   Expected Returns: +2.0% to +5.3%
+2025-12-29 15:35:38 | INFO     | strategies.bond_strategy | ============================================================
+2025-12-29 15:35:38 | INFO     | trading.bot | ============================================================
+2025-12-29 15:35:38 | INFO     | trading.bot | 🚀 STARTING TRADING BOT
+2025-12-29 15:35:38 | INFO     | trading.bot | ============================================================
+2025-12-29 15:35:38 | INFO     | trading.bot |   Agent ID:   bond-bot
+2025-12-29 15:35:38 | INFO     | trading.bot |   Type:       bond
+2025-12-29 15:35:38 | INFO     | trading.bot |   Mode:       💸 LIVE
+2025-12-29 15:35:38 | INFO     | trading.bot |   ✅ Credentials validated
+2025-12-29 15:35:38 | INFO     | trading.bot |   ✅ API connected
+2025-12-29 15:35:38 | INFO     | trading.bot |   ✅ CLOB client initialized
+2025-12-29 15:35:38 | INFO     | trading.storage.sqlite | SQLite storage initialized: data/risk_state.db
+2025-12-29 15:35:38 | INFO     | trading.storage.sqlite | Registered agent bond-bot (bond)
+2025-12-29 15:35:38 | INFO     | trading.risk_coordinator | ============================================================
+2025-12-29 15:35:38 | INFO     | trading.risk_coordinator | 🔄 RECONCILING STATE WITH ON-CHAIN...
+2025-12-29 15:35:38 | INFO     | trading.risk_coordinator | ============================================================
+2025-12-29 15:35:38 | INFO     | trading.risk_coordinator |   Wallet: 0xf54f4FF134f2A96E7E63674e561Cde110dE4f282
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |   📡 API returned: 15 positions, $552.44 USDC
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |   📦 Positions from API:
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |       - 92017981406808384305... | 76.6500 shares @ $0.9865 = $75.62
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |       - 38799348442724633229... | 42.6100 shares @ $0.9850 = $41.97
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |       - 64438803144617060812... | 41.2600 shares @ $0.9710 = $40.06
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |       - 88933989741847491097... | 37.2100 shares @ $0.9500 = $35.35
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |       - 57250582726141352031... | 26.0900 shares @ $0.9850 = $25.70
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |       - 14805424610556521493... | 20.1400 shares @ $0.9755 = $19.65
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |       - 82617212581795024039... | 18.5100 shares @ $0.9880 = $18.29
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |       - 15023754393998281560... | 15.2100 shares @ $0.9575 = $14.56
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |       - 62907314912118087699... | 14.0600 shares @ $0.9885 = $13.90
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |       - 69066581937470837277... | 13.6200 shares @ $0.9755 = $13.29
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |       - 10194940612355593823... | 10.0000 shares @ $0.9840 = $9.84
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |       - 11095693793658442691... | 7.9800 shares @ $0.9860 = $7.87
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |       - 32915172045130582917... | 7.8000 shares @ $0.9590 = $7.48
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |       - 43577760886052680570... | 5.3000 shares @ $0.9835 = $5.21
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |       - 75858118176847938138... | 1.7700 shares @ $0.9750 = $1.73
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |   💰 Total API positions value: $330.51
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |   💾 DB state: 0 open, 72 orphan
+2025-12-29 15:35:40 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 92017981406808384305... | 76.6500 shares @ $0.9865 = $75.62
+2025-12-29 15:35:40 | WARNING  | trading.storage.sqlite | Added orphan position 73: 76.65 shares
+2025-12-29 15:35:40 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 38799348442724633229... | 42.6100 shares @ $0.9850 = $41.97
+2025-12-29 15:35:40 | WARNING  | trading.storage.sqlite | Added orphan position 74: 42.61 shares
+2025-12-29 15:35:40 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 64438803144617060812... | 41.2600 shares @ $0.9710 = $40.06
+2025-12-29 15:35:40 | WARNING  | trading.storage.sqlite | Added orphan position 75: 41.26 shares
+2025-12-29 15:35:40 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 88933989741847491097... | 37.2100 shares @ $0.9500 = $35.35
+2025-12-29 15:35:40 | WARNING  | trading.storage.sqlite | Added orphan position 76: 37.21 shares
+2025-12-29 15:35:40 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 57250582726141352031... | 26.0900 shares @ $0.9850 = $25.70
+2025-12-29 15:35:40 | WARNING  | trading.storage.sqlite | Added orphan position 77: 26.09 shares
+2025-12-29 15:35:40 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 14805424610556521493... | 20.1400 shares @ $0.9755 = $19.65
+2025-12-29 15:35:40 | WARNING  | trading.storage.sqlite | Added orphan position 78: 20.14 shares
+2025-12-29 15:35:40 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 82617212581795024039... | 18.5100 shares @ $0.9880 = $18.29
+2025-12-29 15:35:40 | WARNING  | trading.storage.sqlite | Added orphan position 79: 18.51 shares
+2025-12-29 15:35:40 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 15023754393998281560... | 15.2100 shares @ $0.9575 = $14.56
+2025-12-29 15:35:40 | WARNING  | trading.storage.sqlite | Added orphan position 80: 15.21 shares
+2025-12-29 15:35:40 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 62907314912118087699... | 14.0600 shares @ $0.9885 = $13.90
+2025-12-29 15:35:40 | WARNING  | trading.storage.sqlite | Added orphan position 81: 14.06 shares
+2025-12-29 15:35:40 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 69066581937470837277... | 13.6200 shares @ $0.9755 = $13.29
+2025-12-29 15:35:40 | WARNING  | trading.storage.sqlite | Added orphan position 82: 13.62 shares
+2025-12-29 15:35:40 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 10194940612355593823... | 10.0000 shares @ $0.9840 = $9.84
+2025-12-29 15:35:40 | WARNING  | trading.storage.sqlite | Added orphan position 83: 10.00 shares
+2025-12-29 15:35:40 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 11095693793658442691... | 7.9800 shares @ $0.9860 = $7.87
+2025-12-29 15:35:40 | WARNING  | trading.storage.sqlite | Added orphan position 84: 7.98 shares
+2025-12-29 15:35:40 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 32915172045130582917... | 7.8000 shares @ $0.9590 = $7.48
+2025-12-29 15:35:40 | WARNING  | trading.storage.sqlite | Added orphan position 85: 7.80 shares
+2025-12-29 15:35:40 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 43577760886052680570... | 5.3000 shares @ $0.9835 = $5.21
+2025-12-29 15:35:40 | WARNING  | trading.storage.sqlite | Added orphan position 86: 5.30 shares
+2025-12-29 15:35:40 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 75858118176847938138... | 1.7700 shares @ $0.9750 = $1.73
+2025-12-29 15:35:40 | WARNING  | trading.storage.sqlite | Added orphan position 87: 1.77 shares
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator | ============================================================
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator | ✅ RECONCILIATION COMPLETE
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |   Positions: 15 on-chain
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |   Orphans added: 15
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |   Ghosts removed: 0
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |   USDC Balance: $552.44
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator |   Positions Value: $330.51
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator | ============================================================
+2025-12-29 15:35:40 | INFO     | trading.risk_coordinator | RiskCoordinator started for agent bond-bot (bond)
+2025-12-29 15:35:40 | INFO     | trading.bot |   ✅ Risk coordinator started
+2025-12-29 15:35:40 | INFO     | trading.safety | Drawdown limits manually reset: equity $2492.24
+2025-12-29 15:35:40 | INFO     | trading.bot | ============================================================
+2025-12-29 15:35:40 | INFO     | trading.bot | 💰 WALLET STATE
+2025-12-29 15:35:40 | INFO     | trading.bot | ============================================================
+2025-12-29 15:35:40 | INFO     | trading.bot |   USDC Balance:    $552.44
+2025-12-29 15:35:40 | INFO     | trading.bot |   Positions Value: $1,939.80
+2025-12-29 15:35:40 | INFO     | trading.bot |   Total Equity:    $2,492.24
+2025-12-29 15:35:40 | INFO     | trading.bot |   Available:       $552.44
+2025-12-29 15:35:40 | INFO     | trading.bot | ============================================================
+2025-12-29 15:35:40 | INFO     | trading.bot | ✅ Bot ready and running!
+2025-12-29 15:35:40 | INFO     | trading.bot | Starting main loop (interval=5.0s)
+2025-12-29 15:35:40 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:35:41 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:36:11 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:36:13 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:36:43 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:36:44 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:37:14 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:37:16 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:37:46 | INFO     | trading.bot | ============================================================
+2025-12-29 15:37:46 | INFO     | trading.bot | 🛑 STOPPING BOT: bond-bot
+2025-12-29 15:37:46 | INFO     | trading.bot | ============================================================
+2025-12-29 15:37:46 | INFO     | trading.risk_coordinator | RiskCoordinator shutdown complete
+2025-12-29 15:37:46 | INFO     | trading.bot |   ✅ Risk coordinator stopped
+2025-12-29 15:37:46 | INFO     | trading.bot |   ✅ API disconnected
+2025-12-29 15:37:46 | INFO     | trading.bot | ============================================================
+2025-12-29 15:37:46 | INFO     | trading.bot | 👋 Bot stopped cleanly
+2025-12-29 15:37:46 | INFO     | trading.bot | ============================================================
+2025-12-29 15:37:48 | INFO     | strategies.bond_strategy | ============================================================
+2025-12-29 15:37:48 | INFO     | strategies.bond_strategy | 🏦 BOND STRATEGY CONFIGURATION
+2025-12-29 15:37:48 | INFO     | strategies.bond_strategy | ============================================================
+2025-12-29 15:37:48 | INFO     | strategies.bond_strategy |   Agent ID:      bond-bot
+2025-12-29 15:37:48 | INFO     | strategies.bond_strategy |   Mode:          💸 LIVE TRADING
+2025-12-29 15:37:48 | INFO     | strategies.bond_strategy |   Price Range:   $0.95 - $0.98
+2025-12-29 15:37:48 | INFO     | strategies.bond_strategy |   Time Window:   60s - 1800s (30 min)
+2025-12-29 15:37:48 | INFO     | strategies.bond_strategy |   Position Size: Half-Kelly (max 25%)
+2025-12-29 15:37:48 | INFO     | strategies.bond_strategy |   Expected Returns: +2.0% to +5.3%
+2025-12-29 15:37:48 | INFO     | strategies.bond_strategy | ============================================================
+2025-12-29 15:37:48 | INFO     | trading.bot | ============================================================
+2025-12-29 15:37:48 | INFO     | trading.bot | 🚀 STARTING TRADING BOT
+2025-12-29 15:37:48 | INFO     | trading.bot | ============================================================
+2025-12-29 15:37:48 | INFO     | trading.bot |   Agent ID:   bond-bot
+2025-12-29 15:37:48 | INFO     | trading.bot |   Type:       bond
+2025-12-29 15:37:48 | INFO     | trading.bot |   Mode:       💸 LIVE
+2025-12-29 15:37:48 | INFO     | trading.bot |   ✅ Credentials validated
+2025-12-29 15:37:48 | INFO     | trading.bot |   ✅ API connected
+2025-12-29 15:37:48 | INFO     | trading.bot |   ✅ CLOB client initialized
+2025-12-29 15:37:48 | INFO     | trading.storage.sqlite | SQLite storage initialized: data/risk_state.db
+2025-12-29 15:37:48 | INFO     | trading.storage.sqlite | Registered agent bond-bot (bond)
+2025-12-29 15:37:48 | INFO     | trading.risk_coordinator | ============================================================
+2025-12-29 15:37:48 | INFO     | trading.risk_coordinator | 🔄 RECONCILING STATE WITH ON-CHAIN...
+2025-12-29 15:37:48 | INFO     | trading.risk_coordinator | ============================================================
+2025-12-29 15:37:48 | INFO     | trading.risk_coordinator |   Wallet: 0xf54f4FF134f2A96E7E63674e561Cde110dE4f282
+2025-12-29 15:37:48 | INFO     | trading.storage.sqlite | Removed 5 duplicate orphan positions for 10194940612355593823...
+2025-12-29 15:37:48 | INFO     | trading.storage.sqlite | Removed 5 duplicate orphan positions for 11095693793658442691...
+2025-12-29 15:37:48 | INFO     | trading.storage.sqlite | Removed 5 duplicate orphan positions for 14805424610556521493...
+2025-12-29 15:37:48 | INFO     | trading.storage.sqlite | Removed 5 duplicate orphan positions for 15023754393998281560...
+2025-12-29 15:37:48 | INFO     | trading.storage.sqlite | Removed 5 duplicate orphan positions for 32915172045130582917...
+2025-12-29 15:37:48 | INFO     | trading.storage.sqlite | Removed 5 duplicate orphan positions for 38799348442724633229...
+2025-12-29 15:37:48 | INFO     | trading.storage.sqlite | Removed 5 duplicate orphan positions for 43577760886052680570...
+2025-12-29 15:37:48 | INFO     | trading.storage.sqlite | Removed 5 duplicate orphan positions for 57250582726141352031...
+2025-12-29 15:37:48 | INFO     | trading.storage.sqlite | Removed 2 duplicate orphan positions for 62907314912118087699...
+2025-12-29 15:37:48 | INFO     | trading.storage.sqlite | Removed 5 duplicate orphan positions for 64438803144617060812...
+2025-12-29 15:37:48 | INFO     | trading.storage.sqlite | Removed 5 duplicate orphan positions for 69066581937470837277...
+2025-12-29 15:37:48 | INFO     | trading.storage.sqlite | Removed 5 duplicate orphan positions for 75858118176847938138...
+2025-12-29 15:37:48 | INFO     | trading.storage.sqlite | Removed 5 duplicate orphan positions for 82617212581795024039...
+2025-12-29 15:37:48 | INFO     | trading.storage.sqlite | Removed 5 duplicate orphan positions for 88933989741847491097...
+2025-12-29 15:37:48 | INFO     | trading.storage.sqlite | Removed 5 duplicate orphan positions for 92017981406808384305...
+2025-12-29 15:37:48 | WARNING  | trading.risk_coordinator |   🧹 Cleaned up 72 duplicate orphan positions
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |   📡 API returned: 15 positions, $552.44 USDC
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |   📦 Positions from API:
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |       - 92017981406808384305... | 76.6500 shares @ $0.9865 = $75.62
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |       - 38799348442724633229... | 42.6100 shares @ $0.9850 = $41.97
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |       - 64438803144617060812... | 41.2600 shares @ $0.9710 = $40.06
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |       - 88933989741847491097... | 37.2100 shares @ $0.9500 = $35.35
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |       - 57250582726141352031... | 26.0900 shares @ $0.9850 = $25.70
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |       - 14805424610556521493... | 20.1400 shares @ $0.9755 = $19.65
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |       - 82617212581795024039... | 18.5100 shares @ $0.9880 = $18.29
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |       - 15023754393998281560... | 15.2100 shares @ $0.9575 = $14.56
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |       - 62907314912118087699... | 14.0600 shares @ $0.9885 = $13.90
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |       - 69066581937470837277... | 13.6200 shares @ $0.9755 = $13.29
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |       - 10194940612355593823... | 10.0000 shares @ $0.9840 = $9.84
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |       - 11095693793658442691... | 7.9800 shares @ $0.9860 = $7.87
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |       - 32915172045130582917... | 7.8000 shares @ $0.9590 = $7.48
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |       - 43577760886052680570... | 5.3000 shares @ $0.9835 = $5.21
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |       - 75858118176847938138... | 1.7700 shares @ $0.9750 = $1.73
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |   💰 Total API positions value: $330.51
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |   💾 DB state: 0 open, 15 orphan
+2025-12-29 15:37:49 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 92017981406808384305... | 76.6500 shares @ $0.9865 = $75.62
+2025-12-29 15:37:49 | INFO     | trading.storage.sqlite | Updated existing orphan position 73: 76.6500 shares @ $0.9865
+2025-12-29 15:37:49 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 38799348442724633229... | 42.6100 shares @ $0.9850 = $41.97
+2025-12-29 15:37:49 | INFO     | trading.storage.sqlite | Updated existing orphan position 74: 42.6100 shares @ $0.9850
+2025-12-29 15:37:49 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 64438803144617060812... | 41.2600 shares @ $0.9710 = $40.06
+2025-12-29 15:37:49 | INFO     | trading.storage.sqlite | Updated existing orphan position 75: 41.2600 shares @ $0.9710
+2025-12-29 15:37:49 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 88933989741847491097... | 37.2100 shares @ $0.9500 = $35.35
+2025-12-29 15:37:49 | INFO     | trading.storage.sqlite | Updated existing orphan position 76: 37.2100 shares @ $0.9500
+2025-12-29 15:37:49 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 57250582726141352031... | 26.0900 shares @ $0.9850 = $25.70
+2025-12-29 15:37:49 | INFO     | trading.storage.sqlite | Updated existing orphan position 77: 26.0900 shares @ $0.9850
+2025-12-29 15:37:49 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 14805424610556521493... | 20.1400 shares @ $0.9755 = $19.65
+2025-12-29 15:37:49 | INFO     | trading.storage.sqlite | Updated existing orphan position 78: 20.1400 shares @ $0.9755
+2025-12-29 15:37:49 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 82617212581795024039... | 18.5100 shares @ $0.9880 = $18.29
+2025-12-29 15:37:49 | INFO     | trading.storage.sqlite | Updated existing orphan position 79: 18.5100 shares @ $0.9880
+2025-12-29 15:37:49 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 15023754393998281560... | 15.2100 shares @ $0.9575 = $14.56
+2025-12-29 15:37:49 | INFO     | trading.storage.sqlite | Updated existing orphan position 80: 15.2100 shares @ $0.9575
+2025-12-29 15:37:49 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 62907314912118087699... | 14.0600 shares @ $0.9885 = $13.90
+2025-12-29 15:37:49 | INFO     | trading.storage.sqlite | Updated existing orphan position 81: 14.0600 shares @ $0.9885
+2025-12-29 15:37:49 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 69066581937470837277... | 13.6200 shares @ $0.9755 = $13.29
+2025-12-29 15:37:49 | INFO     | trading.storage.sqlite | Updated existing orphan position 82: 13.6200 shares @ $0.9755
+2025-12-29 15:37:49 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 10194940612355593823... | 10.0000 shares @ $0.9840 = $9.84
+2025-12-29 15:37:49 | INFO     | trading.storage.sqlite | Updated existing orphan position 83: 10.0000 shares @ $0.9840
+2025-12-29 15:37:49 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 11095693793658442691... | 7.9800 shares @ $0.9860 = $7.87
+2025-12-29 15:37:49 | INFO     | trading.storage.sqlite | Updated existing orphan position 84: 7.9800 shares @ $0.9860
+2025-12-29 15:37:49 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 32915172045130582917... | 7.8000 shares @ $0.9590 = $7.48
+2025-12-29 15:37:49 | INFO     | trading.storage.sqlite | Updated existing orphan position 85: 7.8000 shares @ $0.9590
+2025-12-29 15:37:49 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 43577760886052680570... | 5.3000 shares @ $0.9835 = $5.21
+2025-12-29 15:37:49 | INFO     | trading.storage.sqlite | Updated existing orphan position 86: 5.3000 shares @ $0.9835
+2025-12-29 15:37:49 | WARNING  | trading.risk_coordinator |   🔍 ORPHAN FOUND: 75858118176847938138... | 1.7700 shares @ $0.9750 = $1.73
+2025-12-29 15:37:49 | INFO     | trading.storage.sqlite | Updated existing orphan position 87: 1.7700 shares @ $0.9750
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator | ============================================================
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator | ✅ RECONCILIATION COMPLETE
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |   Positions: 15 on-chain
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |   Orphans added: 15
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |   Ghosts removed: 0
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |   USDC Balance: $552.44
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator |   Positions Value: $330.51
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator | ============================================================
+2025-12-29 15:37:49 | INFO     | trading.risk_coordinator | RiskCoordinator started for agent bond-bot (bond)
+2025-12-29 15:37:49 | INFO     | trading.bot |   ✅ Risk coordinator started
+2025-12-29 15:37:49 | INFO     | trading.safety | Drawdown limits manually reset: equity $882.95
+2025-12-29 15:37:49 | INFO     | trading.bot | ============================================================
+2025-12-29 15:37:49 | INFO     | trading.bot | 💰 WALLET STATE
+2025-12-29 15:37:49 | INFO     | trading.bot | ============================================================
+2025-12-29 15:37:49 | INFO     | trading.bot |   USDC Balance:    $552.44
+2025-12-29 15:37:49 | INFO     | trading.bot |   Positions Value: $330.51
+2025-12-29 15:37:49 | INFO     | trading.bot |   Total Equity:    $882.95
+2025-12-29 15:37:49 | INFO     | trading.bot |   Available:       $552.44
+2025-12-29 15:37:49 | INFO     | trading.bot | ============================================================
+2025-12-29 15:37:49 | INFO     | trading.bot | ✅ Bot ready and running!
+2025-12-29 15:37:49 | INFO     | trading.bot | Starting main loop (interval=5.0s)
+2025-12-29 15:37:49 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:37:51 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:38:21 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:38:22 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:38:52 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:38:54 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:39:24 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:39:25 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:39:56 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:39:57 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:40:27 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:40:29 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:40:59 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:41:00 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:41:30 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:41:32 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:42:02 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:42:04 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:42:34 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:42:35 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:43:06 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:43:07 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:43:37 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:43:39 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:44:09 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:44:10 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:44:41 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:44:42 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:45:12 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:45:14 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:45:44 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:45:45 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:46:15 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:46:17 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:46:47 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:46:48 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:47:18 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:47:20 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:47:50 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:47:51 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:48:21 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:48:23 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:48:53 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:48:55 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:49:25 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:49:26 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:49:56 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:49:58 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:50:28 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:50:32 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:51:02 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:51:04 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:51:34 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:51:35 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:52:05 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:52:07 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:52:37 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:52:38 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:53:08 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:53:10 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:53:40 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:53:42 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:54:12 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:54:13 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:54:43 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:54:45 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:55:15 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:55:16 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:55:47 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:55:48 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:56:18 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:56:20 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:56:50 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:56:52 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:57:22 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:57:23 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:57:53 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:57:55 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:58:25 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:58:27 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:58:57 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:58:58 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 15:59:28 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 15:59:30 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 16:00:00 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:00:02 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 16:00:32 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:00:34 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 16:01:04 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:01:05 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 16:01:35 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:01:37 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 16:02:07 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:02:09 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 16:02:39 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:02:40 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 16:03:11 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:03:12 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 16:03:42 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:03:44 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 16:04:14 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:04:15 | INFO     | strategies.bond_strategy | 📥 Loaded 9370 active markets (skipped: 220 expired, 0 closed)
+2025-12-29 16:04:45 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:04:47 | INFO     | strategies.bond_strategy | 📥 Loaded 9371 active markets (skipped: 219 expired, 0 closed)
+2025-12-29 16:05:17 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:05:18 | INFO     | strategies.bond_strategy | 📥 Loaded 9369 active markets (skipped: 219 expired, 0 closed)
+2025-12-29 16:05:48 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:05:50 | INFO     | strategies.bond_strategy | 📥 Loaded 9368 active markets (skipped: 221 expired, 0 closed)
+2025-12-29 16:06:20 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:06:21 | INFO     | strategies.bond_strategy | 📥 Loaded 9371 active markets (skipped: 217 expired, 0 closed)
+2025-12-29 16:06:52 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:06:53 | INFO     | strategies.bond_strategy | 📥 Loaded 9373 active markets (skipped: 215 expired, 0 closed)
+2025-12-29 16:07:23 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:07:25 | INFO     | strategies.bond_strategy | 📥 Loaded 9373 active markets (skipped: 216 expired, 0 closed)
+2025-12-29 16:07:55 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:07:56 | INFO     | strategies.bond_strategy | 📥 Loaded 9373 active markets (skipped: 216 expired, 0 closed)
+2025-12-29 16:08:26 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:08:28 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 217 expired, 0 closed)
+2025-12-29 16:08:58 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:08:59 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 217 expired, 0 closed)
+2025-12-29 16:09:29 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:09:31 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 217 expired, 0 closed)
+2025-12-29 16:10:01 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:10:03 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 217 expired, 0 closed)
+2025-12-29 16:10:33 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:10:34 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 16:11:04 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:11:06 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 16:11:36 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:11:37 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 16:12:07 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:12:09 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 16:12:39 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:12:40 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 16:13:10 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:13:12 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 16:13:42 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:13:44 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 16:14:14 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:14:15 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 16:14:45 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:14:49 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 16:30:32 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:30:33 | INFO     | strategies.bond_strategy | 📥 Loaded 0 active markets (skipped: 0 expired, 0 closed)
+2025-12-29 16:31:03 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 16:31:08 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 16:31:33 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 17:04:23 | INFO     | strategies.bond_strategy | 📥 Loaded 200 active markets (skipped: 0 expired, 0 closed)
+2025-12-29 17:04:28 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 17:04:39 | INFO     | strategies.bond_strategy | 📥 Loaded 0 active markets (skipped: 0 expired, 0 closed)
+2025-12-29 17:06:17 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 17:06:22 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 17:06:48 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 17:23:47 | INFO     | strategies.bond_strategy | 📥 Loaded 489 active markets (skipped: 1 expired, 0 closed)
+2025-12-29 17:23:52 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 17:24:03 | INFO     | strategies.bond_strategy | 📥 Loaded 0 active markets (skipped: 0 expired, 0 closed)
+2025-12-29 17:24:23 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 17:24:25 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 17:24:55 | INFO     | strategies.bond_strategy | 🔄 Refreshing markets from Polymarket API...
+2025-12-29 17:24:57 | INFO     | strategies.bond_strategy | 📥 Loaded 9372 active markets (skipped: 218 expired, 0 closed)
+2025-12-29 17:25:22 | INFO     | trading.bot | ============================================================
+2025-12-29 17:25:22 | INFO     | trading.bot | 🛑 STOPPING BOT: bond-bot
+2025-12-29 17:25:22 | INFO     | trading.bot | ============================================================
+2025-12-29 17:25:22 | INFO     | trading.risk_coordinator | RiskCoordinator shutdown complete
+2025-12-29 17:25:22 | INFO     | trading.bot |   ✅ Risk coordinator stopped
+2025-12-29 17:25:22 | INFO     | trading.bot |   ✅ API disconnected
+2025-12-29 17:25:22 | INFO     | trading.bot | ============================================================
+2025-12-29 17:25:22 | INFO     | trading.bot | 👋 Bot stopped cleanly
+2025-12-29 17:25:22 | INFO     | trading.bot | ============================================================
