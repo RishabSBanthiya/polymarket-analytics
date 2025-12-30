@@ -2,6 +2,7 @@
 Exit Strategy Module.
 
 Provides configurable exit strategies for position management:
+- Near-resolution: Auto-sell when market resolves ($0.995+ or $0.01-)
 - Take-profit: Exit when target profit reached
 - Trailing stop: Lock in profits with dynamic stop-loss
 - Time-based: Force exit after maximum hold time
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 class ExitReason(Enum):
     """Reason for exiting a position."""
+    NEAR_RESOLUTION = "near_resolution"  # Market resolved - price at $0.995+ or $0.01-
     TAKE_PROFIT = "take_profit"
     TRAILING_STOP = "trailing_stop"
     TIME_LIMIT = "time_limit"
@@ -37,6 +39,12 @@ class ExitConfig:
     Default values optimized via Bayesian optimization:
     - 53.83% return, 72.5% win rate, 24x profit factor
     """
+    # Near-resolution exit (auto-sell when market resolves)
+    # This is the highest priority exit - captures value since Polymarket API doesn't allow claims
+    near_resolution_exit_enabled: bool = True
+    near_resolution_high_price: float = 0.995  # Sell when price >= this (position won)
+    near_resolution_low_price: float = 0.01    # Sell when price <= this (position lost)
+    
     # Take-profit settings
     take_profit_enabled: bool = True
     take_profit_pct: float = 0.05  # Exit at +5% profit (optimized)
@@ -62,6 +70,10 @@ class ExitConfig:
             raise ValueError("trailing_stop_distance_pct must be positive")
         if self.stop_loss_pct <= 0:
             raise ValueError("stop_loss_pct must be positive")
+        if self.near_resolution_high_price <= 0 or self.near_resolution_high_price > 1:
+            raise ValueError("near_resolution_high_price must be in (0, 1]")
+        if self.near_resolution_low_price < 0 or self.near_resolution_low_price >= 1:
+            raise ValueError("near_resolution_low_price must be in [0, 1)")
 
 
 @dataclass
@@ -137,6 +149,7 @@ class ExitMonitor:
     Monitors positions and determines when to exit.
     
     Checks multiple exit conditions in priority order:
+    0. Near-resolution (market resolved - price at $0.995+ or $0.01-)
     1. Take-profit (lock in gains)
     2. Trailing stop (protect profits)
     3. Stop-loss (limit losses)
@@ -214,6 +227,22 @@ class ExitMonitor:
         
         # Calculate current P&L
         current_return = (current_price - state.entry_price) / state.entry_price
+        
+        # 0. Check near-resolution (HIGHEST PRIORITY - market resolved)
+        # Since Polymarket API doesn't allow direct claims, sell at near-resolution prices
+        if self.config.near_resolution_exit_enabled:
+            if current_price >= self.config.near_resolution_high_price:
+                return (
+                    ExitReason.NEAR_RESOLUTION,
+                    current_price,
+                    f"Near resolution (won) - price ${current_price:.4f} >= ${self.config.near_resolution_high_price:.3f}"
+                )
+            if current_price <= self.config.near_resolution_low_price:
+                return (
+                    ExitReason.NEAR_RESOLUTION,
+                    current_price,
+                    f"Near resolution (lost) - price ${current_price:.4f} <= ${self.config.near_resolution_low_price:.3f}"
+                )
         
         # 1. Check take-profit
         if self.config.take_profit_enabled:

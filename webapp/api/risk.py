@@ -2,13 +2,17 @@
 Risk monitoring API endpoints.
 """
 
+import logging
 from fastapi import APIRouter, Query
 from typing import Optional, List
 from datetime import datetime, timezone
 
 from polymarket.trading.storage.sqlite import SQLiteStorage
 from polymarket.core.config import get_config
+from polymarket.core.api import PolymarketAPI
 from polymarket.core.models import AgentStatus, PositionStatus, ReservationStatus
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 config = get_config()
@@ -179,4 +183,107 @@ async def cleanup_stale_data():
         "expired_reservations_cleaned": expired_res,
         "stale_agents_marked_crashed": stale_agents,
     }
+
+
+@router.post("/refresh")
+async def refresh_wallet_data():
+    """
+    Refresh wallet data from blockchain and API.
+    
+    Fetches actual USDC balance from Polygon blockchain and
+    syncs positions with Polymarket Data API.
+    """
+    wallet = config.proxy_address or ""
+    
+    if not wallet:
+        return {
+            "success": False,
+            "error": "No wallet address configured",
+            "usdc_balance": 0,
+            "positions_synced": 0,
+        }
+    
+    api = PolymarketAPI(config)
+    
+    try:
+        await api.connect()
+        
+        # Fetch actual USDC balance from blockchain
+        actual_balance = await api.fetch_usdc_balance(wallet)
+        logger.info(f"Fetched actual USDC balance: ${actual_balance:.2f}")
+        
+        # Fetch actual positions from API
+        actual_positions = await api.fetch_positions(wallet)
+        logger.info(f"Fetched {len(actual_positions)} positions from API")
+        
+        # Update database
+        with storage.transaction() as txn:
+            # Update cached balance
+            txn.update_usdc_balance(wallet, actual_balance)
+            
+            # Build lookup of current positions by token_id
+            db_open = txn.get_all_positions(wallet, PositionStatus.OPEN)
+            db_orphan = txn.get_all_positions(wallet, PositionStatus.ORPHAN)
+            db_positions = db_open + db_orphan
+            db_token_ids = {p.token_id: p for p in db_positions}
+            actual_token_ids = {p.token_id: p for p in actual_positions}
+            
+            positions_added = 0
+            positions_updated = 0
+            positions_closed = 0
+            
+            # Sync positions from API
+            for token_id, pos in actual_token_ids.items():
+                price = pos.current_price or pos.entry_price or 0
+                
+                if token_id not in db_token_ids:
+                    # Add as orphan position
+                    txn.add_orphan_position(
+                        wallet_address=wallet,
+                        token_id=token_id,
+                        market_id=pos.market_id,
+                        shares=pos.shares,
+                        current_price=price
+                    )
+                    positions_added += 1
+                else:
+                    # Update existing position price
+                    db_pos = db_token_ids[token_id]
+                    if db_pos.id and price > 0:
+                        txn.update_position_price(db_pos.id, price)
+                        positions_updated += 1
+            
+            # Mark ghost positions as closed
+            for token_id, db_pos in db_token_ids.items():
+                if token_id not in actual_token_ids:
+                    txn.mark_position_closed(db_pos.id)
+                    positions_closed += 1
+        
+        # Calculate totals
+        total_positions_value = sum(
+            p.shares * (p.current_price or p.entry_price or 0) 
+            for p in actual_positions
+        )
+        
+        return {
+            "success": True,
+            "usdc_balance": actual_balance,
+            "positions_value": total_positions_value,
+            "total_equity": actual_balance + total_positions_value,
+            "positions_synced": len(actual_positions),
+            "positions_added": positions_added,
+            "positions_updated": positions_updated,
+            "positions_closed": positions_closed,
+        }
+        
+    except Exception as e:
+        logger.error(f"Error refreshing wallet data: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "usdc_balance": 0,
+            "positions_synced": 0,
+        }
+    finally:
+        await api.close()
 

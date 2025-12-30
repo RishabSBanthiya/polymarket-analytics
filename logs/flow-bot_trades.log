@@ -3062,3 +3062,5 @@
 2025-12-30 22:28:24 | INFO     | polymarket.strategies.flow_strategy |     📊 SUDDEN_PRICE_MOVEMENT: 4
 2025-12-30 22:28:24 | INFO     | polymarket.strategies.flow_strategy |     📊 CORRELATED_MOVEMENT: 2
 2025-12-30 22:28:24 | INFO     | polymarket.strategies.flow_strategy | ============================================================
+2025-12-30 22:33:25 | INFO     | polymarket.strategies.flow_strategy | 📊 Flow Stats: No alerts received in last 5 minutes
+2025-12-30 22:38:26 | INFO     | polymarket.strategies.flow_strategy | 📊 Flow Stats: No alerts received in last 5 minutes

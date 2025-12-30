@@ -28,6 +28,7 @@ from ..trading.components.exit_strategies import ExitConfig
 
 if TYPE_CHECKING:
     from ..flow_detector import TradeFeedFlowDetector, FlowAlert
+    from ..trading.storage.base import StorageBackend
 
 logger = logging.getLogger(__name__)
 
@@ -63,10 +64,12 @@ class FlowCopySignalSource(FlowAlertSignals):
         min_score: float = 30.0,
         min_trade_size: float = 100.0,
         category_filter: Optional[str] = None,
+        storage: Optional["StorageBackend"] = None,
     ):
         super().__init__(dedup_window_seconds, decay_half_life_seconds, min_score)
         self.min_trade_size = min_trade_size
         self.category_filter = category_filter
+        self.storage = storage
         self._detector: Optional["TradeFeedFlowDetector"] = None
         self._detector_task: Optional[asyncio.Task] = None
         
@@ -159,7 +162,8 @@ class FlowCopySignalSource(FlowAlertSignals):
             self._detector = TradeFeedFlowDetector(
                 min_trade_size=self.min_trade_size,
                 verbose=False,
-                category_filter=category
+                category_filter=category,
+                storage=self.storage
             )
             
             # Set up callback
@@ -306,6 +310,10 @@ def create_flow_bot(
         logger.info(f"    {emoji} {signal_type}: {weight:.1f}x")
     logger.info(f"{'='*60}")
     
+    # Create storage for persisting flow alerts
+    from ..trading.storage.sqlite import SQLiteStorage
+    storage = SQLiteStorage(config.db_path)
+    
     # Create components
     signal_source = FlowCopySignalSource(
         dedup_window_seconds=30,
@@ -313,6 +321,7 @@ def create_flow_bot(
         min_score=min_score,
         min_trade_size=min_trade_size,
         category_filter=category,
+        storage=storage,
     )
     
     position_sizer = SignalScaledSizer(

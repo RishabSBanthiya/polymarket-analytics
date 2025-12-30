@@ -7,7 +7,7 @@
     <div class="col-12">
         <h1 class="mb-4">
             <span class="me-2">⚠️</span>Risk Monitor
-            <button class="btn btn-outline-secondary btn-sm ms-3" onclick="loadRiskData()">
+            <button class="btn btn-outline-secondary btn-sm ms-3" onclick="refreshFromBlockchain()">
                 <i class="bi bi-arrow-clockwise"></i> Refresh
             </button>
         </h1>
@@ -228,6 +228,40 @@
 
 {% block extra_js %}
 <script>
+// Flag to track if we're currently refreshing
+let isRefreshing = false;
+
+async function refreshFromBlockchain() {
+    if (isRefreshing) return;
+    
+    isRefreshing = true;
+    const refreshBtn = document.querySelector('button[onclick="refreshFromBlockchain()"]');
+    const originalText = refreshBtn.innerHTML;
+    refreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Refreshing...';
+    refreshBtn.disabled = true;
+    
+    try {
+        // Call refresh endpoint to sync with blockchain
+        const refreshRes = await fetch('/api/risk/refresh', { method: 'POST' });
+        const result = await refreshRes.json();
+        
+        if (result.success) {
+            console.log('Refreshed from blockchain:', result);
+        } else {
+            console.error('Refresh failed:', result.error);
+        }
+        
+        // Reload all data
+        await loadRiskData();
+    } catch (error) {
+        console.error('Error refreshing:', error);
+    } finally {
+        refreshBtn.innerHTML = originalText;
+        refreshBtn.disabled = false;
+        isRefreshing = false;
+    }
+}
+
 async function loadRiskData() {
     try {
         // Load status
