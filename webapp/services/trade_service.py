@@ -1,216 +1,87 @@
 """
 Trade service for aggregating and processing trade data.
+
+Uses the transactions table as the source of truth (chain-synced on-chain data).
 """
 
-import asyncio
+import logging
 from typing import Optional, List, Dict
 from datetime import datetime, timedelta
 
 from ..storage.trade_storage import TradeStorage
-from polymarket.core.api import PolymarketAPI
 from polymarket.core.config import get_config
+from polymarket.trading.storage.sqlite import SQLiteStorage
+
+logger = logging.getLogger(__name__)
 
 
 class TradeService:
-    """Service for trade history operations"""
+    """Service for trade history operations using chain-synced data."""
     
     def __init__(self, storage: Optional[TradeStorage] = None):
         self.storage = storage or TradeStorage()
         self.config = get_config()
+        self._sqlite_storage = SQLiteStorage(self.config.db_path)
     
-    async def _fetch_orphan_trades(self, wallet_address: str) -> List[dict]:
-        """Fetch orphan trades from wallet's complete transaction history"""
-        try:
-            api = PolymarketAPI(self.config)
-            await api.connect()
+    def get_all_transactions(
+        self,
+        wallet_address: str,
+        transaction_type: Optional[str] = None,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None,
+        limit: Optional[int] = None
+    ) -> List[dict]:
+        """
+        Get all transactions from the chain-synced transactions table.
+        
+        This is the primary method for accessing complete on-chain history.
+        """
+        with self._sqlite_storage.transaction() as txn:
+            transactions = txn.get_transactions(
+                wallet_address=wallet_address,
+                transaction_type=transaction_type,
+                start_time=start_time,
+                end_time=end_time,
+                limit=limit
+            )
+        
+        # Convert to trade format for compatibility
+        trades = []
+        for tx in transactions:
+            tx_type = tx.get("transaction_type", "")
+            side = tx_type.upper() if tx_type else "UNKNOWN"
             
-            orphan_trades = []
-            
-            # Get all stored executions for this wallet to compare
-            stored_executions = self.storage.get_executions(wallet_address=wallet_address)
-            
-            # Create matching sets for stored executions
-            # Exact match: (token_id, shares, price, side, timestamp within 5 min)
-            stored_matches = set()
-            for e in stored_executions:
-                # Create multiple keys for flexible matching
-                key_exact = (
-                    e["token_id"],
-                    round(e["shares"], 4),
-                    round(e["filled_price"], 4),
-                    e["side"]
-                )
-                stored_matches.add(key_exact)
-                
-                # Also store by token + approximate price/time
-                timestamp_key = e["timestamp"].replace(second=0, microsecond=0)
-                stored_matches.add((e["token_id"], timestamp_key, e["side"]))
-            
-            # Fetch complete transaction history (trades, deposits, withdrawals)
-            # Use a large limit to get all-time history
-            try:
-                transactions = await api.fetch_user_transactions(wallet_address, limit=10000)
-                import logging
-                logging.getLogger(__name__).info(f"Fetched {len(transactions)} transactions from API")
-            except Exception as e:
-                import logging
-                logging.getLogger(__name__).warning(f"Could not fetch user transactions, falling back to positions: {e}")
-                transactions = []
-            
-            # Process transactions
-            for tx in transactions:
-                tx_type = tx.get("type", "trade")
-                side = tx.get("side", "").upper()
-                
-                # Skip deposits and withdrawals for now (they're not trades)
-                # But we could add them as separate transaction types if needed
-                if tx_type in ["deposit", "withdrawal", "transfer"]:
-                    # Add as a special transaction type
-                    orphan_trades.append({
-                        "id": None,
-                        "agent_id": "orphan",
-                        "market_id": "",
-                        "token_id": "",
-                        "side": side,
-                        "shares": 0.0,
-                        "price": tx.get("price", 0.0),
-                        "filled_price": tx.get("price", 0.0),
-                        "signal_score": None,
-                        "success": True,
-                        "error_message": None,
-                        "timestamp": tx["timestamp"],
-                        "wallet_address": wallet_address,
-                        "is_orphan": True,
-                        "transaction_type": tx_type
-                    })
-                    continue
-                
-                # For trades, check if they match stored executions
-                token_id = tx.get("token_id", "")
-                shares = tx.get("shares", 0)
-                price = tx.get("price", 0)
-                timestamp = tx["timestamp"]
-                
-                if not token_id or token_id == "":
-                    import logging
-                    logging.getLogger(__name__).debug(f"Skipping trade with no token_id")
-                    continue
-                
-                if shares <= 0:
-                    import logging
-                    logging.getLogger(__name__).debug(f"Skipping trade with shares <= 0: {shares}")
-                    continue
-                
-                # Check for matches
-                key_exact = (token_id, round(shares, 4), round(price, 4), side)
-                timestamp_key = timestamp.replace(second=0, microsecond=0)
-                key_time = (token_id, timestamp_key, side)
-                
-                is_matched = False
-                
-                # Check exact match
-                if key_exact in stored_matches:
-                    is_matched = True
-                # Check time-based match (same token, same minute, same side)
-                elif key_time in stored_matches:
-                    is_matched = True
-                # Check approximate match (within 5 minutes, similar price/shares)
-                else:
-                    for stored in stored_executions:
-                        if stored["token_id"] == token_id and stored["side"] == side:
-                            time_diff = abs((stored["timestamp"] - timestamp).total_seconds())
-                            if time_diff < 300:  # 5 minutes
-                                price_diff = abs(price - stored["filled_price"]) / stored["filled_price"] if stored["filled_price"] > 0 else 1.0
-                                shares_diff = abs(shares - stored["shares"]) / stored["shares"] if stored["shares"] > 0 else 1.0
-                                # Match if price within 5% and shares within 20%
-                                if price_diff < 0.05 and shares_diff < 0.20:
-                                    is_matched = True
-                                    break
-                
-                if not is_matched:
-                    # This is an orphan trade
-                    orphan_trades.append({
-                        "id": None,
-                        "agent_id": "orphan",
-                        "market_id": tx.get("market_id", ""),
-                        "token_id": token_id,
-                        "side": side,
-                        "shares": shares,
-                        "price": price,
-                        "filled_price": price,
-                        "signal_score": None,
-                        "success": True,
-                        "error_message": None,
-                        "timestamp": timestamp,
-                        "wallet_address": wallet_address,
-                        "is_orphan": True,
-                        "transaction_type": "trade"
-                    })
-            
-            # Fallback: Also check current positions if we didn't get transactions
-            if not transactions:
-                positions = await api.fetch_positions(wallet_address)
-                for pos in positions:
-                    # Check if this position matches any stored execution
-                    pos_key = (pos.token_id, round(pos.shares, 4), round(pos.entry_price, 4), "BUY")
-                    
-                    if pos_key not in stored_matches:
-                        # Check approximate match
-                        is_matched = False
-                        for stored in stored_executions:
-                            if stored["token_id"] == pos.token_id:
-                                price_diff = abs(pos.entry_price - stored["filled_price"]) / stored["filled_price"] if stored["filled_price"] > 0 else 1.0
-                                shares_diff = abs(pos.shares - stored["shares"]) / stored["shares"] if stored["shares"] > 0 else 1.0
-                                if price_diff < 0.05 and shares_diff < 0.20:
-                                    is_matched = True
-                                    break
-                        
-                        if not is_matched:
-                            orphan_trades.append({
-                                "id": None,
-                                "agent_id": "orphan",
-                                "market_id": pos.market_id,
-                                "token_id": pos.token_id,
-                                "side": "BUY",
-                                "shares": pos.shares,
-                                "price": pos.entry_price,
-                                "filled_price": pos.entry_price,
-                                "signal_score": None,
-                                "success": True,
-                                "error_message": None,
-                                "timestamp": pos.entry_time if pos.entry_time else datetime.now(),
-                                "wallet_address": wallet_address,
-                                "is_orphan": True,
-                                "transaction_type": "trade"
-                            })
-            
-            await api.close()
-            
-            # Remove duplicates (same token_id, side, shares, price, and exact timestamp)
-            # Use more specific criteria to avoid removing legitimate trades
-            seen = set()
-            unique_orphans = []
-            for trade in orphan_trades:
-                # Create a key that uniquely identifies a trade
-                # Include shares and price to distinguish between multiple trades in the same minute
-                key = (
-                    trade["token_id"],
-                    trade["side"],
-                    round(trade.get("shares", 0), 4),
-                    round(trade.get("filled_price", 0), 6),
-                    trade["timestamp"].isoformat(),  # Use exact timestamp, not rounded
-                    trade.get("transaction_type", "trade")
-                )
-                if key not in seen:
-                    seen.add(key)
-                    unique_orphans.append(trade)
-            
-            return unique_orphans
-            
-        except Exception as e:
-            import logging
-            logging.getLogger(__name__).error(f"Error fetching orphan trades: {e}")
-            return []
+            trades.append({
+                "id": tx.get("id"),
+                "tx_hash": tx.get("tx_hash"),
+                "agent_id": tx.get("agent_id") or "unattributed",
+                "market_id": tx.get("market_id") or "",
+                "token_id": tx.get("token_id") or "",
+                "side": side,
+                "shares": tx.get("shares") or 0.0,
+                "price": tx.get("price_per_share") or 0.0,
+                "filled_price": tx.get("price_per_share") or 0.0,
+                "signal_score": None,
+                "success": True,
+                "error_message": None,
+                "timestamp": tx.get("block_timestamp"),
+                "wallet_address": wallet_address,
+                "is_orphan": tx.get("agent_id") is None,
+                "transaction_type": tx_type,
+                "usdc_amount": tx.get("usdc_amount"),
+                "block_number": tx.get("block_number"),
+            })
+        
+        return trades
+    
+    def get_unattributed_trades(self, wallet_address: str) -> List[dict]:
+        """
+        Get trades without agent attribution.
+        
+        Returns transactions from the chain sync that don't have an agent_id.
+        """
+        all_transactions = self.get_all_transactions(wallet_address, limit=10000)
+        return [t for t in all_transactions if t.get("agent_id") == "unattributed"]
     
     async def get_trades_async(
         self,
@@ -221,33 +92,40 @@ class TradeService:
         limit: Optional[int] = None,
         include_orphans: bool = True
     ) -> List[dict]:
-        """Get trades with filters, optionally including orphan trades (async version)"""
-        # For all-time queries, use a very large limit
+        """Get trades with filters from chain-synced transactions."""
         if limit is None and start_time is None:
-            limit = 10000  # Get all trades
+            limit = 10000
         
-        trades = self.storage.get_executions(
-            agent_id=agent_id,
-            start_time=start_time,
-            end_time=end_time,
-            wallet_address=wallet_address,
-            limit=limit
-        )
-        
-        # Mark non-orphan trades
-        for trade in trades:
-            trade["is_orphan"] = False
-        
-        # Add orphan trades if requested and wallet_address is provided
-        if include_orphans and wallet_address:
-            try:
-                orphan_trades = await self._fetch_orphan_trades(wallet_address)
-                trades.extend(orphan_trades)
-            except Exception as e:
-                print(f"Error getting orphan trades: {e}")
+        if wallet_address:
+            # Use chain sync data
+            trades = self.get_all_transactions(
+                wallet_address=wallet_address,
+                start_time=start_time,
+                end_time=end_time,
+                limit=limit
+            )
+            
+            # Filter by agent_id if specified
+            if agent_id:
+                trades = [t for t in trades if t.get("agent_id") == agent_id]
+            
+            # Optionally exclude orphans
+            if not include_orphans:
+                trades = [t for t in trades if not t.get("is_orphan", False)]
+        else:
+            # Fallback to executions table for backward compatibility
+            trades = self.storage.get_executions(
+                agent_id=agent_id,
+                start_time=start_time,
+                end_time=end_time,
+                wallet_address=wallet_address,
+                limit=limit
+            )
+            for trade in trades:
+                trade["is_orphan"] = False
         
         # Sort by timestamp descending
-        trades.sort(key=lambda x: x["timestamp"], reverse=True)
+        trades.sort(key=lambda x: x["timestamp"] if x.get("timestamp") else datetime.min, reverse=True)
         
         if limit:
             return trades[:limit]
@@ -262,22 +140,32 @@ class TradeService:
         limit: Optional[int] = None,
         include_orphans: bool = True
     ) -> List[dict]:
-        """Get trades with filters (sync version, orphans disabled in sync context)"""
-        trades = self.storage.get_executions(
-            agent_id=agent_id,
-            start_time=start_time,
-            end_time=end_time,
-            wallet_address=wallet_address,
-            limit=limit
-        )
+        """Get trades with filters (sync version)."""
+        if wallet_address:
+            trades = self.get_all_transactions(
+                wallet_address=wallet_address,
+                start_time=start_time,
+                end_time=end_time,
+                limit=limit
+            )
+            
+            if agent_id:
+                trades = [t for t in trades if t.get("agent_id") == agent_id]
+            
+            if not include_orphans:
+                trades = [t for t in trades if not t.get("is_orphan", False)]
+        else:
+            trades = self.storage.get_executions(
+                agent_id=agent_id,
+                start_time=start_time,
+                end_time=end_time,
+                wallet_address=wallet_address,
+                limit=limit
+            )
+            for trade in trades:
+                trade["is_orphan"] = False
         
-        # Mark non-orphan trades
-        for trade in trades:
-            trade["is_orphan"] = False
-        
-        # Note: Orphan detection requires async, use get_trades_async in async contexts
-        # Sort by timestamp descending
-        trades.sort(key=lambda x: x["timestamp"], reverse=True)
+        trades.sort(key=lambda x: x["timestamp"] if x.get("timestamp") else datetime.min, reverse=True)
         
         if limit:
             return trades[:limit]
@@ -290,7 +178,7 @@ class TradeService:
         days: int = 30,
         include_orphans: bool = True
     ) -> Dict:
-        """Get trade statistics including orphan trades (async version)"""
+        """Get trade statistics from chain-synced data."""
         end_time = datetime.now()
         start_time = end_time - timedelta(days=days)
         
@@ -312,9 +200,12 @@ class TradeService:
                 "orphan_count": 0
             }
         
-        successful = [t for t in trades if t["success"]]
+        successful = [t for t in trades if t.get("success", True)]
         orphan_trades = [t for t in trades if t.get("is_orphan", False)]
-        total_volume = sum(t["filled_price"] * t["shares"] for t in successful)
+        total_volume = sum(
+            (t.get("filled_price") or t.get("price") or 0) * (t.get("shares") or 0) 
+            for t in successful
+        )
         
         return {
             "total": len(trades),
@@ -331,7 +222,7 @@ class TradeService:
         wallet_address: Optional[str] = None,
         days: int = 30
     ) -> Dict:
-        """Get trade statistics (sync version, orphans not included)"""
+        """Get trade statistics (sync version)."""
         end_time = datetime.now()
         start_time = end_time - timedelta(days=days)
         
@@ -340,7 +231,7 @@ class TradeService:
             start_time=start_time,
             end_time=end_time,
             wallet_address=wallet_address,
-            include_orphans=False  # Can't fetch orphans in sync context
+            include_orphans=True
         )
         
         if not trades:
@@ -353,8 +244,12 @@ class TradeService:
                 "orphan_count": 0
             }
         
-        successful = [t for t in trades if t["success"]]
-        total_volume = sum(t["filled_price"] * t["shares"] for t in successful)
+        successful = [t for t in trades if t.get("success", True)]
+        orphan_trades = [t for t in trades if t.get("is_orphan", False)]
+        total_volume = sum(
+            (t.get("filled_price") or t.get("price") or 0) * (t.get("shares") or 0) 
+            for t in successful
+        )
         
         return {
             "total": len(trades),
@@ -362,6 +257,30 @@ class TradeService:
             "failed": len(trades) - len(successful),
             "total_volume": total_volume,
             "avg_trade_size": total_volume / len(successful) if successful else 0.0,
-            "orphan_count": 0
+            "orphan_count": len(orphan_trades)
         }
-
+    
+    def get_computed_positions(self, wallet_address: str) -> List[dict]:
+        """
+        Get current positions computed from transaction history.
+        
+        This is the source-of-truth for positions.
+        """
+        with self._sqlite_storage.transaction() as txn:
+            return txn.get_computed_positions(wallet_address)
+    
+    def get_transaction_summary(self, wallet_address: str) -> Dict:
+        """
+        Get summary of all transactions for a wallet.
+        
+        Returns counts and totals by transaction type.
+        """
+        with self._sqlite_storage.transaction() as txn:
+            return txn.get_transaction_summary(wallet_address)
+    
+    def get_chain_sync_status(self, wallet_address: str) -> Optional[Dict]:
+        """
+        Get the current chain sync status for a wallet.
+        """
+        with self._sqlite_storage.transaction() as txn:
+            return txn.get_chain_sync_state(wallet_address)

@@ -3,7 +3,8 @@ Risk monitoring API endpoints.
 """
 
 import logging
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Body
+from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime, timezone
 
@@ -17,6 +18,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 config = get_config()
 storage = SQLiteStorage(config.db_path)
+
+
+# ClaimRequest removed - claims are now auto-detected from chain sync
 
 
 @router.get("/status")
@@ -286,4 +290,36 @@ async def refresh_wallet_data():
         }
     finally:
         await api.close()
+
+
+# ==================== CLAIMS/REDEMPTIONS ====================
+# Claims are now automatically detected from chain sync.
+# These endpoints read from the transactions table.
+
+@router.get("/claims")
+async def get_claims(
+    agent_id: Optional[str] = Query(None, description="Filter by agent ID")
+):
+    """Get all claims from the chain-synced transactions table."""
+    wallet = config.proxy_address or ""
+    
+    with storage.transaction() as txn:
+        claims = txn.get_transactions(
+            wallet_address=wallet,
+            transaction_type="claim",
+            limit=1000
+        )
+    
+    # Calculate total PNL from claims
+    total_pnl = sum(c.get("usdc_amount", 0) or 0 for c in claims)
+    
+    # Filter by agent if specified
+    if agent_id:
+        claims = [c for c in claims if c.get("agent_id") == agent_id]
+    
+    return {
+        "claims": claims,
+        "total_realized_pnl": total_pnl,
+        "count": len(claims)
+    }
 

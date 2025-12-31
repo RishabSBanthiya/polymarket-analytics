@@ -54,6 +54,43 @@ flowchart TB
 3. **Risk Coordinator** atomically reserves capital, enforces limits, and tracks positions
 4. **Execution** happens via CLOB API with slippage protection and exit strategies
 
+### Trading Lifecycle
+
+```mermaid
+sequenceDiagram
+    participant Signal as Signal Source
+    participant Bot as Trading Bot
+    participant Risk as Risk Coordinator
+    participant Exec as Execution Engine
+    participant CLOB as CLOB API
+    participant Exit as Exit Monitor
+
+    Signal->>Bot: Generate Signal
+    Bot->>Bot: Calculate Position Size
+    Bot->>Risk: Request Capital Reservation
+    Risk->>Risk: Check Limits (Wallet/Agent/Market)
+    alt Capital Available
+        Risk->>Bot: Reservation ID
+        Bot->>Exec: Execute Trade
+        Exec->>CLOB: Place Order
+        CLOB->>Exec: Order Filled
+        Exec->>Bot: Execution Result
+        Bot->>Risk: Confirm Execution
+        Risk->>Risk: Update Position
+        Bot->>Exit: Register Position
+        loop Monitor Position
+            Exit->>Exit: Check Exit Conditions
+            alt Exit Triggered
+                Exit->>Exec: Exit Trade
+                Exec->>CLOB: Place Exit Order
+                Exit->>Risk: Close Position
+            end
+        end
+    else Capital Unavailable
+        Risk->>Bot: Reject (Limit Exceeded)
+    end
+```
+
 ---
 
 ## Quick Start
@@ -105,6 +142,36 @@ python scripts/risk_monitor.py status
 
 Trades markets near expiration priced 95-98¢, betting they resolve to $1. Behaves like short-term bonds with high probability of small gain.
 
+```mermaid
+flowchart TB
+    subgraph Scan[Market Scanning]
+        SCAN[Scan Markets<br/>Expiring 60s-30min]
+        FILTER[Filter by Price<br/>95-98¢ Range]
+        SCORE[Score Opportunities<br/>Time + Expected Return]
+    end
+    
+    subgraph Execution[Trade Execution]
+        SIZE[Kelly Position Sizing<br/>Half-Kelly, 25% Max]
+        RESERVE[Reserve Capital<br/>Atomic Transaction]
+        EXEC[Execute Trade<br/>IOC Order]
+    end
+    
+    subgraph Monitoring[Risk Monitoring]
+        HEDGE[Hedge Monitor<br/>Adverse Price Moves]
+        DIVERSIFY[Time-Bucketed<br/>Diversification]
+        ORPHAN[Orphan Handler<br/>Crashed Trades]
+    end
+    
+    SCAN --> FILTER
+    FILTER --> SCORE
+    SCORE --> SIZE
+    SIZE --> RESERVE
+    RESERVE --> EXEC
+    EXEC --> HEDGE
+    HEDGE --> DIVERSIFY
+    DIVERSIFY --> ORPHAN
+```
+
 ```bash
 # Dry run
 python run_bot.py bond --dry-run --interval 10
@@ -119,6 +186,38 @@ python run_bot.py bond --min-price 0.94 --max-price 0.99
 ### Flow Copy Strategy
 
 Copies unusual flow signals from smart money, oversized bets, and coordinated wallets.
+
+```mermaid
+flowchart TB
+    subgraph Signal[Signal Processing]
+        ALERT[Flow Alert<br/>From Detector]
+        SCORE[Composite Score<br/>Weighted Signals]
+        DECAY[Time Decay<br/>Signal Freshness]
+        DEDUP[Deduplication<br/>Prevent Duplicates]
+    end
+    
+    subgraph Trade[Trade Execution]
+        SIZE[Signal-Scaled Sizing<br/>Higher Score = Larger]
+        EXEC[Execute Trade<br/>Aggressive IOC]
+    end
+    
+    subgraph Exit[Exit Strategy]
+        TP[Take Profit<br/>5% Gain]
+        TS[Trailing Stop<br/>2% Activate, 1% Trail]
+        SL[Stop Loss<br/>25% Loss]
+        MAX[Max Hold<br/>75 Minutes]
+    end
+    
+    ALERT --> SCORE
+    SCORE --> DECAY
+    DECAY --> DEDUP
+    DEDUP --> SIZE
+    SIZE --> EXEC
+    EXEC --> TP
+    EXEC --> TS
+    EXEC --> SL
+    EXEC --> MAX
+```
 
 ```bash
 # Dry run
@@ -154,6 +253,44 @@ python scripts/risk_monitor.py stop-all --yes
 
 The `RiskCoordinator` provides bulletproof multi-agent risk management:
 
+```mermaid
+flowchart TB
+    subgraph Request[Trade Request]
+        REQ[Agent Requests Capital]
+    end
+    
+    subgraph Checks[Risk Checks]
+        WALLET{Wallet Limit<br/>80% equity}
+        AGENT{Agent Limit<br/>40% equity}
+        MARKET{Market Limit<br/>15% equity}
+        AVAIL{Available<br/>Capital?}
+        CIRCUIT{Circuit Breaker<br/>OK?}
+        DRAWDOWN{Drawdown<br/>OK?}
+    end
+    
+    subgraph Action[Action]
+        RESERVE[Atomic Reservation<br/>SQLite Transaction]
+        REJECT[Reject Request]
+    end
+    
+    REQ --> CIRCUIT
+    CIRCUIT -->|Fail| REJECT
+    CIRCUIT -->|Pass| DRAWDOWN
+    DRAWDOWN -->|Fail| REJECT
+    DRAWDOWN -->|Pass| WALLET
+    WALLET -->|Fail| REJECT
+    WALLET -->|Pass| AGENT
+    AGENT -->|Fail| REJECT
+    AGENT -->|Pass| MARKET
+    MARKET -->|Fail| REJECT
+    MARKET -->|Pass| AVAIL
+    AVAIL -->|Fail| REJECT
+    AVAIL -->|Pass| RESERVE
+    
+    style REJECT fill:#ffcccc
+    style RESERVE fill:#ccffcc
+```
+
 | Feature | Description |
 |---------|-------------|
 | **Atomic Reservation** | No race conditions between agents |
@@ -178,6 +315,60 @@ python scripts/risk_monitor.py cleanup      # Cleanup stale data
 ## Flow Detection
 
 Real-time unusual flow detection via Polymarket WebSocket.
+
+```mermaid
+flowchart LR
+    subgraph Input[Data Sources]
+        WS[RTDS WebSocket<br/>Real-time Trades]
+        POLY[Polygon RPC<br/>On-chain Data]
+    end
+    
+    subgraph Tracking[State Tracking]
+        MARKET[Market State<br/>Price/Volume History]
+        WALLET[Wallet Profile<br/>History & Stats]
+    end
+    
+    subgraph Detection[Detection Algorithms]
+        SMART[Smart Money<br/>High Win Rate]
+        OVERSIZED[Oversized Bet<br/>10x+ Median]
+        COORD[Coordinated<br/>Connected Wallets]
+        VOLUME[Volume Spike<br/>3x Baseline]
+        PRICE[Price Movement<br/>Z-score > 2.5]
+        ACCEL[Acceleration<br/>Momentum]
+        FRESH[Fresh Wallet<br/><7 Days Old]
+    end
+    
+    subgraph Output[Alert Generation]
+        SCORE[Composite Score<br/>Weighted Sum]
+        DEDUP[Deduplication<br/>Cooldown]
+        ALERT[Flow Alert]
+    end
+    
+    WS --> MARKET
+    WS --> WALLET
+    POLY --> WALLET
+    
+    MARKET --> OVERSIZED
+    MARKET --> VOLUME
+    MARKET --> PRICE
+    MARKET --> ACCEL
+    WALLET --> SMART
+    WALLET --> COORD
+    WALLET --> FRESH
+    
+    OVERSIZED --> SCORE
+    SMART --> SCORE
+    COORD --> SCORE
+    VOLUME --> SCORE
+    PRICE --> SCORE
+    ACCEL --> SCORE
+    FRESH --> SCORE
+    
+    SCORE --> DEDUP
+    DEDUP --> ALERT
+    
+    style ALERT fill:#ffeb3b
+```
 
 | Signal | Description | Weight |
 |--------|-------------|--------|
@@ -267,6 +458,49 @@ CIRCUIT_BREAKER_FAILURES=5        # Stop after 5 failures
 | **Polygon RPC** | Various | USDC balance | Varies |
 
 ---
+
+## Component Architecture
+
+The system uses a composition-based architecture where trading bots are assembled from pluggable components:
+
+```mermaid
+graph TB
+    subgraph Bot[TradingBot]
+        SIGNAL[SignalSource<br/>Where signals come from]
+        SIZER[PositionSizer<br/>How to size positions]
+        EXEC[ExecutionEngine<br/>How to execute trades]
+        EXIT[ExitMonitor<br/>When to exit]
+    end
+    
+    subgraph Signals[Signal Sources]
+        EXPIRING[ExpiringMarketSignals<br/>Markets near expiration]
+        FLOW_ALERT[FlowAlertSignals<br/>Flow detector alerts]
+    end
+    
+    subgraph Sizers[Position Sizers]
+        FIXED[FixedFractionSizer<br/>Fixed % of capital]
+        KELLY[KellyPositionSizer<br/>Kelly criterion]
+        SCALED[SignalScaledSizer<br/>Based on signal score]
+    end
+    
+    subgraph Executors[Execution Engines]
+        DRY[DryRunExecutor<br/>Simulation only]
+        AGGR[AggressiveExecutor<br/>IOC with slippage protection]
+    end
+    
+    SIGNAL -.->|implements| EXPIRING
+    SIGNAL -.->|implements| FLOW_ALERT
+    SIZER -.->|implements| FIXED
+    SIZER -.->|implements| KELLY
+    SIZER -.->|implements| SCALED
+    EXEC -.->|implements| DRY
+    EXEC -.->|implements| AGGR
+    
+    style Bot fill:#e1f5ff
+    style Signals fill:#fff4e1
+    style Sizers fill:#e8f5e9
+    style Executors fill:#fce4ec
+```
 
 ## Project Structure
 

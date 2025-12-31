@@ -104,9 +104,10 @@ class PolymarketAPI:
         offset: int = 0, 
         limit: int = 100,
         closed: bool = False,
-        active: bool = True
+        active: bool = True,
+        retries: int = 3
     ) -> List[dict]:
-        """Fetch a batch of markets from Gamma API"""
+        """Fetch a batch of markets from Gamma API with retry logic"""
         params = {
             "closed": str(closed).lower(),
             "active": str(active).lower(),
@@ -114,33 +115,101 @@ class PolymarketAPI:
             "offset": offset,
         }
         
-        data = await self._get(f"{self.config.gamma_api_base}/markets", params)
-        return data if isinstance(data, list) else []
+        # Use longer timeout for market fetching (can be slow with large datasets)
+        timeout = 30.0
+        
+        for attempt in range(retries):
+            data = await self._get(
+                f"{self.config.gamma_api_base}/markets", 
+                params,
+                timeout=timeout
+            )
+            
+            if data is not None:
+                return data if isinstance(data, list) else []
+            
+            # If this wasn't the last attempt, wait before retrying
+            if attempt < retries - 1:
+                wait_time = (attempt + 1) * 2  # Exponential backoff: 2s, 4s, 6s
+                logger.debug(f"Retrying market batch fetch (offset={offset}, attempt={attempt+1}/{retries}) after {wait_time}s")
+                await asyncio.sleep(wait_time)
+        
+        logger.warning(f"Failed to fetch market batch after {retries} attempts (offset={offset})")
+        return []
     
     async def fetch_all_markets(
         self, 
         closed: bool = False,
         active: bool = True,
-        max_markets: int = 10000
+        max_markets: int = 10000,
+        max_concurrent: int = 10
     ) -> List[dict]:
-        """Fetch all markets concurrently"""
+        """
+        Fetch all markets with controlled concurrency to avoid timeouts.
+        
+        Args:
+            closed: Whether to fetch closed markets
+            active: Whether to fetch active markets
+            max_markets: Maximum number of markets to fetch
+            max_concurrent: Maximum number of concurrent requests (default: 10)
+        """
+        # Fetch first batch to determine total count
         first_batch = await self.fetch_markets_batch(0, 100, closed, active)
         if not first_batch:
+            logger.warning("Failed to fetch first batch of markets")
             return []
         
-        # Fetch remaining in parallel
-        tasks = []
-        for offset in range(100, max_markets, 100):
-            tasks.append(self.fetch_markets_batch(offset, 100, closed, active))
-        
-        results = await asyncio.gather(*tasks)
-        
         all_markets = first_batch
-        for batch in results:
-            if batch:
-                all_markets.extend(batch)
+        
+        # If first batch is less than limit, we're done
+        if len(first_batch) < 100:
+            logger.info(f"Fetched {len(all_markets)} markets (single batch)")
+            return all_markets
+        
+        # Calculate number of remaining batches
+        remaining_batches = (max_markets - 100) // 100
+        
+        # Fetch remaining batches with controlled concurrency
+        semaphore = asyncio.Semaphore(max_concurrent)
+        
+        async def fetch_with_semaphore(offset: int):
+            async with semaphore:
+                return await self.fetch_markets_batch(offset, 100, closed, active)
+        
+        # Create tasks for remaining batches
+        tasks = [
+            fetch_with_semaphore(offset) 
+            for offset in range(100, max_markets, 100)
+        ]
+        
+        # Execute with controlled concurrency
+        logger.info(f"Fetching {len(tasks)} additional batches (max {max_concurrent} concurrent)")
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Process results
+        successful_batches = 0
+        failed_batches = 0
+        
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                logger.warning(f"Batch {i+1} failed: {result}")
+                failed_batches += 1
+                # Stop if we get too many failures in a row
+                if failed_batches >= 3:
+                    logger.warning(f"Too many consecutive failures, stopping at batch {i+1}")
+                    break
+            elif result:
+                all_markets.extend(result)
+                successful_batches += 1
+                failed_batches = 0  # Reset failure counter on success
             else:
+                # Empty result - likely reached end
                 break
+        
+        logger.info(
+            f"Market fetch complete: {len(all_markets)} total markets "
+            f"({successful_batches} successful batches, {failed_batches} failed)"
+        )
         
         return all_markets
     
@@ -633,9 +702,11 @@ class PolymarketAPI:
         params = {"limit": limit}
         if user:
             params["user"] = user
+        # Use longer timeout for activity endpoint as it can be slow with large limits
         data = await self._get(
             f"{self.config.data_api_base}/activity",
-            params
+            params,
+            timeout=30.0  # Increased from default 10s
         )
         
         return data if isinstance(data, list) else []
@@ -725,45 +796,12 @@ class PolymarketAPI:
         """
         Fetch all trades for a user from Polymarket.
         This includes both buy and sell trades.
-        Tries multiple endpoints to get complete trade history.
+        
+        Note: The CLOB /trades endpoint requires L2 Header authentication,
+        so we use the public Data API activity feed instead.
+        For authenticated trade fetching, use py_clob_client directly.
         """
         trades = []
-        
-        # Method 1: Try CLOB API trades endpoint with user filter
-        try:
-            data = await self._get(
-                f"{self.config.clob_host}/trades",
-                {"user": wallet_address, "limit": limit}
-            )
-            
-            if data and isinstance(data, list):
-                for t in data:
-                    try:
-                        # Check if this trade involves our wallet
-                        maker = t.get("maker_address", "").lower()
-                        taker = t.get("taker_address", "").lower()
-                        wallet_lower = wallet_address.lower()
-                        
-                        if maker == wallet_lower or taker == wallet_lower:
-                            trades.append({
-                                "trade_id": t.get("id", ""),
-                                "market_id": t.get("market", ""),
-                                "token_id": t.get("asset_id", "") or t.get("asset", ""),
-                                "side": "SELL" if maker == wallet_lower else "BUY",
-                                "shares": float(t.get("size", 0)),
-                                "price": float(t.get("price", 0)),
-                                "timestamp": datetime.fromisoformat(
-                                    t.get("created_at", "").replace("Z", "+00:00")
-                                ) if t.get("created_at") else datetime.now(timezone.utc),
-                                "maker_address": t.get("maker_address"),
-                                "taker_address": t.get("taker_address"),
-                                "type": "trade"
-                            })
-                    except Exception as e:
-                        logger.debug(f"Error parsing user trade: {e}")
-                        continue
-        except Exception as e:
-            logger.debug(f"CLOB trades endpoint failed: {e}")
         
         # Method 2: Try Data API activity feed filtered by user
         try:
@@ -946,5 +984,479 @@ class PolymarketAPI:
         transactions.sort(key=lambda x: x["timestamp"], reverse=True)
         
         return transactions
+    
+    # ==================== POLYGON EVENT QUERIES ====================
+    
+    async def fetch_ctf_transfer_events(
+        self,
+        wallet_address: str,
+        from_block: int,
+        to_block: int,
+        ctf_contract: Optional[str] = None
+    ) -> List[dict]:
+        """
+        Fetch ERC-1155 TransferSingle/TransferBatch events from the CTF contract.
+        
+        These events represent:
+        - Buys: Transfer from exchange to wallet
+        - Sells: Transfer from wallet to exchange
+        - Claims: Transfer from wallet to 0x0 (burn)
+        
+        Args:
+            wallet_address: The wallet to fetch events for (involved as from OR to)
+            from_block: Starting block number
+            to_block: Ending block number
+            ctf_contract: Optional CTF contract address (defaults to config)
+        
+        Returns:
+            List of parsed transfer events
+        """
+        try:
+            from web3 import Web3
+        except ImportError:
+            logger.warning("web3 not available, cannot query CTF events")
+            return []
+        
+        ctf_address = ctf_contract or self.config.chain_sync.ctf_contract_address
+        
+        # ERC-1155 TransferSingle event signature
+        # event TransferSingle(address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value)
+        TRANSFER_SINGLE_TOPIC = Web3.keccak(
+            text="TransferSingle(address,address,address,uint256,uint256)"
+        ).hex()
+        
+        # ERC-1155 TransferBatch event signature
+        # event TransferBatch(address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] values)
+        TRANSFER_BATCH_TOPIC = Web3.keccak(
+            text="TransferBatch(address,address,address,uint256[],uint256[])"
+        ).hex()
+        
+        events = []
+        
+        try:
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                None,
+                self._fetch_ctf_events_sync,
+                wallet_address,
+                from_block,
+                to_block,
+                ctf_address,
+                TRANSFER_SINGLE_TOPIC,
+                TRANSFER_BATCH_TOPIC
+            )
+            events = result
+        except Exception as e:
+            logger.error(f"Error fetching CTF events: {e}")
+        
+        return events
+    
+    def _fetch_ctf_events_sync(
+        self,
+        wallet_address: str,
+        from_block: int,
+        to_block: int,
+        ctf_address: str,
+        transfer_single_topic: str,
+        transfer_batch_topic: str
+    ) -> List[dict]:
+        """Synchronous CTF event fetching (called in executor)"""
+        from web3 import Web3
+        
+        events = []
+        wallet_lower = wallet_address.lower()
+        wallet_topic = "0x" + wallet_lower[2:].zfill(64)
+        
+        # Try multiple RPC endpoints
+        rpc_urls = [
+            self.config.polygon_rpc_url,
+            "https://rpc.ankr.com/polygon",
+            "https://polygon.llamarpc.com",
+        ]
+        
+        for rpc_url in rpc_urls:
+            try:
+                w3 = Web3(Web3.HTTPProvider(rpc_url))
+                if not w3.is_connected():
+                    continue
+                
+                # Query TransferSingle events where wallet is sender OR receiver
+                # Note: We need two queries - one for 'from' and one for 'to'
+                
+                # Events where wallet is the sender (sells, claims)
+                from_filter = {
+                    "fromBlock": from_block,
+                    "toBlock": to_block,
+                    "address": Web3.to_checksum_address(ctf_address),
+                    "topics": [
+                        transfer_single_topic,
+                        None,  # operator (any)
+                        wallet_topic,  # from (our wallet)
+                    ]
+                }
+                
+                from_logs = w3.eth.get_logs(from_filter)
+                
+                for log in from_logs:
+                    parsed = self._parse_transfer_single_event(w3, log, wallet_lower)
+                    if parsed:
+                        events.append(parsed)
+                
+                # Events where wallet is the receiver (buys)
+                to_filter = {
+                    "fromBlock": from_block,
+                    "toBlock": to_block,
+                    "address": Web3.to_checksum_address(ctf_address),
+                    "topics": [
+                        transfer_single_topic,
+                        None,  # operator (any)
+                        None,  # from (any)
+                        wallet_topic,  # to (our wallet)
+                    ]
+                }
+                
+                to_logs = w3.eth.get_logs(to_filter)
+                
+                for log in to_logs:
+                    parsed = self._parse_transfer_single_event(w3, log, wallet_lower)
+                    if parsed:
+                        # Avoid duplicates if wallet sent to itself
+                        if not any(e["tx_hash"] == parsed["tx_hash"] and e["log_index"] == parsed["log_index"] for e in events):
+                            events.append(parsed)
+                
+                # Successfully got events, no need to try other RPCs
+                break
+                
+            except Exception as e:
+                logger.debug(f"RPC {rpc_url} failed for CTF events: {e}")
+                continue
+        
+        return events
+    
+    def _parse_transfer_single_event(
+        self,
+        w3,
+        log: dict,
+        wallet_address: str
+    ) -> Optional[dict]:
+        """Parse a TransferSingle event log"""
+        try:
+            # Topics: [event_sig, operator, from, to]
+            # Data: [id (uint256), value (uint256)]
+            
+            topics = log.get("topics", [])
+            if len(topics) < 4:
+                return None
+            
+            from_addr = "0x" + topics[2].hex()[-40:]
+            to_addr = "0x" + topics[3].hex()[-40:]
+            
+            # Decode data (id and value are each 32 bytes)
+            data = log.get("data", b"")
+            if isinstance(data, str):
+                data = bytes.fromhex(data[2:] if data.startswith("0x") else data)
+            
+            if len(data) < 64:
+                return None
+            
+            token_id = int.from_bytes(data[:32], "big")
+            value = int.from_bytes(data[32:64], "big")
+            
+            # CTF tokens use 6 decimals (same as USDC collateral)
+            # 1 share = 1 USDC potential payout
+            shares = value / 1e6
+            
+            # Determine transaction type
+            wallet_lower = wallet_address.lower()
+            from_lower = from_addr.lower()
+            to_lower = to_addr.lower()
+            
+            # Burn address
+            ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+            
+            if to_lower == ZERO_ADDRESS and from_lower == wallet_lower:
+                tx_type = "claim"  # Burning tokens = claiming
+            elif from_lower == wallet_lower:
+                tx_type = "sell"  # Sending tokens = selling
+            elif to_lower == wallet_lower:
+                tx_type = "buy"  # Receiving tokens = buying
+            else:
+                return None  # Not relevant to this wallet
+            
+            # Get block for timestamp
+            block_number = log.get("blockNumber", 0)
+            
+            return {
+                "tx_hash": log.get("transactionHash", b"").hex() if isinstance(log.get("transactionHash"), bytes) else log.get("transactionHash", ""),
+                "log_index": log.get("logIndex", 0),
+                "block_number": block_number,
+                "transaction_type": tx_type,
+                "wallet_address": wallet_lower,
+                "token_id": str(token_id),
+                "from_address": from_lower,
+                "to_address": to_lower,
+                "shares": shares,
+                "raw_log": {
+                    "address": log.get("address", ""),
+                    "topics": [t.hex() if isinstance(t, bytes) else t for t in topics],
+                    "data": data.hex() if isinstance(data, bytes) else data,
+                }
+            }
+        except Exception as e:
+            logger.debug(f"Error parsing TransferSingle event: {e}")
+            return None
+    
+    async def fetch_usdc_transfer_events(
+        self,
+        wallet_address: str,
+        from_block: int,
+        to_block: int
+    ) -> List[dict]:
+        """
+        Fetch USDC transfer events for deposits and withdrawals.
+        
+        Args:
+            wallet_address: The wallet to fetch events for
+            from_block: Starting block number
+            to_block: Ending block number
+        
+        Returns:
+            List of parsed USDC transfer events
+        """
+        try:
+            from web3 import Web3
+        except ImportError:
+            logger.warning("web3 not available, cannot query USDC events")
+            return []
+        
+        # ERC-20 Transfer event signature
+        # event Transfer(address indexed from, address indexed to, uint256 value)
+        TRANSFER_TOPIC = Web3.keccak(
+            text="Transfer(address,address,uint256)"
+        ).hex()
+        
+        events = []
+        
+        try:
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                None,
+                self._fetch_usdc_events_sync,
+                wallet_address,
+                from_block,
+                to_block,
+                TRANSFER_TOPIC
+            )
+            events = result
+        except Exception as e:
+            logger.error(f"Error fetching USDC events: {e}")
+        
+        return events
+    
+    def _fetch_usdc_events_sync(
+        self,
+        wallet_address: str,
+        from_block: int,
+        to_block: int,
+        transfer_topic: str
+    ) -> List[dict]:
+        """Synchronous USDC event fetching (called in executor)"""
+        from web3 import Web3
+        
+        events = []
+        wallet_lower = wallet_address.lower()
+        wallet_topic = "0x" + wallet_lower[2:].zfill(64)
+        usdc_address = self.config.usdc_contract_address
+        
+        rpc_urls = [
+            self.config.polygon_rpc_url,
+            "https://rpc.ankr.com/polygon",
+            "https://polygon.llamarpc.com",
+        ]
+        
+        for rpc_url in rpc_urls:
+            try:
+                w3 = Web3(Web3.HTTPProvider(rpc_url))
+                if not w3.is_connected():
+                    continue
+                
+                # Deposits (transfers TO our wallet)
+                deposit_filter = {
+                    "fromBlock": from_block,
+                    "toBlock": to_block,
+                    "address": Web3.to_checksum_address(usdc_address),
+                    "topics": [
+                        transfer_topic,
+                        None,  # from (any)
+                        wallet_topic,  # to (our wallet)
+                    ]
+                }
+                
+                deposit_logs = w3.eth.get_logs(deposit_filter)
+                
+                for log in deposit_logs:
+                    parsed = self._parse_usdc_transfer_event(w3, log, wallet_lower, "deposit")
+                    if parsed:
+                        events.append(parsed)
+                
+                # Withdrawals (transfers FROM our wallet)
+                withdrawal_filter = {
+                    "fromBlock": from_block,
+                    "toBlock": to_block,
+                    "address": Web3.to_checksum_address(usdc_address),
+                    "topics": [
+                        transfer_topic,
+                        wallet_topic,  # from (our wallet)
+                    ]
+                }
+                
+                withdrawal_logs = w3.eth.get_logs(withdrawal_filter)
+                
+                for log in withdrawal_logs:
+                    parsed = self._parse_usdc_transfer_event(w3, log, wallet_lower, "withdrawal")
+                    if parsed:
+                        events.append(parsed)
+                
+                break
+                
+            except Exception as e:
+                logger.debug(f"RPC {rpc_url} failed for USDC events: {e}")
+                continue
+        
+        return events
+    
+    def _parse_usdc_transfer_event(
+        self,
+        w3,
+        log: dict,
+        wallet_address: str,
+        tx_type: str
+    ) -> Optional[dict]:
+        """Parse a USDC Transfer event log"""
+        try:
+            topics = log.get("topics", [])
+            if len(topics) < 3:
+                return None
+            
+            from_addr = "0x" + topics[1].hex()[-40:]
+            to_addr = "0x" + topics[2].hex()[-40:]
+            
+            # Decode value (32 bytes)
+            data = log.get("data", b"")
+            if isinstance(data, str):
+                data = bytes.fromhex(data[2:] if data.startswith("0x") else data)
+            
+            if len(data) < 32:
+                return None
+            
+            value = int.from_bytes(data[:32], "big")
+            # USDC has 6 decimals
+            usdc_amount = value / 1e6
+            
+            return {
+                "tx_hash": log.get("transactionHash", b"").hex() if isinstance(log.get("transactionHash"), bytes) else log.get("transactionHash", ""),
+                "log_index": log.get("logIndex", 0),
+                "block_number": log.get("blockNumber", 0),
+                "transaction_type": tx_type,
+                "wallet_address": wallet_address.lower(),
+                "from_address": from_addr.lower(),
+                "to_address": to_addr.lower(),
+                "usdc_amount": usdc_amount,
+                "raw_log": {
+                    "address": log.get("address", ""),
+                    "topics": [t.hex() if isinstance(t, bytes) else t for t in topics],
+                    "data": data.hex() if isinstance(data, bytes) else data,
+                }
+            }
+        except Exception as e:
+            logger.debug(f"Error parsing USDC Transfer event: {e}")
+            return None
+    
+    async def get_block_timestamp(self, block_number: int) -> Optional[datetime]:
+        """Get the timestamp of a block"""
+        try:
+            from web3 import Web3
+        except ImportError:
+            return None
+        
+        try:
+            loop = asyncio.get_event_loop()
+            timestamp = await loop.run_in_executor(
+                None,
+                self._get_block_timestamp_sync,
+                block_number
+            )
+            return timestamp
+        except Exception as e:
+            logger.debug(f"Error getting block timestamp: {e}")
+            return None
+    
+    def _get_block_timestamp_sync(self, block_number: int) -> Optional[datetime]:
+        """Synchronous block timestamp fetch"""
+        from web3 import Web3
+        
+        rpc_urls = [
+            self.config.polygon_rpc_url,
+            "https://rpc.ankr.com/polygon",
+            "https://polygon.llamarpc.com",
+        ]
+        
+        for rpc_url in rpc_urls:
+            try:
+                w3 = Web3(Web3.HTTPProvider(rpc_url))
+                if not w3.is_connected():
+                    continue
+                
+                block = w3.eth.get_block(block_number)
+                timestamp = block.get("timestamp", 0)
+                return datetime.fromtimestamp(timestamp, tz=timezone.utc)
+                
+            except Exception as e:
+                logger.debug(f"RPC {rpc_url} failed for block timestamp: {e}")
+                continue
+        
+        return None
+    
+    async def get_current_block(self) -> int:
+        """Get the current block number"""
+        try:
+            from web3 import Web3
+        except ImportError:
+            return 0
+        
+        try:
+            loop = asyncio.get_event_loop()
+            block = await loop.run_in_executor(
+                None,
+                self._get_current_block_sync
+            )
+            return block
+        except Exception as e:
+            logger.debug(f"Error getting current block: {e}")
+            return 0
+    
+    def _get_current_block_sync(self) -> int:
+        """Synchronous current block fetch"""
+        from web3 import Web3
+        
+        rpc_urls = [
+            self.config.polygon_rpc_url,
+            "https://rpc.ankr.com/polygon",
+            "https://polygon.llamarpc.com",
+        ]
+        
+        for rpc_url in rpc_urls:
+            try:
+                w3 = Web3(Web3.HTTPProvider(rpc_url))
+                if not w3.is_connected():
+                    continue
+                
+                return w3.eth.block_number
+                
+            except Exception as e:
+                logger.debug(f"RPC {rpc_url} failed for current block: {e}")
+                continue
+        
+        return 0
 
 

@@ -134,6 +134,50 @@ class RiskConfig:
 
 
 @dataclass
+class ChainSyncConfig:
+    """Chain synchronization configuration"""
+    
+    # Contract addresses (Polygon mainnet)
+    ctf_contract_address: str = "0x4D97DCd97eC945f40cF65F87097ACe5EA0476045"  # Polymarket CTF
+    neg_risk_ctf_exchange: str = "0xC5d563A36AE78145C45a50134d48A1215220f80a"  # NegRisk CTF Exchange
+    neg_risk_adapter: str = "0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296"  # NegRisk Adapter
+    
+    # Sync settings
+    # Note: Most public RPCs limit getLogs to ~100-200 blocks for busy contracts
+    batch_size: int = 100  # Blocks per batch when fetching events
+    max_retries: int = 3
+    retry_delay_seconds: float = 1.0
+    
+    # Initial sync - set to a block near when Polymarket CTF was active
+    # The Polymarket CTF contract was deployed around block 39,410,580
+    # For most users, setting this ~1 week before their first trade is optimal
+    # Use CHAIN_SYNC_INITIAL_BLOCK env var to customize
+    initial_sync_block: int = 77000000  # Reasonable default for recent wallets
+    
+    @classmethod
+    def from_env(cls) -> "ChainSyncConfig":
+        """Load from environment variables"""
+        return cls(
+            ctf_contract_address=os.getenv(
+                "CTF_CONTRACT_ADDRESS",
+                "0x4D97DCd97eC945f40cF65F87097ACe5EA0476045"
+            ),
+            neg_risk_ctf_exchange=os.getenv(
+                "NEG_RISK_CTF_EXCHANGE",
+                "0xC5d563A36AE78145C45a50134d48A1215220f80a"
+            ),
+            neg_risk_adapter=os.getenv(
+                "NEG_RISK_ADAPTER",
+                "0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296"
+            ),
+            batch_size=int(os.getenv("CHAIN_SYNC_BATCH_SIZE", "2000")),
+            max_retries=int(os.getenv("CHAIN_SYNC_MAX_RETRIES", "3")),
+            retry_delay_seconds=float(os.getenv("CHAIN_SYNC_RETRY_DELAY", "1.0")),
+            initial_sync_block=int(os.getenv("CHAIN_SYNC_INITIAL_BLOCK", "77000000")),
+        )
+
+
+@dataclass
 class Config:
     """Main application configuration"""
     
@@ -156,6 +200,9 @@ class Config:
     
     # Risk configuration
     risk: RiskConfig = field(default_factory=RiskConfig)
+    
+    # Chain sync configuration
+    chain_sync: ChainSyncConfig = field(default_factory=ChainSyncConfig)
     
     # Logging
     log_level: str = "INFO"
@@ -187,6 +234,7 @@ class Config:
             db_path=os.getenv("RISK_DB_PATH", "data/risk_state.db"),
             log_level=os.getenv("LOG_LEVEL", "INFO"),
             risk=RiskConfig.from_env(),
+            chain_sync=ChainSyncConfig.from_env(),
         )
     
     def validate_credentials(self) -> bool:

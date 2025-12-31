@@ -13,27 +13,26 @@ Includes hedging capability to protect against fat-tail losses:
 3. Partial exit (reduce exposure)
 4. Stop-loss (full exit)
 
-Also includes orphan position handling:
-- Detects positions that exist on-chain but weren't tracked
-- Automatically sells orphan positions to recover capital
+Note: Orphan positions are now handled by the unified safety sell system
+in TradingBot, which places GTC limit sells at $0.99 for all positions.
 """
 
 import asyncio
 import logging
+from collections import defaultdict
 from typing import Optional, List, Dict, TYPE_CHECKING
 from datetime import datetime, timezone
 
 from ..core.config import Config, get_config
 from ..core.api import PolymarketAPI
-from ..core.models import Market, Signal, Position, Side, PositionStatus
+from ..core.models import Market, Signal, Position, Side
 
 if TYPE_CHECKING:
     from py_clob_client.client import ClobClient
-    from ..trading.risk_coordinator import RiskCoordinator
 from ..trading.bot import TradingBot
 from ..trading.components.signals import ExpiringMarketSignals
 from ..trading.components.sizers import KellyPositionSizer
-from ..trading.components.executors import AggressiveExecutor, DryRunExecutor, ExecutionEngine
+from ..trading.components.executors import AggressiveExecutor, DryRunExecutor
 from ..trading.components.hedge_monitor import (
     HedgeMonitor,
     HedgeConfig,
@@ -43,344 +42,6 @@ from ..trading.components.hedge_monitor import (
 from ..trading.components.hedge_strategies import HedgeExecutor
 
 logger = logging.getLogger(__name__)
-
-
-class OrphanPositionHandler:
-    """
-    Handles orphan positions - positions that exist on-chain but weren't tracked.
-    
-    This can happen when:
-    - Bot crashes after placing buy order but before tracking the position
-    - Manual trades made outside the bot
-    - Network issues during order confirmation
-    
-    The handler attempts to sell these orphan positions to recover capital.
-    """
-    
-    def __init__(
-        self,
-        api: PolymarketAPI,
-        executor: ExecutionEngine,
-        client: Optional["ClobClient"] = None,
-        min_value_to_sell: float = 0.10,  # Don't bother with positions < $0.10
-        check_interval_iterations: int = 12,  # Check every ~minute at 5s interval
-        sell_price: float = 0.999,  # Sell orphans at this price (close to $1 resolution)
-    ):
-        self.api = api
-        self.executor = executor
-        self.client = client
-        self.min_value_to_sell = min_value_to_sell
-        self.check_interval_iterations = check_interval_iterations
-        self.sell_price = sell_price
-        self._iteration_count = 0
-        self._last_check_time: Optional[datetime] = None
-        
-        # Track which orphans we've attempted to sell (to avoid repeated failures)
-        self._sell_attempts: Dict[str, int] = {}  # token_id -> attempt count
-        self._max_sell_attempts = 3
-    
-    async def check_and_sell_orphans(
-        self,
-        risk_coordinator: "RiskCoordinator",
-        dry_run: bool = False,
-    ) -> List[Dict]:
-        """
-        Check for orphan positions and attempt to sell them.
-        
-        Args:
-            risk_coordinator: RiskCoordinator to get positions and mark closed
-            dry_run: If True, don't actually execute sells
-            
-        Returns:
-            List of results for each orphan processed
-        """
-        self._iteration_count += 1
-        
-        # Only check periodically to avoid spamming
-        if self._iteration_count % self.check_interval_iterations != 0:
-            return []
-        
-        results = []
-        
-        # Get orphan positions from the database
-        wallet_state = risk_coordinator.get_wallet_state()
-        orphan_positions = [
-            p for p in wallet_state.positions 
-            if p.status == PositionStatus.ORPHAN
-        ]
-        
-        if not orphan_positions:
-            logger.debug("No orphan positions found")
-            return []
-        
-        logger.info(f"{'='*60}")
-        logger.info(f"🔍 ORPHAN POSITION CHECK: Found {len(orphan_positions)} orphan(s)")
-        logger.info(f"{'='*60}")
-        
-        for position in orphan_positions:
-            # Skip if we've tried too many times
-            attempts = self._sell_attempts.get(position.token_id, 0)
-            if attempts >= self._max_sell_attempts:
-                logger.debug(
-                    f"Skipping orphan {position.token_id[:16]}... - "
-                    f"max attempts ({self._max_sell_attempts}) reached"
-                )
-                continue
-            
-            # Get current price
-            try:
-                bid, ask, spread = await self.api.get_spread(position.token_id)
-            except Exception as e:
-                logger.warning(f"Failed to get price for orphan {position.token_id[:16]}...: {e}")
-                # API error likely means market is closed/resolved - mark as closed
-                self._mark_orphan_as_resolved(
-                    position, risk_coordinator, results, 
-                    reason="API error - market likely resolved"
-                )
-                continue
-            
-            # Check if market appears resolved/closed
-            is_resolved = False
-            resolution_reason = ""
-            
-            if bid is None and ask is None:
-                is_resolved = True
-                resolution_reason = "no orderbook"
-            elif bid is None:
-                is_resolved = True
-                resolution_reason = "no bid"
-            elif bid is not None and ask is not None:
-                # Wide spread indicates closed/illiquid market
-                actual_spread = (ask - bid) / ((ask + bid) / 2) if (ask + bid) > 0 else 1.0
-                if actual_spread > 0.50:  # >50% spread = likely resolved
-                    is_resolved = True
-                    resolution_reason = f"spread {actual_spread:.0%}"
-                # Price very close to $1 or $0 indicates resolution
-                elif bid >= 0.995 or bid <= 0.005:
-                    is_resolved = True
-                    resolution_reason = f"resolution price ${bid:.4f}"
-            
-            if is_resolved:
-                self._mark_orphan_as_resolved(
-                    position, risk_coordinator, results,
-                    reason=resolution_reason,
-                    estimated_value=position.shares * (bid or position.current_price or 0.99)
-                )
-                continue
-            
-            # Use market bid as the execution price (not the ideal sell_price)
-            # This ensures we don't try to sell more shares than we have
-            exec_price = bid
-            
-            logger.info(f"  📦 Orphan: {position.token_id[:20]}...")
-            logger.info(f"      SQL Shares: {position.shares:.4f}")
-            logger.info(f"      Target Price: ${self.sell_price:.4f}")
-            logger.info(f"      Market Bid: ${bid:.4f}")
-            
-            # Verify actual on-chain balance via API
-            api_shares = await risk_coordinator.fetch_actual_position(position.token_id)
-            if api_shares is not None:
-                if api_shares <= 0:
-                    logger.info(f"  ℹ️  Position no longer exists on-chain - marking as resolved")
-                    self._mark_orphan_as_resolved(
-                        position, risk_coordinator, results,
-                        reason="no longer on-chain",
-                        estimated_value=0.0
-                    )
-                    continue
-                actual_shares = api_shares
-                logger.info(f"      API Shares: {api_shares:.4f}")
-            else:
-                # API unavailable, use SQL with safety margin
-                actual_shares = position.shares
-                logger.warning(f"      ⚠️  API unavailable, using SQL shares")
-            
-            # Apply 99% safety margin to avoid "not enough balance" errors
-            # Use exec_price (market bid) for USD calculation since executor will recalculate shares
-            safe_shares = actual_shares * 0.99
-            safe_value = safe_shares * exec_price  # Use market price, not sell_price
-            logger.info(f"      Safe Shares: {safe_shares:.4f} (99% of actual)")
-            logger.info(f"      Safe Value: ${safe_value:.2f} @ market bid")
-            
-            if safe_value < self.min_value_to_sell:
-                logger.info(
-                    f"⏭️  Skipping orphan {position.token_id[:16]}... - "
-                    f"value ${safe_value:.2f} < min ${self.min_value_to_sell:.2f}"
-                )
-                continue
-            
-            if dry_run:
-                logger.info(f"  🧪 DRY RUN: Would sell {safe_shares:.4f} shares @ ${exec_price:.4f}")
-                results.append({
-                    "token_id": position.token_id,
-                    "shares": safe_shares,
-                    "price": exec_price,
-                    "value": safe_value,
-                    "dry_run": True,
-                    "success": True,
-                })
-                continue
-            
-            # Attempt to sell at market price (use exec_price to match safe_value calculation)
-            try:
-                result = await self.executor.execute(
-                    client=self.client,
-                    token_id=position.token_id,
-                    side=Side.SELL,
-                    size_usd=safe_value,
-                    price=exec_price,  # Use market bid, not ideal sell_price
-                    orderbook=None,
-                )
-                
-                self._sell_attempts[position.token_id] = attempts + 1
-                
-                if result.success and result.filled_shares > 0:
-                    proceeds = result.filled_shares * result.filled_price
-                    
-                    logger.info(f"  ✅ SOLD ORPHAN")
-                    logger.info(f"      Filled: {result.filled_shares:.4f} shares")
-                    logger.info(f"      Price: ${result.filled_price:.4f}")
-                    logger.info(f"      Proceeds: ${proceeds:.2f}")
-                    
-                    # Mark position as closed in DB
-                    try:
-                        with risk_coordinator.storage.transaction() as txn:
-                            txn.mark_position_closed(position.id)
-                    except Exception as e:
-                        logger.warning(f"Failed to mark orphan as closed: {e}")
-                    
-                    # Clear from attempts tracking
-                    self._sell_attempts.pop(position.token_id, None)
-                    
-                    results.append({
-                        "token_id": position.token_id,
-                        "shares": result.filled_shares,
-                        "price": result.filled_price,
-                        "proceeds": proceeds,
-                        "success": True,
-                    })
-                else:
-                    error_msg = result.error_message or "Order not filled"
-                    
-                    # Check if error indicates market is resolved/closed
-                    is_likely_resolved = any(indicator in error_msg.lower() for indicator in [
-                        "request exception",
-                        "not enough balance",
-                        "market closed",
-                        "market resolved",
-                        "cannot trade",
-                    ])
-                    
-                    if is_likely_resolved and attempts >= 1:
-                        # After 2+ attempts with these errors, assume market is resolved
-                        self._mark_orphan_as_resolved(
-                            position, risk_coordinator, results,
-                            reason=f"sell failed: {error_msg[:50]}",
-                            estimated_value=current_value
-                        )
-                    else:
-                        logger.warning(f"  ❌ Failed to sell orphan: {error_msg}")
-                        results.append({
-                            "token_id": position.token_id,
-                            "shares": position.shares,
-                            "error": error_msg,
-                            "success": False,
-                        })
-                    
-            except Exception as e:
-                error_str = str(e)
-                logger.error(f"  ❌ Error selling orphan {position.token_id[:16]}...: {e}")
-                self._sell_attempts[position.token_id] = attempts + 1
-                
-                # Check if exception indicates market is resolved
-                is_likely_resolved = any(indicator in error_str.lower() for indicator in [
-                    "request exception",
-                    "timeout",
-                    "connection",
-                ])
-                
-                if is_likely_resolved and attempts >= 1:
-                    # After 2+ attempts with network errors, assume market is resolved
-                    self._mark_orphan_as_resolved(
-                        position, risk_coordinator, results,
-                        reason=f"repeated failures: {error_str[:30]}",
-                        estimated_value=current_value
-                    )
-                else:
-                    results.append({
-                        "token_id": position.token_id,
-                        "shares": position.shares,
-                        "error": error_str,
-                        "success": False,
-                    })
-        
-        if results:
-            successful = sum(1 for r in results if r.get("success"))
-            resolved = sum(1 for r in results if r.get("resolved"))
-            sold = sum(1 for r in results if r.get("success") and r.get("proceeds"))
-            
-            logger.info(f"{'='*60}")
-            logger.info(f"📊 ORPHAN PROCESSING COMPLETE: {successful}/{len(results)} handled")
-            if sold > 0:
-                total_proceeds = sum(r.get("proceeds", 0) for r in results if r.get("proceeds"))
-                logger.info(f"   💰 Sold: {sold} positions, ${total_proceeds:.2f} recovered")
-            if resolved > 0:
-                total_resolved_value = sum(r.get("estimated_value", 0) for r in results if r.get("resolved"))
-                logger.info(f"   🏁 Resolved: {resolved} positions, ~${total_resolved_value:.2f} will auto-settle")
-            logger.info(f"{'='*60}")
-        
-        self._last_check_time = datetime.now(timezone.utc)
-        return results
-    
-    def reset_attempts(self, token_id: Optional[str] = None):
-        """Reset sell attempt counter for a token or all tokens."""
-        if token_id:
-            self._sell_attempts.pop(token_id, None)
-        else:
-            self._sell_attempts.clear()
-    
-    def _mark_orphan_as_resolved(
-        self,
-        position: Position,
-        risk_coordinator: "RiskCoordinator",
-        results: List[Dict],
-        reason: str,
-        estimated_value: Optional[float] = None,
-    ):
-        """
-        Mark an orphan position as resolved/closed.
-        
-        When a market resolves, the position will auto-settle to USDC.
-        We mark it as closed so we don't keep trying to sell it.
-        The next balance refresh will pick up the settled USDC.
-        """
-        if estimated_value is None:
-            estimated_value = position.shares * (position.current_price or 0.99)
-        
-        logger.info(f"  🏁 RESOLVED MARKET: {position.token_id[:20]}...")
-        logger.info(f"      Reason: {reason}")
-        logger.info(f"      Shares: {position.shares:.4f}")
-        logger.info(f"      Est. Value: ${estimated_value:.2f} (will auto-settle)")
-        
-        # Mark position as closed in DB
-        try:
-            with risk_coordinator.storage.transaction() as txn:
-                txn.mark_position_closed(position.id)
-            logger.info(f"      ✅ Marked as closed - USDC will update on next refresh")
-        except Exception as e:
-            logger.warning(f"      Failed to mark as closed: {e}")
-        
-        # Clear from attempts tracking
-        self._sell_attempts.pop(position.token_id, None)
-        
-        results.append({
-            "token_id": position.token_id,
-            "shares": position.shares,
-            "estimated_value": estimated_value,
-            "resolved": True,
-            "reason": reason,
-            "success": True,  # Successfully handled (marked as closed)
-        })
 
 
 def format_time_remaining(seconds: float) -> str:
@@ -444,58 +105,192 @@ class BondSignalSource(ExpiringMarketSignals):
         
         self._scan_count += 1
         
-        # Log scan summary periodically or when opportunities change
-        if signals or self._scan_count % 12 == 0:  # Every ~minute at 5s interval
+        # Log scan summary:
+        # - Always when signals are found
+        # - Every 6 scans (~30s at 5s interval) when no signals
+        # - Every scan for first 3 scans (initial visibility)
+        should_log = (
+            signals or 
+            self._scan_count <= 3 or
+            self._scan_count % 6 == 0
+        )
+        
+        if should_log:
             self._log_scan_summary(signals)
         
         return signals
     
+    def _get_time_bucket(self, seconds: float) -> tuple:
+        """Get time bucket info for given seconds"""
+        for max_sec, weight, max_pos in TIME_BUCKETS:
+            if seconds <= max_sec:
+                if max_sec <= 120:
+                    return ("<2m ⚡", max_sec, weight, max_pos)
+                elif max_sec <= 300:
+                    return ("2-5m 🔥", max_sec, weight, max_pos)
+                elif max_sec <= 900:
+                    return ("5-15m", max_sec, weight, max_pos)
+                elif max_sec <= 1800:
+                    return ("15-30m", max_sec, weight, max_pos)
+                else:
+                    return ("30m+", max_sec, weight, max_pos)
+        return ("30m+", float('inf'), 1.0, 2)
+    
+    def _analyze_markets_by_bucket(self) -> Dict:
+        """Analyze all markets by time bucket and filter reasons"""
+        now = datetime.now(timezone.utc)
+        analysis = {
+            'buckets': defaultdict(lambda: {
+                'total': 0,
+                'in_price_range': 0,
+                'below_price_range': 0,
+                'above_price_range': 0,
+                'no_tokens': 0,
+                'markets': []
+            }),
+            'outside_window': {'too_soon': 0, 'too_late': 0},
+            'total_markets': len(self._markets)
+        }
+        
+        for market in self._markets:
+            if not market.end_date:
+                continue
+            
+            time_left = (market.end_date - now).total_seconds()
+            bucket_name, _, _, _ = self._get_time_bucket(time_left)
+            
+            # Check if in time window
+            if time_left < self.min_seconds_left:
+                analysis['outside_window']['too_soon'] += 1
+                continue
+            if time_left > self.max_seconds_left:
+                analysis['outside_window']['too_late'] += 1
+                continue
+            
+            # Analyze tokens in this market
+            bucket = analysis['buckets'][bucket_name]
+            bucket['total'] += 1
+            
+            if not market.tokens:
+                bucket['no_tokens'] += 1
+                continue
+            
+            # Check each token
+            has_in_range = False
+            has_below = False
+            has_above = False
+            
+            for token in market.tokens:
+                if self.min_price <= token.price <= self.max_price:
+                    has_in_range = True
+                elif token.price < self.min_price:
+                    has_below = True
+                elif token.price > self.max_price:
+                    has_above = True
+            
+            if has_in_range:
+                bucket['in_price_range'] += 1
+                bucket['markets'].append({
+                    'question': market.question[:60],
+                    'time_left': time_left,
+                    'tokens': [
+                        {'outcome': t.outcome, 'price': t.price}
+                        for t in market.tokens
+                        if self.min_price <= t.price <= self.max_price
+                    ]
+                })
+            elif has_below:
+                bucket['below_price_range'] += 1
+            elif has_above:
+                bucket['above_price_range'] += 1
+        
+        return analysis
+    
     def _log_scan_summary(self, signals: List[Signal]):
-        """Log detailed scan summary"""
-        expiring_count = len([m for m in self._markets if self._is_expiring_soon(m)])
+        """Log detailed scan summary with time bucket breakdown"""
+        analysis = self._analyze_markets_by_bucket()
         
-        if not signals:
-            if expiring_count > 0:
-                logger.info(
-                    f"📊 Scan #{self._scan_count}: {expiring_count} expiring markets, "
-                    f"0 in price range ${self.min_price:.2f}-${self.max_price:.2f}"
-                )
+        logger.info(f"{'='*60}")
+        logger.info(f"📊 BOND STRATEGY SCAN #{self._scan_count}")
+        logger.info(f"{'='*60}")
+        logger.info(f"📈 Total Markets Loaded: {analysis['total_markets']}")
+        logger.info(f"")
+        
+        # Show markets outside time window
+        if analysis['outside_window']['too_soon'] > 0 or analysis['outside_window']['too_late'] > 0:
+            logger.info(f"⏰ Time Window Filter:")
+            if analysis['outside_window']['too_soon'] > 0:
+                logger.info(f"   ⏩ Too soon (< {self.min_seconds_left}s): {analysis['outside_window']['too_soon']}")
+            if analysis['outside_window']['too_late'] > 0:
+                logger.info(f"   ⏪ Too late (> {self.max_seconds_left}s): {analysis['outside_window']['too_late']}")
+            logger.info(f"")
+        
+        # Show breakdown by time bucket
+        logger.info(f"🪣 TIME BUCKET BREAKDOWN:")
+        logger.info(f"   Price Range: ${self.min_price:.2f} - ${self.max_price:.2f}")
+        logger.info(f"")
+        
+        bucket_order = ["<2m ⚡", "2-5m 🔥", "5-15m", "15-30m", "30m+"]
+        has_any_markets = False
+        
+        for bucket_name in bucket_order:
+            if bucket_name not in analysis['buckets']:
+                continue
+            
+            bucket = analysis['buckets'][bucket_name]
+            if bucket['total'] == 0:
+                continue
+            
+            has_any_markets = True
+            logger.info(f"   {bucket_name}:")
+            logger.info(f"      Total Markets: {bucket['total']}")
+            
+            if bucket['in_price_range'] > 0:
+                logger.info(f"      ✅ In Price Range: {bucket['in_price_range']}")
+                # Show details of markets in price range
+                for mkt in bucket['markets'][:3]:  # Show up to 3 examples
+                    time_str = format_time_remaining(mkt['time_left'])
+                    token_str = ", ".join([f"{t['outcome']}@${t['price']:.3f}" for t in mkt['tokens']])
+                    logger.info(f"         • {mkt['question']}... ({time_str}) - {token_str}")
+                if len(bucket['markets']) > 3:
+                    logger.info(f"         ... and {len(bucket['markets']) - 3} more")
             else:
-                logger.debug(f"📊 Scan #{self._scan_count}: No expiring markets found")
-            return
-        
-        logger.info(f"{'='*60}")
-        logger.info(f"🎯 BOND OPPORTUNITIES FOUND: {len(signals)}")
-        logger.info(f"{'='*60}")
-        
-        for i, signal in enumerate(signals, 1):
-            time_left = signal.metadata.get('seconds_left', 0)
-            price = signal.metadata.get('price', 0)
-            expected_return = ((1.0 / price) - 1.0) * 100 if price > 0 else 0
-            question = signal.metadata.get('question', 'Unknown')[:50]
+                logger.info(f"      ❌ In Price Range: 0")
             
-            # Determine time bucket
-            bucket = "30m+"
-            for max_sec, weight, _ in TIME_BUCKETS:
-                if time_left <= max_sec:
-                    if max_sec <= 120:
-                        bucket = "<2m ⚡"
-                    elif max_sec <= 300:
-                        bucket = "2-5m 🔥"
-                    elif max_sec <= 900:
-                        bucket = "5-15m"
-                    elif max_sec <= 1800:
-                        bucket = "15-30m"
-                    break
-            
-            logger.info(
-                f"  [{i}] {question}..."
-            )
-            logger.info(
-                f"      💰 Price: ${price:.4f} | "
-                f"⏱️  Time: {format_time_remaining(time_left)} ({bucket}) | "
-                f"📈 Expected: +{expected_return:.1f}%"
-            )
+            if bucket['below_price_range'] > 0:
+                logger.info(f"      ⬇️  Below Range (<${self.min_price:.2f}): {bucket['below_price_range']}")
+            if bucket['above_price_range'] > 0:
+                logger.info(f"      ⬆️  Above Range (>${self.max_price:.2f}): {bucket['above_price_range']}")
+            if bucket['no_tokens'] > 0:
+                logger.info(f"      ⚠️  No Tokens: {bucket['no_tokens']}")
+            logger.info(f"")
+        
+        if not has_any_markets:
+            logger.info(f"   ⚠️  No markets in any time bucket within time window")
+            logger.info(f"")
+        
+        # Show signals if any
+        if signals:
+            logger.info(f"🎯 SIGNALS GENERATED: {len(signals)}")
+            logger.info(f"{'='*60}")
+            for i, signal in enumerate(signals, 1):
+                time_left = signal.metadata.get('seconds_left', 0)
+                price = signal.metadata.get('price', 0)
+                expected_return = ((1.0 / price) - 1.0) * 100 if price > 0 else 0
+                question = signal.metadata.get('question', 'Unknown')[:50]
+                bucket_name, _, _, _ = self._get_time_bucket(time_left)
+                
+                logger.info(
+                    f"  [{i}] {question}..."
+                )
+                logger.info(
+                    f"      💰 Price: ${price:.4f} | "
+                    f"⏱️  Time: {format_time_remaining(time_left)} ({bucket_name}) | "
+                    f"📈 Expected: +{expected_return:.1f}% | Score: {signal.score:.1f}"
+                )
+            logger.info(f"{'='*60}")
+        else:
+            logger.info(f"❌ No signals generated (no markets in price range)")
         
         logger.info(f"{'='*60}")
         self._last_opportunity_count = len(signals)
@@ -517,6 +312,7 @@ class BondSignalSource(ExpiringMarketSignals):
         markets = []
         expired_count = 0
         closed_count = 0
+        no_end_date_count = 0
         
         for raw in raw_markets:
             market = self.api.parse_market(raw)
@@ -525,6 +321,8 @@ class BondSignalSource(ExpiringMarketSignals):
                     expired_count += 1
                 elif market.closed:
                     closed_count += 1
+                elif not market.end_date:
+                    no_end_date_count += 1
                 else:
                     markets.append(market)
                     # Map token IDs to market for hedging
@@ -537,12 +335,17 @@ class BondSignalSource(ExpiringMarketSignals):
         expiring = [m for m in markets if self._is_expiring_soon(m)]
         
         logger.info(
-            f"📥 Loaded {len(markets)} active markets "
-            f"(skipped: {expired_count} expired, {closed_count} closed)"
+            f"📥 Market Refresh Complete:"
         )
-        if expiring:
+        logger.info(
+            f"   ✅ Active Markets: {len(markets)}"
+        )
+        logger.info(
+            f"   ⏰ In Time Window ({self.min_seconds_left}s - {self.max_seconds_left}s): {len(expiring)}"
+        )
+        if expired_count > 0 or closed_count > 0 or no_end_date_count > 0:
             logger.info(
-                f"⏰ {len(expiring)} markets expiring in {self.min_seconds_left}-{self.max_seconds_left}s window"
+                f"   🗑️  Filtered: {expired_count} expired, {closed_count} closed, {no_end_date_count} no end_date"
             )
     
     def get_market_for_token(self, token_id: str) -> Optional[Market]:
@@ -552,12 +355,14 @@ class BondSignalSource(ExpiringMarketSignals):
 
 class HedgedBondBot:
     """
-    Bond bot with integrated hedge monitoring and orphan position handling.
+    Bond bot with integrated hedge monitoring.
     
     Wraps TradingBot and adds:
     - Position monitoring for adverse movements
     - Cascading hedge execution (arb -> hedge -> partial -> stop-loss)
-    - Orphan position detection and automatic selling
+    
+    Note: Orphan positions are now handled by the unified safety sell system
+    in the base TradingBot class.
     """
     
     def __init__(
@@ -578,9 +383,6 @@ class HedgedBondBot:
         self.hedge_monitor: Optional[HedgeMonitor] = None
         self.hedge_executor: Optional[HedgeExecutor] = None
         
-        # Orphan position handler
-        self.orphan_handler: Optional[OrphanPositionHandler] = None
-        
         # Track positions we've traded
         self._tracked_positions: Dict[str, Position] = {}
         
@@ -589,7 +391,7 @@ class HedgedBondBot:
         self._dead_orderbooks: set = set()
     
     async def start(self):
-        """Start the bot, hedge monitor, and orphan handler"""
+        """Start the bot and hedge monitor"""
         await self.bot.start()
         
         # Initialize hedge monitor
@@ -607,16 +409,6 @@ class HedgedBondBot:
             config=self.hedge_config,
         )
         
-        # Initialize orphan position handler
-        self.orphan_handler = OrphanPositionHandler(
-            api=self.api,
-            executor=self.bot.executor,
-            client=self.bot.client,
-            min_value_to_sell=0.10,
-            check_interval_iterations=12,  # Check every ~minute at 5s interval
-            sell_price=0.999,  # Sell at $0.999 (close to $1 resolution)
-        )
-        
         # Start monitoring
         await self.hedge_monitor.start()
         
@@ -627,11 +419,7 @@ class HedgedBondBot:
         logger.info(f"  Min Arb Profit:     {self.hedge_config.min_arb_profit_pct:.0%}")
         logger.info(f"  Stop-Loss:          {self.hedge_config.stop_loss_pct:.0%}")
         logger.info(f"{'='*60}")
-        
-        logger.info(f"🧹 ORPHAN HANDLER ACTIVE")
-        logger.info(f"  Sell Price:         ${self.orphan_handler.sell_price:.4f}")
-        logger.info(f"  Min Value to Sell:  ${self.orphan_handler.min_value_to_sell:.2f}")
-        logger.info(f"  Check Interval:     Every {self.orphan_handler.check_interval_iterations} iterations")
+        logger.info(f"🛡️ SAFETY SELLS: Handled by base TradingBot (GTC @ $0.99)")
         logger.info(f"{'='*60}")
     
     async def stop(self):
@@ -641,7 +429,7 @@ class HedgedBondBot:
         await self.bot.stop()
     
     async def run(self, interval_seconds: float = 5.0):
-        """Run the trading loop with hedge monitoring and orphan handling"""
+        """Run the trading loop with hedge monitoring"""
         if not self.bot.running:
             raise RuntimeError("Bot not started. Call start() first.")
         
@@ -650,7 +438,7 @@ class HedgedBondBot:
         try:
             while self.bot.running:
                 try:
-                    # Run trading iteration
+                    # Run trading iteration (includes safety sell placement for all positions)
                     await self.bot._trading_iteration()
                     
                     # Update tracked positions from risk coordinator
@@ -658,9 +446,6 @@ class HedgedBondBot:
                     
                     # Check for hedge opportunities
                     await self._check_hedges()
-                    
-                    # Check for and sell orphan positions
-                    await self._check_orphans()
                     
                 except Exception as e:
                     logger.error(f"Error in trading iteration: {e}")
@@ -672,13 +457,54 @@ class HedgedBondBot:
             logger.info("Trading loop cancelled")
     
     async def _sync_positions(self):
-        """Sync positions from risk coordinator to hedge monitor"""
+        """Sync positions from risk coordinator to hedge monitor.
+        
+        Only syncs positions owned by this bot or orphan positions.
+        Other agents' positions are left for their respective bots.
+        
+        Also removes positions from hedge monitor if they're no longer
+        owned by this bot (e.g., if agent_id changed or position was closed).
+        """
         if not self.bot.risk_coordinator or not self.hedge_monitor:
             return
         
         wallet_state = self.bot.risk_coordinator.get_wallet_state()
         
+        # Create a map of current positions by token_id for quick lookup
+        current_positions_by_token = {pos.token_id: pos for pos in wallet_state.positions}
+        
+        # First, clean up positions that are no longer owned by this bot
+        # Get all currently tracked positions in hedge monitor
+        monitored_positions = self.hedge_monitor.get_monitored_positions()
+        for monitored in monitored_positions:
+            token_id = monitored.position.token_id
+            
+            # Check if position still exists in wallet state
+            current_position = current_positions_by_token.get(token_id)
+            
+            if current_position is None:
+                # Position no longer exists (closed/exited) - remove from hedge monitor
+                logger.info(
+                    f"🔄 Removing position from hedge monitor (position closed): "
+                    f"{token_id[:16]}..."
+                )
+                self.hedge_monitor.remove_position(token_id)
+                self._tracked_positions.pop(token_id, None)
+            elif not self.bot._should_manage_position(current_position):
+                # Position exists but is no longer owned by this bot - remove from hedge monitor
+                logger.info(
+                    f"🔄 Removing position from hedge monitor (no longer owned by {self.bot.agent_id}): "
+                    f"{token_id[:16]}... (agent_id: {current_position.agent_id})"
+                )
+                self.hedge_monitor.remove_position(token_id)
+                self._tracked_positions.pop(token_id, None)
+        
+        # Now sync positions that should be managed by this bot
         for position in wallet_state.positions:
+            # Only manage positions owned by this bot (or orphans)
+            if not self.bot._should_manage_position(position):
+                continue
+            
             # Skip if already tracked
             if position.token_id in self._tracked_positions:
                 continue
@@ -752,27 +578,6 @@ class HedgedBondBot:
                 if rec.action == HedgeAction.STOP_LOSS:
                     self._tracked_positions.pop(rec.position.position.token_id, None)
                     self.hedge_monitor.remove_position(rec.position.position.token_id)
-    
-    async def _check_orphans(self):
-        """Check for and sell orphan positions"""
-        if not self.orphan_handler or not self.bot.risk_coordinator:
-            return
-        
-        try:
-            results = await self.orphan_handler.check_and_sell_orphans(
-                risk_coordinator=self.bot.risk_coordinator,
-                dry_run=self.dry_run,
-            )
-            
-            # Log summary if any orphans were processed
-            if results:
-                successful = [r for r in results if r.get("success")]
-                if successful:
-                    total_proceeds = sum(r.get("proceeds", 0) for r in successful)
-                    logger.info(f"💰 Recovered ${total_proceeds:.2f} from orphan positions")
-                    
-        except Exception as e:
-            logger.error(f"Error checking orphan positions: {e}")
     
     def _on_hedge_triggered(self, recommendation: HedgeRecommendation):
         """Callback when hedge is triggered"""

@@ -332,6 +332,7 @@ class ExecutionResult:
     requested_price: float = 0.0
     error_message: Optional[str] = None
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    is_rejection: bool = False  # True = protective rejection (price drift, spread), not a system error
     
     @property
     def fill_ratio(self) -> float:

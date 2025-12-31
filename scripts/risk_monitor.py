@@ -5,7 +5,7 @@ Risk Monitor CLI.
 Monitor and manage multi-agent risk coordinator.
 
 Usage:
-    # View current status
+    # View current status (with live sync)
     python risk_monitor.py status
     
     # View drawdown status
@@ -13,6 +13,9 @@ Usage:
     
     # View all agents
     python risk_monitor.py agents
+    
+    # Force sync with on-chain data
+    python risk_monitor.py sync
     
     # Cleanup stale data
     python risk_monitor.py cleanup
@@ -22,6 +25,7 @@ Usage:
 """
 
 import argparse
+import asyncio
 import logging
 import sys
 from datetime import datetime, timezone
@@ -35,6 +39,7 @@ sys.path.insert(0, str(project_root))
 from polymarket.core.config import Config, get_config
 from polymarket.core.models import AgentStatus
 from polymarket.trading.storage.sqlite import SQLiteStorage
+from polymarket.trading.chain_sync import ChainSyncService
 
 
 def get_storage(config: Optional[Config] = None) -> SQLiteStorage:
@@ -43,13 +48,51 @@ def get_storage(config: Optional[Config] = None) -> SQLiteStorage:
     return SQLiteStorage(config.db_path)
 
 
+async def do_sync(wallet: str, config: Config, verbose: bool = True) -> bool:
+    """Perform incremental sync with on-chain data"""
+    try:
+        sync_service = ChainSyncService(config)
+        storage = SQLiteStorage(config.db_path)
+        
+        # Check if we have sync state
+        with storage.transaction() as txn:
+            sync_state = txn.get_chain_sync_state(wallet)
+        
+        if sync_state:
+            if verbose:
+                print(f"📡 Syncing from block {sync_state['last_synced_block']:,}...")
+            result = await sync_service.incremental_sync(wallet)
+        else:
+            if verbose:
+                print("📡 First sync - using fast API sync...")
+            result = await sync_service.fast_sync_from_api(wallet)
+        
+        # Verify and fix discrepancies
+        is_valid, discrepancies = await sync_service.verify_sync_integrity(wallet)
+        if not is_valid:
+            if verbose:
+                print(f"⚠️  Found {len(discrepancies)} discrepancies, fixing...")
+            await sync_service.fix_discrepancies(wallet)
+        
+        await sync_service.close()
+        return True
+    except Exception as e:
+        if verbose:
+            print(f"❌ Sync error: {e}")
+        return False
+
+
 def cmd_status(args):
     """Show overall status"""
-    storage = get_storage()
-    
-    # Get wallet address from config
     config = get_config()
     wallet = config.proxy_address or "unknown"
+    
+    # Perform sync first (unless --no-sync)
+    if not getattr(args, 'no_sync', False):
+        print("\n🔄 Syncing with on-chain data...")
+        asyncio.run(do_sync(wallet, config, verbose=True))
+    
+    storage = get_storage()
     
     with storage.transaction() as txn:
         wallet_state = txn.get_wallet_state(wallet)
@@ -135,9 +178,15 @@ def cmd_agents(args):
 
 def cmd_positions(args):
     """Show all positions"""
-    storage = get_storage()
     config = get_config()
     wallet = config.proxy_address or "unknown"
+    
+    # Sync first
+    if not getattr(args, 'no_sync', False):
+        print("\n🔄 Syncing with on-chain data...")
+        asyncio.run(do_sync(wallet, config, verbose=False))
+    
+    storage = get_storage()
     
     with storage.transaction() as txn:
         positions = txn.get_all_positions(wallet)
@@ -206,14 +255,55 @@ def cmd_reservations(args):
     print("="*60 + "\n")
 
 
+def cmd_sync(args):
+    """Force sync with on-chain data"""
+    config = get_config()
+    wallet = config.proxy_address or "unknown"
+    
+    print("\n" + "="*60)
+    print("CHAIN SYNC")
+    print("="*60)
+    
+    print(f"\nWallet: {wallet[:10]}...{wallet[-6:]}")
+    
+    success = asyncio.run(do_sync(wallet, config, verbose=True))
+    
+    if success:
+        print("\n✅ Sync complete!")
+        
+        # Show updated stats
+        storage = get_storage()
+        with storage.transaction() as txn:
+            wallet_state = txn.get_wallet_state(wallet)
+            computed = txn.get_computed_positions(wallet.lower())
+        
+        print(f"\nUpdated Stats:")
+        print(f"  Positions: {len(computed)}")
+        print(f"  Total Value: ${wallet_state.total_positions_value:,.2f}")
+        print(f"  USDC Balance: ${wallet_state.usdc_balance:,.2f}")
+    else:
+        print("\n❌ Sync failed!")
+    
+    print("="*60 + "\n")
+
+
 def cmd_drawdown(args):
     """Show drawdown status"""
     storage = get_storage()
     config = get_config()
     wallet = config.proxy_address or "unknown"
     
+    # Sync first to get accurate data
+    if not getattr(args, 'no_sync', False):
+        print("\n🔄 Syncing with on-chain data...")
+        asyncio.run(do_sync(wallet, config, verbose=False))
+    
     with storage.transaction() as txn:
         wallet_state = txn.get_wallet_state(wallet)
+        # Get transaction summary to show P&L
+        summary = txn.get_transaction_summary(wallet.lower())
+        # Get persisted drawdown state
+        drawdown_state = txn.get_drawdown_state(wallet)
     
     total_equity = wallet_state.usdc_balance + wallet_state.total_positions_value
     
@@ -222,12 +312,48 @@ def cmd_drawdown(args):
     print("="*60)
     
     print(f"\nCurrent Equity: ${total_equity:,.2f}")
+    print(f"Positions Value: ${wallet_state.total_positions_value:,.2f}")
+    print(f"USDC Balance: ${wallet_state.usdc_balance:,.2f}")
+    
     print(f"\nLimits from config:")
     print(f"  Max Daily Drawdown: {config.risk.max_daily_drawdown_pct:.1%}")
     print(f"  Max Total Drawdown: {config.risk.max_total_drawdown_pct:.1%}")
     
-    print("\n⚠️  Note: Historical drawdown tracking requires the trading bot to be running.")
-    print("    This view shows current state only.")
+    # Show persisted drawdown tracking
+    if drawdown_state:
+        peak = drawdown_state["peak_equity"]
+        daily_start = drawdown_state["daily_start_equity"]
+        
+        # Calculate current drawdowns
+        daily_dd = (daily_start - total_equity) / daily_start if daily_start > 0 else 0
+        total_dd = (peak - total_equity) / peak if peak > 0 else 0
+        
+        print(f"\nDrawdown Tracking (persisted):")
+        print(f"  Peak Equity: ${peak:,.2f}")
+        print(f"  Daily Start: ${daily_start:,.2f} (as of {drawdown_state['daily_start_date'].strftime('%Y-%m-%d') if drawdown_state['daily_start_date'] else 'N/A'})")
+        print(f"  Current Daily DD: {daily_dd:.1%} (limit: {config.risk.max_daily_drawdown_pct:.1%})")
+        print(f"  Current Total DD: {total_dd:.1%} (limit: {config.risk.max_total_drawdown_pct:.1%})")
+        
+        if drawdown_state["is_breached"]:
+            print(f"\n  🚨 BREACHED: {drawdown_state['breach_reason']}")
+        else:
+            daily_remaining = max(0, config.risk.max_daily_drawdown_pct - daily_dd)
+            total_remaining = max(0, config.risk.max_total_drawdown_pct - total_dd)
+            print(f"\n  ✅ Within limits")
+            print(f"     Daily headroom: {daily_remaining:.1%} (${daily_start * daily_remaining:,.2f})")
+            print(f"     Total headroom: {total_remaining:.1%} (${peak * total_remaining:,.2f})")
+    else:
+        print(f"\n⚠️  No drawdown state saved yet - run the bot to start tracking")
+    
+    # Show transaction summary
+    if summary:
+        buy = summary.get('buy', {})
+        sell = summary.get('sell', {})
+        claim = summary.get('claim', {})
+        print(f"\nTransaction Summary:")
+        print(f"  Total Buys: {buy.get('count', 0)} (${buy.get('total_usdc', 0):,.2f})")
+        print(f"  Total Sells: {sell.get('count', 0)} (${sell.get('total_usdc', 0):,.2f})")
+        print(f"  Claims/Redemptions: {claim.get('count', 0)} (${claim.get('total_usdc', 0):,.2f})")
     
     print("="*60 + "\n")
 
@@ -296,7 +422,8 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Commands:
-  status       Show overall status
+  status       Show overall status (syncs first)
+  sync         Force sync with on-chain data
   agents       List all agents
   positions    Show all positions
   reservations Show active reservations
@@ -309,19 +436,25 @@ Commands:
     subparsers = parser.add_subparsers(dest="command", help="Command")
     
     # Status
-    subparsers.add_parser("status", help="Show overall status")
+    status_parser = subparsers.add_parser("status", help="Show overall status")
+    status_parser.add_argument("--no-sync", action="store_true", help="Skip sync (use cached data)")
+    
+    # Sync
+    subparsers.add_parser("sync", help="Force sync with on-chain data")
     
     # Agents
     subparsers.add_parser("agents", help="List all agents")
     
     # Positions
-    subparsers.add_parser("positions", help="Show all positions")
+    positions_parser = subparsers.add_parser("positions", help="Show all positions")
+    positions_parser.add_argument("--no-sync", action="store_true", help="Skip sync (use cached data)")
     
     # Reservations
     subparsers.add_parser("reservations", help="Show active reservations")
     
     # Drawdown
-    subparsers.add_parser("drawdown", help="Show drawdown status")
+    drawdown_parser = subparsers.add_parser("drawdown", help="Show drawdown status")
+    drawdown_parser.add_argument("--no-sync", action="store_true", help="Skip sync (use cached data)")
     
     # Cleanup
     subparsers.add_parser("cleanup", help="Cleanup stale data")
@@ -342,6 +475,7 @@ Commands:
     # Run command
     commands = {
         "status": cmd_status,
+        "sync": cmd_sync,
         "agents": cmd_agents,
         "positions": cmd_positions,
         "reservations": cmd_reservations,

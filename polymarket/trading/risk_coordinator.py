@@ -4,21 +4,25 @@ Multi-Agent Risk Coordinator.
 Centralized risk management for multiple trading agents sharing the same wallet.
 Provides:
 - Atomic capital reservation (no race conditions)
-- State reconciliation on startup
+- State reconciliation on startup (using chain sync for source of truth)
 - Agent heartbeat monitoring
 - Exposure limit enforcement
+
+The coordinator now uses the transactions table as the source of truth,
+syncing on-chain data via the ChainSyncService.
 """
 
 import asyncio
 import logging
 from datetime import datetime, timezone, timedelta
-from typing import Optional, List, Tuple, TYPE_CHECKING
+from typing import Optional, List, Tuple, Dict, TYPE_CHECKING
 
 from ..core.models import Position, WalletState, PositionStatus, ReservationStatus
 from ..core.config import RiskConfig, Config, get_config
 from ..core.api import PolymarketAPI
 from .storage.base import StorageBackend
 from .storage.sqlite import SQLiteStorage
+from .chain_sync import ChainSyncService
 
 if TYPE_CHECKING:
     pass
@@ -62,6 +66,8 @@ class RiskCoordinator:
         self._reconciled = False
         self._heartbeat_task: Optional[asyncio.Task] = None
         self._current_agent_id: Optional[str] = None
+        self._chain_sync: Optional[ChainSyncService] = None
+        self._current_prices: Dict[str, float] = {}  # Cache for current prices
     
     async def startup(self, agent_id: str, agent_type: str) -> bool:
         """
@@ -121,9 +127,13 @@ class RiskCoordinator:
         
         # Mark agent as stopped
         if self._current_agent_id:
-            from core.models import AgentStatus
+            from ..core.models import AgentStatus
             with self.storage.transaction() as txn:
                 txn.update_agent_status(self._current_agent_id, AgentStatus.STOPPED)
+        
+        # Close chain sync service
+        if self._chain_sync:
+            await self._chain_sync.close()
         
         # Close API
         if self.api:
@@ -133,116 +143,100 @@ class RiskCoordinator:
     
     async def _reconcile_state(self):
         """
-        CRITICAL: Sync DB state with on-chain reality.
+        CRITICAL: Sync DB state with on-chain reality via chain sync.
         
-        This handles:
-        - Orphan positions (on-chain but not in DB)
-        - Ghost positions (in DB but not on-chain)
-        - Stale reservations
+        This method:
+        1. Syncs all on-chain transactions to the transactions table
+        2. Computes positions from transaction history
+        3. Verifies computed positions match on-chain state
+        4. Updates USDC balance and price cache
         """
         logger.info(f"{'='*60}")
-        logger.info("🔄 RECONCILING STATE WITH ON-CHAIN...")
+        logger.info("🔄 RECONCILING STATE WITH CHAIN SYNC...")
         logger.info(f"{'='*60}")
         logger.info(f"  Wallet: {self.wallet_address}")
         
-        # First, clean up any duplicate orphan positions from previous runs
-        with self.storage.transaction() as txn:
-            duplicates_removed = txn.cleanup_duplicate_orphans()
-            if duplicates_removed > 0:
-                logger.warning(f"  🧹 Cleaned up {duplicates_removed} duplicate orphan positions")
+        # Initialize chain sync service
+        if self._chain_sync is None:
+            self._chain_sync = ChainSyncService(
+                config=self.config,
+                storage=self.storage,
+                api=self.api
+            )
         
-        # 1. Fetch actual positions from Polymarket API
-        actual_positions = await self.api.fetch_positions(self.wallet_address)
+        # Check if we need full sync or incremental
+        with self.storage.transaction() as txn:
+            sync_state = txn.get_chain_sync_state(self.wallet_address)
+        
+        if sync_state is None:
+            logger.info("  📡 First sync - performing full historical sync...")
+            result = await self._chain_sync.full_sync(
+                self.wallet_address,
+                match_existing_executions=True
+            )
+        else:
+            logger.info(f"  📡 Incremental sync from block {sync_state['last_synced_block']:,}...")
+            result = await self._chain_sync.incremental_sync(self.wallet_address)
+        
+        if result.success:
+            logger.info(f"  ✅ Synced {result.transactions_synced} transactions")
+        else:
+            logger.warning(f"  ⚠️  Sync had errors: {result.errors}")
+        
+        # Fetch USDC balance from chain
         actual_balance = await self.api.fetch_usdc_balance(self.wallet_address)
         
-        logger.info(f"  📡 API returned: {len(actual_positions)} positions, ${actual_balance:.2f} USDC")
-        
-        # Log each position from API for debugging
-        total_api_value = 0.0
-        if actual_positions:
-            logger.info(f"  📦 Positions from API:")
-            for pos in actual_positions:
-                value = pos.shares * (pos.current_price or pos.entry_price or 0)
-                total_api_value += value
-                logger.info(
-                    f"      - {pos.token_id[:20]}... | "
-                    f"{pos.shares:.4f} shares @ ${pos.current_price or pos.entry_price:.4f} = ${value:.2f}"
-                )
-            logger.info(f"  💰 Total API positions value: ${total_api_value:.2f}")
-        else:
-            logger.warning("  ⚠️  No positions returned from API!")
-        
-        # 2. Get DB state
+        # Get computed positions from transactions
         with self.storage.transaction() as txn:
-            db_positions = txn.get_all_positions(self.wallet_address, PositionStatus.OPEN)
-            db_orphan_positions = txn.get_all_positions(self.wallet_address, PositionStatus.ORPHAN)
-            
-            logger.info(f"  💾 DB state: {len(db_positions)} open, {len(db_orphan_positions)} orphan")
-            
-            # Update cached balance
             txn.update_usdc_balance(self.wallet_address, actual_balance)
-            
-            # 3. Build lookup of DB positions by token_id (include BOTH open AND orphan)
-            all_tracked_positions = db_positions + db_orphan_positions
-            db_token_ids = {p.token_id: p for p in all_tracked_positions}
-            actual_token_ids = {p.token_id: p for p in actual_positions}
-            
-            # 4. Find orphan positions (on-chain but not in DB) and update existing positions
-            orphans_added = 0
-            prices_updated = 0
-            for token_id, pos in actual_token_ids.items():
-                price = pos.current_price or pos.entry_price or 0
-                if token_id not in db_token_ids:
-                    # New orphan position
-                    value = pos.shares * price
-                    logger.warning(
-                        f"  🔍 ORPHAN FOUND: {token_id[:20]}... | "
-                        f"{pos.shares:.4f} shares @ ${price:.4f} = ${value:.2f}"
-                    )
-                    txn.add_orphan_position(
-                        wallet_address=self.wallet_address,
-                        token_id=token_id,
-                        market_id=pos.market_id,
-                        shares=pos.shares,
-                        current_price=price
-                    )
-                    orphans_added += 1
-                else:
-                    # Update existing position price
-                    db_pos = db_token_ids[token_id]
-                    if db_pos.id and price > 0:
-                        txn.update_position_price(db_pos.id, price)
-                        prices_updated += 1
-            
-            # 5. Find ghost positions (in DB but not on-chain)
-            ghosts_removed = 0
-            for token_id, db_pos in db_token_ids.items():
-                if token_id not in actual_token_ids:
-                    logger.warning(f"  👻 GHOST POSITION: {token_id[:20]}... - marking closed")
-                    txn.mark_position_closed(db_pos.id)
-                    ghosts_removed += 1
-            
-            # 6. Clear stale reservations
+            computed_positions = txn.get_computed_positions(self.wallet_address)
+            tx_summary = txn.get_transaction_summary(self.wallet_address)
+        
+        # Update current prices cache
+        actual_positions = await self.api.fetch_positions(self.wallet_address)
+        self._current_prices = {
+            p.token_id: p.current_price or p.entry_price or 0
+            for p in actual_positions
+        }
+        
+        # Calculate total positions value
+        total_positions_value = sum(
+            p["shares"] * self._current_prices.get(p["token_id"], p["avg_entry_price"])
+            for p in computed_positions
+        )
+        
+        # Log summary
+        logger.info(f"{'='*60}")
+        logger.info(f"✅ CHAIN SYNC RECONCILIATION COMPLETE")
+        logger.info(f"  Transactions: {tx_summary.get('buy', {}).get('count', 0)} buys, "
+                   f"{tx_summary.get('sell', {}).get('count', 0)} sells, "
+                   f"{tx_summary.get('claim', {}).get('count', 0)} claims")
+        logger.info(f"  Computed Positions: {len(computed_positions)}")
+        logger.info(f"  USDC Balance: ${actual_balance:.2f}")
+        logger.info(f"  Positions Value: ${total_positions_value:.2f}")
+        logger.info(f"  Total Equity: ${actual_balance + total_positions_value:.2f}")
+        logger.info(f"{'='*60}")
+        
+        # Verify integrity and fix any discrepancies
+        is_valid, discrepancies = await self._chain_sync.verify_sync_integrity(self.wallet_address)
+        if not is_valid:
+            logger.warning(f"  ⚠️  Sync integrity issues: {len(discrepancies)} discrepancies")
+            # Fix the discrepancies
+            fixes = await self._chain_sync.fix_discrepancies(self.wallet_address)
+            if fixes > 0:
+                logger.info(f"  ✅ Applied {fixes} fixes to match on-chain state")
+        
+        # Still cleanup stale reservations and agents
+        with self.storage.transaction() as txn:
             released_count = txn.release_all_reservations()
             if released_count > 0:
                 logger.info(f"  🔓 Released {released_count} stale reservations")
             
-            # 7. Cleanup stale agents
             crashed_count = txn.cleanup_stale_agents(
                 self.config.risk.stale_agent_threshold_seconds
             )
             if crashed_count > 0:
                 logger.warning(f"  ⚠️  Marked {crashed_count} stale agents as crashed")
-        
-        logger.info(f"{'='*60}")
-        logger.info(f"✅ RECONCILIATION COMPLETE")
-        logger.info(f"  Positions: {len(actual_positions)} on-chain")
-        logger.info(f"  Orphans added: {orphans_added}")
-        logger.info(f"  Prices updated: {prices_updated}")
-        logger.info(f"  Ghosts removed: {ghosts_removed}")
-        logger.info(f"  USDC Balance: ${actual_balance:.2f}")
-        logger.info(f"  Positions Value: ${total_api_value:.2f}")
-        logger.info(f"{'='*60}")
     
     async def _heartbeat_loop(self, agent_id: str):
         """Background task to update heartbeat"""
@@ -550,5 +544,115 @@ class RiskCoordinator:
             logger.warning(f"Marked {agents} stale agents as crashed")
         
         return reservations, agents
+    
+    async def reconcile_positions(self) -> Tuple[int, int]:
+        """
+        Lightweight reconciliation of SQL positions with on-chain state.
+        
+        Performs incremental chain sync to update the transactions table.
+        
+        Returns (transactions_synced, actual_position_count).
+        """
+        if not self.api:
+            return 0, 0
+        
+        try:
+            if self._chain_sync is None:
+                self._chain_sync = ChainSyncService(
+                    config=self.config,
+                    storage=self.storage,
+                    api=self.api
+                )
+            
+            result = await self._chain_sync.incremental_sync(self.wallet_address)
+            
+            # Update current prices cache
+            actual_positions = await self.api.fetch_positions(self.wallet_address)
+            self._current_prices = {
+                p.token_id: p.current_price or p.entry_price or 0
+                for p in actual_positions
+            }
+            
+            # Also refresh USDC balance
+            actual_balance = await self.api.fetch_usdc_balance(self.wallet_address)
+            with self.storage.transaction() as txn:
+                txn.update_usdc_balance(self.wallet_address, actual_balance)
+            
+            return result.transactions_synced, len(actual_positions)
+            
+        except Exception as e:
+            logger.warning(f"Chain sync reconciliation failed: {e}")
+            return 0, 0
+    
+    def get_computed_positions(self) -> List[dict]:
+        """
+        Get current positions computed from transaction history.
+        
+        This is the source-of-truth method when chain sync is enabled.
+        """
+        with self.storage.transaction() as txn:
+            return txn.get_computed_positions(self.wallet_address)
+    
+    def get_computed_exposure(self, agent_id: Optional[str] = None) -> float:
+        """
+        Get exposure computed from transaction history.
+        
+        Args:
+            agent_id: Optional agent ID to filter by. If None, returns total wallet exposure.
+        
+        Returns total position value based on transactions.
+        """
+        with self.storage.transaction() as txn:
+            if agent_id:
+                return txn.get_agent_computed_exposure(agent_id, self._current_prices)
+            else:
+                return txn.get_total_computed_exposure(self.wallet_address, self._current_prices)
+    
+    def get_transaction_history(
+        self,
+        transaction_type: Optional[str] = None,
+        token_id: Optional[str] = None,
+        limit: Optional[int] = None
+    ) -> List[dict]:
+        """
+        Get transaction history from the transactions table.
+        
+        Args:
+            transaction_type: Optional filter ('buy', 'sell', 'claim', 'deposit', 'withdrawal')
+            token_id: Optional filter by token
+            limit: Optional limit on results
+        
+        Returns list of transactions.
+        """
+        with self.storage.transaction() as txn:
+            return txn.get_transactions(
+                wallet_address=self.wallet_address,
+                transaction_type=transaction_type,
+                token_id=token_id,
+                limit=limit
+            )
+    
+    async def sync_transactions(self, full_sync: bool = False) -> int:
+        """
+        Manually trigger transaction sync.
+        
+        Args:
+            full_sync: If True, performs full historical sync. Otherwise incremental.
+        
+        Returns number of transactions synced.
+        """
+        if self._chain_sync is None:
+            self._chain_sync = ChainSyncService(
+                config=self.config,
+                storage=self.storage,
+                api=self.api
+            )
+        
+        if full_sync:
+            result = await self._chain_sync.full_sync(self.wallet_address)
+        else:
+            result = await self._chain_sync.incremental_sync(self.wallet_address)
+        
+        return result.transactions_synced
 
 

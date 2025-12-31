@@ -162,7 +162,8 @@ class AggressiveExecutor(ExecutionEngine):
                 )
                 return ExecutionResult(
                     success=False,
-                    error_message=f"Spread too wide: {spread:.1%} (max {self.max_spread:.1%})"
+                    error_message=f"Spread too wide: {spread:.1%} (max {self.max_spread:.1%})",
+                    is_rejection=True  # Protective rejection, not a system error
                 )
             elif side == Side.SELL and spread is not None and spread > self.max_spread:
                 # Log but allow SELLs to proceed - reducing exposure is priority
@@ -200,7 +201,8 @@ class AggressiveExecutor(ExecutionEngine):
                         return ExecutionResult(
                             success=False,
                             requested_price=original_signal_price,
-                            error_message=f"Price drifted {price_drift:.1%} from signal (max {slippage_threshold:.1%})"
+                            error_message=f"Price drifted {price_drift:.1%} from signal (max {slippage_threshold:.1%})",
+                            is_rejection=True  # Protective rejection, not a system error
                         )
             
             # Determine execution price
@@ -228,7 +230,8 @@ class AggressiveExecutor(ExecutionEngine):
                     return ExecutionResult(
                         success=False,
                         requested_price=price,
-                        error_message=f"Slippage too high: {slippage:.1%}"
+                        error_message=f"Slippage too high: {slippage:.1%}",
+                        is_rejection=True  # Protective rejection, not a system error
                     )
             
             # Calculate shares

@@ -81,11 +81,88 @@ flowchart TB
 3. **State Reconciliation**: On startup, DB state is synced with on-chain reality
 4. **Fail-Safe Defaults**: Circuit breakers, drawdown limits, and rate limiting are always active
 
+### System Data Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant API as External APIs
+    participant Flow as Flow Detector
+    participant Bot as Trading Bot
+    participant Risk as Risk Coordinator
+    participant DB as SQLite DB
+    participant Chain as Polygon RPC
+
+    Note over API,Chain: Real-time Data Collection
+    API->>Flow: WebSocket Trades
+    API->>Bot: Market Data (Gamma API)
+    
+    Note over Flow,Bot: Signal Generation
+    Flow->>Flow: Detect Unusual Activity
+    Flow->>Bot: Flow Alerts
+    Bot->>Bot: Generate Trading Signals
+    
+    Note over Bot,Risk: Risk Management
+    Bot->>Risk: Request Capital Reservation
+    Risk->>DB: Check Current State
+    Risk->>Chain: Verify On-chain Balance
+    Risk->>Risk: Validate Limits
+    alt Limits OK
+        Risk->>DB: Atomic Reservation (Transaction)
+        Risk->>Bot: Reservation ID
+        Bot->>API: Execute Trade (CLOB API)
+        API->>Bot: Execution Result
+        Bot->>Risk: Confirm Execution
+        Risk->>DB: Update Position
+    else Limits Exceeded
+        Risk->>Bot: Reject Request
+    end
+    
+    Note over Risk,DB: State Reconciliation (On Startup)
+    Risk->>API: Fetch Positions (Data API)
+    Risk->>Chain: Fetch USDC Balance
+    Risk->>DB: Compare & Sync State
+    Risk->>DB: Mark Orphan/Ghost Positions
+```
+
 ---
 
 ## External APIs
 
 ### Polymarket APIs
+
+```mermaid
+graph TB
+    subgraph APIs[Polymarket APIs]
+        RTDS[RTDS WebSocket<br/>wss://ws-live-data.polymarket.com<br/>Real-time Trades<br/>No Auth]
+        GAMMA[Gamma API<br/>gamma-api.polymarket.com<br/>Market Metadata<br/>4,000/10s]
+        CLOB[CLOB API<br/>clob.polymarket.com<br/>Orderbook & Orders<br/>9,000/10s<br/>Auth for Orders]
+        DATA[Data API<br/>data-api.polymarket.com<br/>Positions & Activity<br/>1,000/10s]
+    end
+    
+    subgraph External[External Services]
+        POLY[Polygon RPC<br/>Various Providers<br/>USDC Balance<br/>On-chain Data]
+    end
+    
+    subgraph Components[System Components]
+        FLOW[Flow Detector]
+        BOT[Trading Bots]
+        RISK[Risk Coordinator]
+    end
+    
+    RTDS --> FLOW
+    GAMMA --> BOT
+    CLOB --> BOT
+    DATA --> RISK
+    POLY --> RISK
+    POLY --> FLOW
+    
+    style RTDS fill:#e1f5ff
+    style GAMMA fill:#e8f5e9
+    style CLOB fill:#fff3e0
+    style DATA fill:#fce4ec
+    style POLY fill:#f3e5f5
+```
 
 | API | Base URL | Purpose | Rate Limit | Auth Required |
 |-----|----------|---------|------------|---------------|
@@ -237,6 +314,40 @@ bot = TradingBot(
 )
 ```
 
+### Component Interaction Flow
+
+```mermaid
+graph TB
+    subgraph Bot[TradingBot Container]
+        direction TB
+        SIGNAL[SignalSource]
+        SIZER[PositionSizer]
+        EXEC[ExecutionEngine]
+        EXIT[ExitMonitor]
+    end
+    
+    subgraph External[External Services]
+        API[Polymarket APIs]
+        RISK[RiskCoordinator]
+        CLOB[CLOB Client]
+    end
+    
+    SIGNAL -->|1. Get Signals| API
+    API -->|Market Data| SIGNAL
+    SIGNAL -->|2. Signals| SIZER
+    SIZER -->|3. Position Size| RISK
+    RISK -->|4. Reservation| EXEC
+    EXEC -->|5. Execute| CLOB
+    CLOB -->|6. Result| EXEC
+    EXEC -->|7. Confirm| RISK
+    EXEC -->|8. Register| EXIT
+    EXIT -->|9. Monitor| API
+    EXIT -->|10. Exit Signal| EXEC
+    
+    style Bot fill:#e3f2fd
+    style External fill:#fff3e0
+```
+
 ### SignalSource
 
 **Base Class**: `polymarket/trading/components/signals.py`
@@ -249,6 +360,36 @@ class SignalSource(ABC):
     async def get_signals(self) -> List[Signal]:
         """Generate trading signals"""
         pass
+```
+
+**Signal Generation Flow:**
+
+```mermaid
+flowchart TB
+    subgraph Input[Input Sources]
+        MARKETS[Market Data<br/>Gamma API]
+        ALERTS[Flow Alerts<br/>Flow Detector]
+        PRICES[Price History<br/>CLOB API]
+    end
+    
+    subgraph Processing[Signal Processing]
+        FILTER[Filter Markets<br/>Price/Time/Status]
+        ANALYZE[Analyze Opportunities<br/>Score & Rank]
+        GENERATE[Generate Signals<br/>Direction & Score]
+    end
+    
+    subgraph Output[Signal Output]
+        SIGNALS[List of Signals<br/>Market/Token/Direction]
+    end
+    
+    MARKETS --> FILTER
+    ALERTS --> ANALYZE
+    PRICES --> ANALYZE
+    FILTER --> ANALYZE
+    ANALYZE --> GENERATE
+    GENERATE --> SIGNALS
+    
+    style SIGNALS fill:#c8e6c9
 ```
 
 **Built-in Implementations**:
@@ -272,6 +413,41 @@ class PositionSizer(ABC):
     ) -> float:
         """Calculate position size in USD"""
         pass
+```
+
+**Position Sizing Flow:**
+
+```mermaid
+flowchart LR
+    subgraph Input[Inputs]
+        SIG[Signal<br/>Score & Direction]
+        CAP[Available Capital<br/>From Risk Coordinator]
+        PRICE[Current Price<br/>From Orderbook]
+    end
+    
+    subgraph Methods[Sizing Methods]
+        FIXED[Fixed Fraction<br/>% of Capital]
+        KELLY[Kelly Criterion<br/>Edge Estimation]
+        SCALED[Signal Scaled<br/>Score-based]
+    end
+    
+    subgraph Output[Output]
+        SIZE[Position Size<br/>USD Amount]
+    end
+    
+    SIG --> FIXED
+    SIG --> KELLY
+    SIG --> SCALED
+    CAP --> FIXED
+    CAP --> KELLY
+    CAP --> SCALED
+    PRICE --> KELLY
+    
+    FIXED --> SIZE
+    KELLY --> SIZE
+    SCALED --> SIZE
+    
+    style SIZE fill:#c8e6c9
 ```
 
 **Built-in Implementations**:
@@ -323,6 +499,44 @@ class ExitConfig:
     max_hold_minutes: int = 120         # Force exit after 2 hours
 ```
 
+**Position Lifecycle & Exit Monitoring:**
+
+```mermaid
+stateDiagram-v2
+    [*] --> Open: Trade Executed
+    
+    state Open {
+        [*] --> Monitoring
+        Monitoring --> CheckConditions: Every 10s
+        CheckConditions --> Monitoring: No Exit Triggered
+    }
+    
+    Open --> TakeProfit: Price >= Entry * (1 + TP%)
+    Open --> StopLoss: Price <= Entry * (1 - SL%)
+    Open --> TrailingStop: Price >= Entry * (1 + TS_Activate%)<br/>Then Price Drops by TS_Distance%
+    Open --> MaxHold: Time >= Max Hold Minutes
+    
+    TakeProfit --> Closed: Exit Trade
+    StopLoss --> Closed: Exit Trade
+    TrailingStop --> Closed: Exit Trade
+    MaxHold --> Closed: Exit Trade
+    
+    Closed --> [*]
+    
+    note right of Open
+        Exit Monitor checks:
+        - Current price vs entry price
+        - Time since entry
+        - Trailing stop state
+    end note
+```
+
+**Exit Strategy Priority:**
+1. **Take Profit**: Highest priority - locks in gains
+2. **Stop Loss**: Prevents excessive losses
+3. **Trailing Stop**: Protects profits after activation
+4. **Max Hold**: Time-based exit regardless of P&L
+
 ---
 
 ## Risk Coordination
@@ -332,6 +546,47 @@ class ExitConfig:
 The `RiskCoordinator` ensures safe multi-agent operation:
 
 ### Atomic Capital Reservation
+
+The atomic reservation system uses SQLite transactions to prevent race conditions when multiple agents request capital simultaneously:
+
+```mermaid
+sequenceDiagram
+    participant Agent1 as Agent 1
+    participant Agent2 as Agent 2
+    participant Risk as Risk Coordinator
+    participant DB as SQLite DB
+
+    Note over Agent1,DB: Concurrent Capital Requests
+    
+    Agent1->>Risk: Reserve $100 (Market A)
+    Agent2->>Risk: Reserve $150 (Market B)
+    
+    Risk->>DB: BEGIN TRANSACTION
+    Risk->>DB: SELECT available_capital
+    Risk->>DB: UPDATE reservations (Agent 1)
+    Risk->>DB: COMMIT
+    
+    Risk->>Agent1: Reservation ID: 123
+    
+    Risk->>DB: BEGIN TRANSACTION
+    Risk->>DB: SELECT available_capital
+    Risk->>DB: UPDATE reservations (Agent 2)
+    Risk->>DB: COMMIT
+    
+    Risk->>Agent2: Reservation ID: 124
+    
+    Note over Agent1,DB: Execution Phase
+    
+    Agent1->>Agent1: Execute Trade
+    Agent1->>Risk: Confirm Execution (ID: 123)
+    Risk->>DB: Convert Reservation → Position
+    
+    Agent2->>Agent2: Execute Trade
+    Agent2->>Risk: Confirm Execution (ID: 124)
+    Risk->>DB: Convert Reservation → Position
+```
+
+**Code Example:**
 
 ```python
 # Request capital (atomic - no race conditions)
@@ -356,22 +611,119 @@ if reservation_id:
 
 ### Exposure Limits
 
+The risk coordinator enforces multiple layers of exposure limits to prevent over-leveraging:
+
 ```mermaid
 flowchart TB
-    REQ[Trade Request] --> WALLET{Wallet Limit<br/>80% equity}
-    WALLET -->|Pass| AGENT{Agent Limit<br/>40% equity}
-    WALLET -->|Fail| REJECT[Reject]
-    AGENT -->|Pass| MARKET{Market Limit<br/>15% equity}
+    REQ[Trade Request<br/>Amount: $X]
+    
+    subgraph Limits[Exposure Limit Checks]
+        WALLET{Wallet Limit<br/>80% of Total Equity}
+        AGENT{Agent Limit<br/>40% of Total Equity}
+        MARKET{Market Limit<br/>15% of Total Equity}
+        AVAIL{Available Capital<br/>After Reservations}
+    end
+    
+    subgraph Result[Result]
+        RESERVE[Create Reservation<br/>Atomic Transaction]
+        REJECT[Reject Request<br/>Log Reason]
+    end
+    
+    REQ --> WALLET
+    WALLET -->|Pass| AGENT
+    WALLET -->|Fail| REJECT
+    AGENT -->|Pass| MARKET
     AGENT -->|Fail| REJECT
-    MARKET -->|Pass| AVAIL{Available<br/>Capital?}
+    MARKET -->|Pass| AVAIL
     MARKET -->|Fail| REJECT
-    AVAIL -->|Pass| RESERVE[Create Reservation]
+    AVAIL -->|Pass| RESERVE
     AVAIL -->|Fail| REJECT
+    
+    style RESERVE fill:#c8e6c9
+    style REJECT fill:#ffcdd2
+    
+    note1[Example: $10,000 equity<br/>Wallet: $8,000 max<br/>Agent: $4,000 max<br/>Market: $1,500 max]
+    
+    note1 -.-> Limits
 ```
+
+**Limit Hierarchy:**
+1. **Wallet Limit** (80%): Total exposure across all agents
+2. **Agent Limit** (40%): Maximum exposure per agent
+3. **Market Limit** (15%): Maximum exposure per market
+4. **Available Capital**: Remaining capital after active reservations
 
 ### State Reconciliation
 
-On startup, the coordinator:
+On startup, the coordinator performs a comprehensive state reconciliation to ensure the database matches on-chain reality:
+
+```mermaid
+flowchart TB
+    subgraph Startup[Startup Process]
+        START[Agent Startup]
+        REGISTER[Register Agent]
+        RECONCILE[State Reconciliation]
+    end
+    
+    subgraph Fetch[Data Fetching]
+        API_POS[Fetch Positions<br/>Data API]
+        CHAIN_BAL[Fetch USDC Balance<br/>Polygon RPC]
+        DB_STATE[Read DB State<br/>SQLite]
+    end
+    
+    subgraph Compare[State Comparison]
+        ORPHAN{Orphan Positions?<br/>On-chain but not in DB}
+        GHOST{Ghost Positions?<br/>In DB but not on-chain}
+        STALE{Stale Reservations?<br/>Old & Unconfirmed}
+        CRASHED{Crashed Agents?<br/>No Heartbeat}
+    end
+    
+    subgraph Action[Reconciliation Actions]
+        ADD_ORPHAN[Add Orphan Positions<br/>Mark as ORPHAN]
+        REMOVE_GHOST[Remove Ghost Positions<br/>Mark as CLOSED]
+        RELEASE_STALE[Release Stale Reservations]
+        MARK_CRASHED[Mark Agents as Crashed]
+    end
+    
+    subgraph Complete[Completion]
+        HEARTBEAT[Start Heartbeat Loop]
+        READY[Ready for Trading]
+    end
+    
+    START --> REGISTER
+    REGISTER --> RECONCILE
+    RECONCILE --> API_POS
+    RECONCILE --> CHAIN_BAL
+    RECONCILE --> DB_STATE
+    
+    API_POS --> ORPHAN
+    CHAIN_BAL --> ORPHAN
+    DB_STATE --> GHOST
+    DB_STATE --> STALE
+    DB_STATE --> CRASHED
+    
+    ORPHAN -->|Yes| ADD_ORPHAN
+    GHOST -->|Yes| REMOVE_GHOST
+    STALE -->|Yes| RELEASE_STALE
+    CRASHED -->|Yes| MARK_CRASHED
+    
+    ORPHAN -->|No| HEARTBEAT
+    GHOST -->|No| HEARTBEAT
+    STALE -->|No| HEARTBEAT
+    CRASHED -->|No| HEARTBEAT
+    
+    ADD_ORPHAN --> HEARTBEAT
+    REMOVE_GHOST --> HEARTBEAT
+    RELEASE_STALE --> HEARTBEAT
+    MARK_CRASHED --> HEARTBEAT
+    
+    HEARTBEAT --> READY
+    
+    style RECONCILE fill:#fff4e1
+    style READY fill:#c8e6c9
+```
+
+**Reconciliation Steps:**
 1. Fetches actual positions from Polymarket API
 2. Fetches USDC balance from Polygon
 3. Identifies orphan positions (on-chain but not in DB)
@@ -470,7 +822,39 @@ flowchart TB
 
 ### Volatility-Adjusted Thresholds
 
-Price movement detection uses per-market volatility:
+Price movement detection uses per-market volatility to avoid false positives in naturally volatile markets:
+
+```mermaid
+flowchart TB
+    subgraph Data[Market Data]
+        PRICES[Price History<br/>Last 100 Trades]
+        RETURNS[Calculate Returns<br/>Price Changes]
+    end
+    
+    subgraph Stats[Statistical Analysis]
+        MEAN[Mean Return<br/>Average Change]
+        STD[Standard Deviation<br/>Volatility Measure]
+        ZSCORE[Z-Score Calculation<br/>current - mean / std]
+    end
+    
+    subgraph Detection[Unusual Move Detection]
+        THRESHOLD{Z-Score >= 2.5?<br/>Top ~1% of Moves}
+        ALERT[Generate Alert<br/>PRICE_MOVEMENT]
+    end
+    
+    PRICES --> RETURNS
+    RETURNS --> MEAN
+    RETURNS --> STD
+    MEAN --> ZSCORE
+    STD --> ZSCORE
+    ZSCORE --> THRESHOLD
+    THRESHOLD -->|Yes| ALERT
+    THRESHOLD -->|No| NO_ALERT[No Alert]
+    
+    style ALERT fill:#ffeb3b
+```
+
+**Code Implementation:**
 
 ```python
 # Z-score based detection
@@ -478,12 +862,71 @@ z_score = (current_change - mean_return) / std_return
 is_unusual = abs(z_score) >= 2.5  # Top ~1% of moves
 ```
 
+This approach ensures that:
+- **Low volatility markets**: Small absolute moves trigger alerts
+- **High volatility markets**: Only significant moves trigger alerts
+- **Adaptive**: Thresholds adjust to each market's characteristics
+
 ### On-Chain Wallet Analysis
 
-The detector checks Polygon for:
+The detector performs on-chain analysis via Polygon RPC to profile wallets:
+
+```mermaid
+flowchart TB
+    subgraph Input[Trade Event]
+        TRADE[Trade Detected<br/>Wallet Address]
+    end
+    
+    subgraph Chain[On-Chain Analysis]
+        FIRST[First Transaction<br/>Wallet Creation Date]
+        COUNT[Transaction Count<br/>Activity Level]
+        TRANSFERS[USDC Transfers<br/>Funding Sources]
+        CONNECTIONS[Connected Wallets<br/>On-Chain Links]
+    end
+    
+    subgraph Profile[Wallet Profile]
+        AGE[Wallet Age<br/>Days Since Creation]
+        VOLUME[Historical Volume<br/>Total Trading]
+        WINRATE[Win Rate<br/>If Tracked]
+        FRESH{Fresh Wallet?<br/><7 Days Old}
+    end
+    
+    subgraph Detection[Detection Logic]
+        SMART{Smart Money?<br/>High Win Rate + Volume}
+        COORD{Coordinated?<br/>Connected Wallets}
+        FRESH_ALERT{Fresh Wallet Alert<br/>New + Significant Trade}
+    end
+    
+    TRADE --> FIRST
+    TRADE --> COUNT
+    TRADE --> TRANSFERS
+    TRADE --> CONNECTIONS
+    
+    FIRST --> AGE
+    COUNT --> VOLUME
+    TRANSFERS --> VOLUME
+    CONNECTIONS --> COORD
+    
+    AGE --> FRESH
+    VOLUME --> SMART
+    WINRATE --> SMART
+    
+    FRESH --> FRESH_ALERT
+    SMART --> SMART_ALERT[Smart Money Alert]
+    COORD --> COORD_ALERT[Coordinated Alert]
+    
+    style FRESH_ALERT fill:#ff9800
+    style SMART_ALERT fill:#4caf50
+    style COORD_ALERT fill:#f44336
+```
+
+**Analysis Checks:**
 - Wallet creation date (first transaction)
 - Total transaction count
 - USDC transfer history (funding sources)
+- On-chain wallet connections (coordinated trading)
+
+**Code Example:**
 
 ```python
 # Detect freshly created wallets
@@ -496,6 +939,67 @@ if wallet_age_days <= 7:
 ## Data Models
 
 **File**: `polymarket/core/models.py`
+
+### Data Model Relationships
+
+```mermaid
+erDiagram
+    MARKET ||--o{ TOKEN : contains
+    MARKET ||--o{ POSITION : "traded in"
+    SIGNAL ||--|| MARKET : "references"
+    SIGNAL ||--|| TOKEN : "references"
+    POSITION ||--|| TOKEN : "holds"
+    POSITION ||--|| AGENT : "owned by"
+    RESERVATION ||--|| MARKET : "for"
+    RESERVATION ||--|| TOKEN : "for"
+    RESERVATION ||--|| AGENT : "requested by"
+    
+    MARKET {
+        string condition_id PK
+        string question
+        datetime end_date
+        bool resolved
+    }
+    
+    TOKEN {
+        string token_id PK
+        string outcome
+        float price
+    }
+    
+    SIGNAL {
+        string market_id FK
+        string token_id FK
+        SignalDirection direction
+        float score
+        datetime timestamp
+    }
+    
+    POSITION {
+        int id PK
+        string agent_id FK
+        string market_id FK
+        string token_id FK
+        float shares
+        float entry_price
+        PositionStatus status
+    }
+    
+    RESERVATION {
+        int id PK
+        string agent_id FK
+        string market_id FK
+        string token_id FK
+        float amount_usd
+        ReservationStatus status
+    }
+    
+    AGENT {
+        string agent_id PK
+        string agent_type
+        string wallet_address
+    }
+```
 
 ### Core Types
 
@@ -600,6 +1104,59 @@ class ExecutionResult:
 ## Implementing a New Strategy
 
 This guide walks through creating a new trading strategy from scratch.
+
+### Strategy Development Workflow
+
+```mermaid
+flowchart TB
+    subgraph Plan[Planning Phase]
+        IDEA[Strategy Idea]
+        RESEARCH[Research & Backtest]
+        VALIDATE[Validate Concept]
+    end
+    
+    subgraph Implement[Implementation Phase]
+        SIGNAL[Create SignalSource]
+        SIZER[Choose/Create PositionSizer]
+        EXEC[Choose ExecutionEngine]
+        EXIT[Configure ExitStrategy]
+    end
+    
+    subgraph Test[Testing Phase]
+        DRY[Dry Run Testing]
+        VERIFY[Verify Signals]
+        CHECK[Check Risk Limits]
+        BACKTEST[Optional: Backtest]
+    end
+    
+    subgraph Deploy[Deployment Phase]
+        LIVE[Live Trading]
+        MONITOR[Monitor Performance]
+        OPTIMIZE[Optimize Parameters]
+    end
+    
+    IDEA --> RESEARCH
+    RESEARCH --> VALIDATE
+    VALIDATE -->|Pass| SIGNAL
+    VALIDATE -->|Fail| IDEA
+    
+    SIGNAL --> SIZER
+    SIZER --> EXEC
+    EXEC --> EXIT
+    EXIT --> DRY
+    
+    DRY --> VERIFY
+    VERIFY --> CHECK
+    CHECK --> BACKTEST
+    BACKTEST --> LIVE
+    
+    LIVE --> MONITOR
+    MONITOR --> OPTIMIZE
+    OPTIMIZE --> LIVE
+    
+    style VALIDATE fill:#fff4e1
+    style LIVE fill:#c8e6c9
+```
 
 ### Step 1: Create a Signal Source
 

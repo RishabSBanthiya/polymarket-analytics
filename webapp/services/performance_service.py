@@ -22,14 +22,19 @@ class PerformanceService:
         self.storage = SQLiteStorage(config.db_path)
         self.config = config
     
-    def _calculate_realized_pnl(self, trades: List[dict]) -> float:
+    def _calculate_realized_pnl(self, trades: List[dict], include_claims: bool = False) -> float:
         """
         Calculate realized P&L from closed trades.
         Matches buy and sell trades for the same token to calculate realized P&L.
         Uses FIFO (First In First Out) method.
+        
+        Note: Claims are now included in trades via the API (high-price sells).
+        The include_claims parameter is deprecated but kept for backward compatibility.
         """
+        total_realized_pnl = 0.0
+        
         if not trades:
-            return 0.0
+            return total_realized_pnl
         
         # Group trades by token_id
         token_trades = defaultdict(list)
@@ -39,8 +44,6 @@ class PerformanceService:
                 # Only include trades that succeeded, or orphan trades (which are always successful)
                 if trade.get("success", False) or trade.get("is_orphan", False):
                     token_trades[trade["token_id"]].append(trade)
-        
-        total_realized_pnl = 0.0
         
         for token_id, token_trade_list in token_trades.items():
             # Sort by timestamp, but prioritize BUYs when timestamps are very close (within 1 second)
@@ -256,45 +259,75 @@ class PerformanceService:
         include_orphans: bool = True
     ) -> Dict:
         """Get overall performance overview including orphan trades (async)"""
-        # For all-time P&L, calculate directly from all trades to ensure accuracy
+        # For all-time P&L, calculate directly from API data to ensure accuracy
         if days >= 36500:  # All-time
-            end_time = datetime.now()
-            start_time = None
             wallet_address = self.config.proxy_address if include_orphans else None
             
-            # Get all trades across all agents (no limit for all-time)
-            all_trades = await self.trade_service.get_trades_async(
-                agent_id=None,
-                start_time=start_time,
-                end_time=end_time,
-                wallet_address=wallet_address,
-                include_orphans=include_orphans,
-                limit=None
-            )
-            
-            # Filter to only actual trades (exclude deposits/withdrawals)
-            actual_trades = [t for t in all_trades if t.get("token_id") and t.get("token_id") != ""]
-            
-            # Calculate realized P&L from all trades
-            realized_pnl = self._calculate_realized_pnl(actual_trades)
-            
-            # Get all open positions for unrealized P&L
-            # Fetch fresh positions from API to get current prices
             from polymarket.core.api import PolymarketAPI
             api = PolymarketAPI(self.config)
             await api.connect()
+            
             try:
+                # Get ALL transactions directly from API (source of truth)
+                api_transactions = await api.fetch_user_transactions(wallet_address, limit=10000) if wallet_address else []
+                
+                # Calculate FIFO P&L directly from API data
+                from collections import defaultdict
+                token_trades = defaultdict(list)
+                for t in api_transactions:
+                    token_id = t.get('token_id', '')
+                    if token_id:
+                        token_trades[token_id].append(t)
+                
+                realized_pnl = 0.0
+                total_buy_value = 0.0
+                total_sell_value = 0.0
+                
+                for token_id, tlist in token_trades.items():
+                    tlist.sort(key=lambda x: x['timestamp'])
+                    open_buys = []
+                    
+                    for trade in tlist:
+                        side = trade.get('side', '').upper()
+                        shares = float(trade.get('shares', 0))
+                        price = float(trade.get('price', 0))
+                        
+                        if shares <= 0:
+                            continue
+                        
+                        if side == 'BUY':
+                            open_buys.append({'shares': shares, 'price': price})
+                            total_buy_value += shares * price
+                        elif side == 'SELL':
+                            total_sell_value += shares * price
+                            remaining = shares
+                            while remaining > 0 and open_buys:
+                                buy = open_buys[0]
+                                matched = min(remaining, buy['shares'])
+                                pnl = (price - buy['price']) * matched
+                                realized_pnl += pnl
+                                buy['shares'] -= matched
+                                remaining -= matched
+                                if buy['shares'] <= 0:
+                                    open_buys.pop(0)
+                
+                # Get current positions for unrealized P&L
                 api_positions = await api.fetch_positions(wallet_address) if wallet_address else []
                 unrealized_pnl = 0.0
                 for pos in api_positions:
                     if pos.current_price and pos.entry_price:
                         unrealized_pnl += (pos.current_price - pos.entry_price) * pos.shares
+                
+                total_pnl = realized_pnl + unrealized_pnl
+                
+                # Count trades
+                buys = [t for t in api_transactions if t.get('side', '').upper() == 'BUY' and t.get('token_id')]
+                sells = [t for t in api_transactions if t.get('side', '').upper() == 'SELL' and t.get('token_id')]
+                total_trades = len(buys) + len(sells)
+                total_volume = total_buy_value + total_sell_value
+                
             finally:
                 await api.close()
-            total_pnl = realized_pnl + unrealized_pnl
-            
-            successful = [t for t in actual_trades if t.get("success", False) or t.get("is_orphan", False)]
-            total_volume = sum(t["filled_price"] * t["shares"] for t in successful)
             
             # Also get agent breakdowns for display
             agents_perf = await self.get_all_agents_performance_async(
@@ -304,7 +337,7 @@ class PerformanceService:
             
             return {
                 "total_agents": len(agents_perf),
-                "total_trades": len(actual_trades),
+                "total_trades": total_trades,
                 "total_pnl": total_pnl,
                 "realized_pnl": realized_pnl,
                 "unrealized_pnl": unrealized_pnl,

@@ -13,7 +13,7 @@ import logging
 from typing import Optional, List, TYPE_CHECKING
 from datetime import datetime, timezone
 
-from ..core.models import Signal, Side, ExecutionResult, Position
+from ..core.models import Signal, Side, ExecutionResult, Position, PositionStatus
 from ..core.config import Config, get_config
 from ..core.api import PolymarketAPI
 from .risk_coordinator import RiskCoordinator
@@ -161,10 +161,48 @@ class TradingBot:
             raise RuntimeError("Failed to start risk coordinator")
         logger.info("  ✅ Risk coordinator started")
         
-        # Initialize drawdown tracking
+        # Initialize drawdown tracking - load persisted state or start fresh
         wallet_state = self.risk_coordinator.get_wallet_state()
         total_equity = wallet_state.usdc_balance + wallet_state.total_positions_value
-        self.drawdown_limit.reset(total_equity)
+        
+        # Try to load persisted drawdown state
+        with self.risk_coordinator.storage.transaction() as txn:
+            saved_state = txn.get_drawdown_state(self.config.proxy_address)
+        
+        if saved_state:
+            # Restore saved state
+            self.drawdown_limit.peak_equity = saved_state["peak_equity"]
+            self.drawdown_limit.daily_start_equity = saved_state["daily_start_equity"]
+            self.drawdown_limit.daily_start_date = saved_state["daily_start_date"]
+            self.drawdown_limit.is_breached = saved_state["is_breached"]
+            self.drawdown_limit.breach_reason = saved_state["breach_reason"]
+            self.drawdown_limit.current_equity = total_equity
+            
+            # Check if we need to reset daily tracking (new day)
+            now = datetime.now(timezone.utc)
+            if saved_state["daily_start_date"] and now.date() != saved_state["daily_start_date"].date():
+                self.drawdown_limit.daily_start_equity = total_equity
+                self.drawdown_limit.daily_start_date = now
+                logger.info(f"Daily drawdown reset (new day): starting equity ${total_equity:.2f}")
+            
+            # Update peak if current equity is higher
+            if total_equity > self.drawdown_limit.peak_equity:
+                self.drawdown_limit.peak_equity = total_equity
+            
+            logger.info(f"📊 Loaded persisted drawdown state:")
+            logger.info(f"  Peak Equity: ${self.drawdown_limit.peak_equity:.2f}")
+            logger.info(f"  Daily Start: ${self.drawdown_limit.daily_start_equity:.2f}")
+            logger.info(f"  Current: ${total_equity:.2f}")
+            logger.info(f"  Daily DD: {self.drawdown_limit.daily_drawdown_pct:.1%}")
+            logger.info(f"  Total DD: {self.drawdown_limit.total_drawdown_pct:.1%}")
+            
+            if self.drawdown_limit.is_breached:
+                logger.warning(f"⚠️  Drawdown limit still breached: {self.drawdown_limit.breach_reason}")
+                self.trading_halt.add_reason("DRAWDOWN", self.drawdown_limit.breach_reason or "")
+        else:
+            # First run - initialize fresh
+            self.drawdown_limit.reset(total_equity)
+            logger.info(f"📊 Initialized fresh drawdown tracking: equity ${total_equity:.2f}")
         
         self.running = True
         
@@ -332,12 +370,81 @@ class TradingBot:
     
     async def _update_equity(self):
         """Update equity and check drawdown limits"""
+        # Throttle reconciliation to every 30 seconds to avoid API rate limits
+        # This ensures manually closed positions are detected promptly
+        now = datetime.now(timezone.utc)
+        if not hasattr(self, '_last_reconcile') or \
+           (now - self._last_reconcile).total_seconds() > 30:
+            closed, _ = await self.risk_coordinator.reconcile_positions()
+            self._last_reconcile = now
+            
+            # If we closed positions, clear any stale drawdown halt
+            # since our equity calculation was based on phantom positions
+            if closed > 0 and self.trading_halt.is_halted:
+                if "DRAWDOWN" in self.trading_halt.reasons:
+                    logger.info(
+                        f"🔄 Reconciled {closed} stale position(s) - "
+                        f"re-checking drawdown with accurate equity"
+                    )
+        
+        # Now get wallet state (will be accurate after reconciliation)
         wallet_state = self.risk_coordinator.get_wallet_state()
         total_equity = wallet_state.usdc_balance + wallet_state.total_positions_value
         
         if not self.drawdown_limit.update(total_equity):
             logger.error("Drawdown limit breached - halting trading")
             self.trading_halt.add_reason("DRAWDOWN", self.drawdown_limit.breach_reason or "")
+        
+        # Persist drawdown state (throttle to avoid excessive writes)
+        if not hasattr(self, '_last_drawdown_save') or \
+           (now - self._last_drawdown_save).total_seconds() > 60:
+            with self.risk_coordinator.storage.transaction() as txn:
+                txn.update_drawdown_state(
+                    wallet_address=self.config.proxy_address,
+                    peak_equity=self.drawdown_limit.peak_equity,
+                    daily_start_equity=self.drawdown_limit.daily_start_equity or total_equity,
+                    daily_start_date=self.drawdown_limit.daily_start_date or datetime.now(timezone.utc),
+                    is_breached=self.drawdown_limit.is_breached,
+                    breach_reason=self.drawdown_limit.breach_reason
+                )
+            self._last_drawdown_save = now
+    
+    def _should_manage_position(self, position: Position) -> bool:
+        """
+        Determine if this bot should manage a given position.
+        
+        Ownership rules:
+        1. Own positions: agent_id matches this bot's agent_id
+        2. Orphan positions: status is ORPHAN or agent_id is 'unattributed'/empty/orphan-prefixed
+        3. Other bots' positions: NOT managed (filtered out)
+        
+        This ensures:
+        - Bond bot only exits bond positions (using bond exit config)
+        - Flow bot only exits flow positions (using flow exit config)
+        - Either bot can handle orphans (positions found on-chain without DB record)
+        
+        Returns:
+            True if this bot should manage the position, False otherwise
+        """
+        # Check if this is our own position
+        if position.agent_id == self.agent_id:
+            return True
+        
+        # Check if this is an orphan position (any bot can manage)
+        # Orphan indicators:
+        # 1. Status is ORPHAN
+        # 2. agent_id is empty, 'unattributed', or starts with 'orphan_'
+        if position.status == PositionStatus.ORPHAN:
+            return True
+        
+        orphan_indicators = ('', 'unattributed', 'orphan_')
+        if not position.agent_id or position.agent_id in orphan_indicators[:2]:
+            return True
+        if position.agent_id.startswith('orphan_'):
+            return True
+        
+        # This position belongs to another bot - don't manage it
+        return False
     
     async def _monitor_positions(self):
         """
@@ -349,6 +456,9 @@ class TradingBot:
         - Stop-loss: Exit when loss threshold reached
         - Time-based: Force exit after max hold time
         
+        Only monitors positions owned by this agent or orphan positions.
+        Other agents' positions are left for their respective bots to manage.
+        
         Also reconciles with actual on-chain state to handle manual sells.
         """
         if not self.exit_monitor:
@@ -357,8 +467,11 @@ class TradingBot:
         wallet_state = self.risk_coordinator.get_wallet_state()
         now = datetime.now(timezone.utc)
         
-        # Get current position token IDs from wallet state
-        current_position_ids = {pos.token_id for pos in wallet_state.positions}
+        # Filter to only positions this bot should manage
+        managed_positions = [p for p in wallet_state.positions if self._should_manage_position(p)]
+        
+        # Get current position token IDs from managed positions only
+        current_position_ids = {pos.token_id for pos in managed_positions}
         
         # Clean up exit monitor for positions that no longer exist
         # This handles manual sells or positions closed outside the bot
@@ -385,10 +498,10 @@ class TradingBot:
                 # Also cancel any stale orders for this token
                 await self._cancel_existing_orders(tracked_id)
         
-        if not wallet_state.positions:
+        if not managed_positions:
             return
         
-        for position in wallet_state.positions:
+        for position in managed_positions:
             try:
                 # Get or create position state for monitoring
                 state = self.exit_monitor.get_state(position.token_id)
@@ -417,17 +530,48 @@ class TradingBot:
                             self.risk_coordinator.mark_position_closed_by_token(position.token_id)
                             continue
                     
-                    # Position exists - register it for monitoring
+                    # Before registering, check if orderbook exists (market still active)
+                    # This prevents failed safety sell attempts for resolved markets
+                    bid, ask, _ = await self.api.get_spread(position.token_id)
+                    if bid is None and ask is None:
+                        # Market is closed/resolved - clean up immediately
+                        logger.info(
+                            f"🧹 Position {position.token_id[:16]}... has no orderbook - "
+                            f"market closed/resolved. Cleaning up."
+                        )
+                        self.risk_coordinator.mark_position_closed_by_token(position.token_id)
+                        await self._cancel_existing_orders(position.token_id)
+                        continue
+                    
+                    # Position exists and market is active - register it for monitoring
+                    actual_shares = api_shares if api_shares is not None else position.shares
                     state = self.exit_monitor.register_position(
                         position_id=position.token_id,
                         entry_price=position.entry_price,
                         entry_time=entry_time,
-                        shares=api_shares if api_shares is not None else position.shares,
+                        shares=actual_shares,
                     )
-                    logger.debug(
+                    logger.info(
                         f"📝 Registered position for monitoring: {position.token_id[:16]}... "
-                        f"@ ${position.entry_price:.4f}"
+                        f"@ ${position.entry_price:.4f} ({actual_shares:.4f} shares)"
                     )
+                    
+                    # Place safety sell order for this position (handles orphans and restarts)
+                    # Only if position doesn't already have a safety order
+                    if state and not state.has_safety_order():
+                        # IMPORTANT: Cancel any existing orders first (from previous bot runs)
+                        # This prevents "not enough balance" errors from duplicate orders
+                        cancelled = await self._cancel_existing_orders(position.token_id)
+                        if cancelled > 0:
+                            logger.info(f"  🗑️  Cleared {cancelled} existing order(s) before placing safety sell")
+                        
+                        safety_order_id = await self._place_safety_sell(
+                            token_id=position.token_id,
+                            shares=actual_shares,
+                            entry_price=position.entry_price,
+                        )
+                        if safety_order_id:
+                            state.update_safety_order(safety_order_id)
                 
                 # Get current price
                 bid, ask, spread = await self.api.get_spread(position.token_id)
@@ -527,6 +671,111 @@ class TradingBot:
             logger.warning(f"Error checking/cancelling existing orders: {e}")
             return 0
     
+    async def _place_safety_sell(
+        self,
+        token_id: str,
+        shares: float,
+        entry_price: float,
+    ) -> Optional[str]:
+        """
+        Place a GTC limit sell order at $0.99 (safety sell).
+        
+        This captures value when the market resolves to the winning outcome,
+        since Polymarket doesn't allow direct claims via API.
+        
+        Args:
+            token_id: Token to place safety sell for
+            shares: Number of shares to sell
+            entry_price: Entry price (for logging)
+            
+        Returns:
+            Order ID if successful, None otherwise
+        """
+        if not self.client or self.dry_run:
+            if self.dry_run:
+                logger.info(
+                    f"  🛡️  [DRY RUN] Would place safety sell: "
+                    f"{shares:.4f} shares @ ${self.exit_config.near_resolution_high_price:.3f}"
+                )
+            return None
+        
+        safety_price = self.exit_config.near_resolution_high_price
+        
+        try:
+            from py_clob_client.clob_types import OrderArgs, OrderType
+            from py_clob_client.order_builder.constants import SELL
+            
+            # Apply 99.5% safety margin to avoid "not enough balance" errors
+            safe_shares = shares * 0.995
+            
+            # Create and place GTC limit sell order at safety price
+            order_args = OrderArgs(
+                price=safety_price,
+                size=safe_shares,
+                side=SELL,
+                token_id=token_id
+            )
+            
+            signed_order = self.client.create_order(order_args)
+            response = self.client.post_order(signed_order, OrderType.GTC)
+            
+            # Handle response - can be dict or object
+            def get_response_field(field: str, default=None):
+                if isinstance(response, dict):
+                    return response.get(field, default)
+                return getattr(response, field, default)
+            
+            success = get_response_field("success")
+            order_id = get_response_field("orderID") or get_response_field("order_id") or ""
+            
+            if success and order_id:
+                expected_value = safe_shares * safety_price
+                logger.info(
+                    f"  🛡️  Safety sell placed: {safe_shares:.4f} shares @ ${safety_price:.3f} "
+                    f"(~${expected_value:.2f} if resolved)"
+                )
+                return order_id
+            else:
+                error_msg = get_response_field("errorMsg") or get_response_field("error_msg") or "Unknown error"
+                logger.warning(f"  ⚠️  Failed to place safety sell: {error_msg}")
+                return None
+                
+        except Exception as e:
+            logger.warning(f"  ⚠️  Error placing safety sell for {token_id[:16]}...: {e}")
+            return None
+    
+    async def _cancel_safety_order(self, token_id: str) -> bool:
+        """
+        Cancel the safety sell order for a position.
+        
+        Should be called before placing exit orders at different prices
+        (e.g., take-profit, stop-loss, trailing stop).
+        
+        Args:
+            token_id: Token ID of the position
+            
+        Returns:
+            True if cancelled successfully or no order existed, False on error
+        """
+        if not self.client or self.dry_run:
+            return True
+        
+        # Get the position state to find the safety order ID
+        state = self.exit_monitor.get_state(token_id)
+        if not state or not state.safety_order_id:
+            return True  # No safety order to cancel
+        
+        try:
+            self.client.cancel(state.safety_order_id)
+            logger.info(f"  🗑️  Cancelled safety sell order: {state.safety_order_id[:16]}...")
+            state.update_safety_order(None)
+            return True
+        except Exception as e:
+            # Order may have already filled or been cancelled
+            logger.debug(f"  ℹ️  Could not cancel safety order (may have filled): {e}")
+            state.update_safety_order(None)
+            return True
+    
     async def _execute_exit(
         self,
         position: Position,
@@ -584,10 +833,13 @@ class TradingBot:
         if safe_shares != actual_shares:
             logger.info(f"  🔄 Applying safety margin: {actual_shares:.4f} → {safe_shares:.4f}")
         
-        # Cancel any existing stale orders for this token before placing new one
+        # Cancel the safety sell order first (updates state tracking)
+        await self._cancel_safety_order(position.token_id)
+        
+        # Cancel any other existing stale orders for this token before placing new one
         cancelled = await self._cancel_existing_orders(position.token_id)
         if cancelled > 0:
-            logger.info(f"  🔄 Replaced {cancelled} existing order(s)")
+            logger.info(f"  🔄 Cancelled {cancelled} additional order(s)")
         
         # Calculate value to sell using SAFE shares (with margin)
         size_usd = safe_shares * exit_price
@@ -910,7 +1162,7 @@ class TradingBot:
                     
                     # Register BUY positions with exit monitor for exit strategy tracking
                     if side == Side.BUY and self.exit_monitor:
-                        self.exit_monitor.register_position(
+                        state = self.exit_monitor.register_position(
                             position_id=actual_token_id,
                             entry_price=result.filled_price,
                             entry_time=datetime.now(timezone.utc),
@@ -922,6 +1174,15 @@ class TradingBot:
                             f"SL: {self.exit_config.stop_loss_pct:.0%}, "
                             f"Max: {self.exit_config.max_hold_minutes}min)"
                         )
+                        
+                        # Place safety sell order at $0.99 to capture value on resolution
+                        safety_order_id = await self._place_safety_sell(
+                            token_id=actual_token_id,
+                            shares=result.filled_shares,
+                            entry_price=result.filled_price,
+                        )
+                        if safety_order_id and state:
+                            state.update_safety_order(safety_order_id)
                 else:
                     # Release reservation
                     self.risk_coordinator.release_reservation(reservation_id)
@@ -946,7 +1207,11 @@ class TradingBot:
                     
                     if result.error_message:
                         logger.warning(f"❌ Execution failed: {result.error_message}")
-                        self.circuit_breaker.record_failure()
+                        # Only count actual system errors toward circuit breaker
+                        # Protective rejections (price drift, spread, slippage) are expected
+                        # behavior during volatile markets, not system failures
+                        if not result.is_rejection:
+                            self.circuit_breaker.record_failure()
                     else:
                         logger.info("⏳ Order placed but not filled (may fill later)")
                         

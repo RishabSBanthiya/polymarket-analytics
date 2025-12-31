@@ -193,18 +193,6 @@ class StorageTransaction(ABC):
         """Mark all positions with the given token_id as closed. Returns count."""
         pass
     
-    @abstractmethod
-    def add_orphan_position(
-        self,
-        wallet_address: str,
-        token_id: str,
-        market_id: str,
-        shares: float,
-        current_price: float
-    ) -> int:
-        """Add an orphan position (found on-chain but not in DB)"""
-        pass
-    
     # ==================== EXPOSURE CALCULATIONS ====================
     
     @abstractmethod
@@ -305,6 +293,115 @@ class StorageTransaction(ABC):
     @abstractmethod
     def get_alert_stats(self) -> dict:
         """Get alert statistics"""
+        pass
+    
+    # ==================== ON-CHAIN TRANSACTIONS ====================
+    
+    @abstractmethod
+    def upsert_transaction(
+        self,
+        tx_hash: str,
+        log_index: int,
+        block_number: int,
+        block_timestamp: datetime,
+        transaction_type: str,
+        wallet_address: str,
+        token_id: Optional[str] = None,
+        market_id: Optional[str] = None,
+        outcome: Optional[str] = None,
+        shares: Optional[float] = None,
+        price_per_share: Optional[float] = None,
+        usdc_amount: Optional[float] = None,
+        agent_id: Optional[str] = None,
+        raw_event: Optional[str] = None
+    ) -> int:
+        """Insert or update an on-chain transaction (source of truth)"""
+        pass
+    
+    @abstractmethod
+    def get_transaction(self, tx_hash: str, log_index: int = 0) -> Optional[dict]:
+        """Get a transaction by hash and log index"""
+        pass
+    
+    @abstractmethod
+    def get_transactions(
+        self,
+        wallet_address: Optional[str] = None,
+        transaction_type: Optional[str] = None,
+        token_id: Optional[str] = None,
+        agent_id: Optional[str] = None,
+        start_block: Optional[int] = None,
+        end_block: Optional[int] = None,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None,
+        limit: Optional[int] = None
+    ) -> List[dict]:
+        """Get transactions with filters"""
+        pass
+    
+    @abstractmethod
+    def get_computed_positions(
+        self,
+        wallet_address: str,
+        include_zero_balances: bool = False
+    ) -> List[dict]:
+        """Compute current positions from transaction history"""
+        pass
+    
+    @abstractmethod
+    def get_agent_computed_exposure(self, agent_id: str, current_prices: Optional[dict] = None) -> float:
+        """Get exposure for an agent from transaction history"""
+        pass
+    
+    @abstractmethod
+    def get_market_computed_exposure(
+        self,
+        market_id: str,
+        wallet_address: str,
+        current_prices: Optional[dict] = None
+    ) -> float:
+        """Get exposure in a specific market from transaction history"""
+        pass
+    
+    @abstractmethod
+    def get_total_computed_exposure(
+        self,
+        wallet_address: str,
+        current_prices: Optional[dict] = None
+    ) -> float:
+        """Get total exposure for wallet from transaction history"""
+        pass
+    
+    @abstractmethod
+    def link_transaction_to_agent(self, tx_hash: str, log_index: int, agent_id: str) -> bool:
+        """Link an existing transaction to an agent"""
+        pass
+    
+    @abstractmethod
+    def count_transactions(self, wallet_address: Optional[str] = None) -> int:
+        """Count total transactions"""
+        pass
+    
+    @abstractmethod
+    def get_transaction_summary(self, wallet_address: str) -> dict:
+        """Get summary of all transactions for a wallet"""
+        pass
+    
+    # ==================== CHAIN SYNC STATE ====================
+    
+    @abstractmethod
+    def get_chain_sync_state(self, wallet_address: str) -> Optional[dict]:
+        """Get chain sync state for a wallet"""
+        pass
+    
+    @abstractmethod
+    def update_chain_sync_state(
+        self,
+        wallet_address: str,
+        last_synced_block: int,
+        total_transactions: int
+    ) -> None:
+        """Update chain sync state for a wallet"""
         pass
 
 

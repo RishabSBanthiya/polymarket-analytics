@@ -2,7 +2,7 @@
 Exit Strategy Module.
 
 Provides configurable exit strategies for position management:
-- Near-resolution: Auto-sell when market resolves ($0.995+ or $0.01-)
+- Near-resolution: Auto-sell when market resolves ($0.99+ or $0.01-)
 - Take-profit: Exit when target profit reached
 - Trailing stop: Lock in profits with dynamic stop-loss
 - Time-based: Force exit after maximum hold time
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class ExitReason(Enum):
     """Reason for exiting a position."""
-    NEAR_RESOLUTION = "near_resolution"  # Market resolved - price at $0.995+ or $0.01-
+    NEAR_RESOLUTION = "near_resolution"  # Market resolved - price at $0.99+ or $0.01-
     TAKE_PROFIT = "take_profit"
     TRAILING_STOP = "trailing_stop"
     TIME_LIMIT = "time_limit"
@@ -42,7 +42,7 @@ class ExitConfig:
     # Near-resolution exit (auto-sell when market resolves)
     # This is the highest priority exit - captures value since Polymarket API doesn't allow claims
     near_resolution_exit_enabled: bool = True
-    near_resolution_high_price: float = 0.995  # Sell when price >= this (position won)
+    near_resolution_high_price: float = 0.99  # Sell when price >= this (position won)
     near_resolution_low_price: float = 0.01    # Sell when price <= this (position lost)
     
     # Take-profit settings
@@ -81,7 +81,8 @@ class PositionState:
     """
     Tracks state needed for exit monitoring.
     
-    Used to track peak price for trailing stops, entry time for time-based exits, etc.
+    Used to track peak price for trailing stops, entry time for time-based exits,
+    and safety sell order management.
     """
     entry_price: float
     entry_time: datetime
@@ -92,6 +93,9 @@ class PositionState:
     trough_price: float = float('inf')  # Lowest price since entry
     trailing_stop_activated: bool = False
     trailing_stop_level: float = 0.0  # Current trailing stop price
+    
+    # Safety sell order tracking
+    safety_order_id: Optional[str] = None  # GTC limit sell order at $0.99
     
     def __post_init__(self):
         """Initialize peak/trough to entry price."""
@@ -142,6 +146,19 @@ class PositionState:
         if self.peak_price <= 0:
             return 0.0
         return (self.peak_price - self.trough_price) / self.peak_price
+    
+    def update_safety_order(self, order_id: Optional[str]) -> None:
+        """
+        Update the safety sell order ID.
+        
+        Args:
+            order_id: New safety order ID, or None to clear
+        """
+        self.safety_order_id = order_id
+    
+    def has_safety_order(self) -> bool:
+        """Check if this position has an active safety sell order."""
+        return self.safety_order_id is not None
 
 
 class ExitMonitor:
@@ -149,7 +166,7 @@ class ExitMonitor:
     Monitors positions and determines when to exit.
     
     Checks multiple exit conditions in priority order:
-    0. Near-resolution (market resolved - price at $0.995+ or $0.01-)
+    0. Near-resolution (market resolved - price at $0.99+ or $0.01-)
     1. Take-profit (lock in gains)
     2. Trailing stop (protect profits)
     3. Stop-loss (limit losses)
