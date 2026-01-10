@@ -22,6 +22,7 @@ from .components.signals import SignalSource
 from .components.sizers import PositionSizer
 from .components.executors import ExecutionEngine, DryRunExecutor
 from .components.exit_strategies import ExitMonitor, ExitConfig, ExitReason, PositionState
+from .alerter import TelegramAlerter, get_alerter
 
 if TYPE_CHECKING:
     from py_clob_client.client import ClobClient
@@ -111,6 +112,9 @@ class TradingBot:
         # State
         self.running = False
         self._main_task: Optional[asyncio.Task] = None
+
+        # Alerter for trade notifications
+        self.alerter: Optional[TelegramAlerter] = None
         
     async def start(self):
         """
@@ -205,7 +209,12 @@ class TradingBot:
             logger.info(f"📊 Initialized fresh drawdown tracking: equity ${total_equity:.2f}")
         
         self.running = True
-        
+
+        # Initialize alerter
+        self.alerter = get_alerter()
+        await self.alerter.start()
+        logger.info("  ✅ Telegram alerter started")
+
         logger.info(f"{'='*60}")
         logger.info(f"💰 WALLET STATE")
         logger.info(f"{'='*60}")
@@ -215,15 +224,23 @@ class TradingBot:
         logger.info(f"  Available:       ${wallet_state.available_capital:,.2f}")
         logger.info(f"{'='*60}")
         logger.info(f"✅ Bot ready and running!")
+
+        # Send bot started alert
+        mode = "DRY RUN" if self.dry_run else "LIVE"
+        self.alerter.bot_started(self.agent_id, mode)
     
     async def stop(self):
         """Stop the trading bot gracefully"""
         logger.info(f"{'='*60}")
         logger.info(f"🛑 STOPPING BOT: {self.agent_id}")
         logger.info(f"{'='*60}")
-        
+
+        # Send bot stopped alert before shutdown
+        if self.alerter:
+            self.alerter.bot_stopped(self.agent_id, "Graceful shutdown")
+
         self.running = False
-        
+
         # Cancel main task
         if self._main_task:
             self._main_task.cancel()
@@ -231,17 +248,22 @@ class TradingBot:
                 await self._main_task
             except asyncio.CancelledError:
                 pass
-        
+
+        # Shutdown alerter
+        if self.alerter:
+            await self.alerter.stop()
+            logger.info("  ✅ Telegram alerter stopped")
+
         # Shutdown risk coordinator
         if self.risk_coordinator:
             await self.risk_coordinator.shutdown()
             logger.info("  ✅ Risk coordinator stopped")
-        
+
         # Close API
         if self.api:
             await self.api.close()
             logger.info("  ✅ API disconnected")
-        
+
         logger.info(f"{'='*60}")
         logger.info(f"👋 Bot stopped cleanly")
         logger.info(f"{'='*60}")
@@ -982,6 +1004,19 @@ class TradingBot:
                         )
                 except Exception as e:
                     logger.warning(f"Failed to save exit execution: {e}")
+
+                # Send Telegram alert for exit
+                if self.alerter:
+                    market_name = position.market_id[:50] if position.market_id else "Unknown"
+                    self.alerter.trade_executed(
+                        agent_id=self.agent_id,
+                        market_name=f"{market_name} (EXIT: {reason.value})",
+                        side="SELL",
+                        amount_usd=result.filled_shares * result.filled_price,
+                        price=result.filled_price,
+                        shares=result.filled_shares,
+                        pnl=pnl,
+                    )
             else:
                 if result.error_message:
                     logger.warning(f"❌ Exit failed: {result.error_message}")
@@ -1270,6 +1305,18 @@ class TradingBot:
                         )
                         if safety_order_id and state:
                             state.update_safety_order(safety_order_id)
+
+                    # Send Telegram alert for entry
+                    if self.alerter:
+                        market_name = signal.metadata.get('question', signal.market_id[:50])
+                        self.alerter.trade_executed(
+                            agent_id=self.agent_id,
+                            market_name=market_name,
+                            side=side.value,
+                            amount_usd=total_cost,
+                            price=result.filled_price,
+                            shares=result.filled_shares,
+                        )
                 else:
                     # Release reservation
                     self.risk_coordinator.release_reservation(reservation_id)
