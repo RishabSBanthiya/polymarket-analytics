@@ -7,12 +7,13 @@ Different engines use different strategies (market, limit, aggressive, etc.)
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, List, TYPE_CHECKING
 from datetime import datetime, timezone
 
 from ...core.models import (
     Signal, ExecutionResult, OrderbookSnapshot, Side,
-    calculate_time_based_slippage_threshold
+    calculate_time_based_slippage_threshold,
+    SignalLeg, MultiLegSignal, LegExecutionResult, MultiLegExecutionResult
 )
 from ...core.config import RiskConfig
 
@@ -523,5 +524,203 @@ class DryRunExecutor(ExecutionEngine):
                 requested_price=price,
                 error_message="Simulated: order not filled"
             )
+
+
+class MultiLegExecutor(ExecutionEngine):
+    """
+    Executor for atomic multi-leg trades.
+
+    Executes all legs sequentially with optional rollback on failure.
+    Used by arb, stat-arb, and sports portfolio strategies.
+    """
+
+    def __init__(
+        self,
+        base_executor: Optional[ExecutionEngine] = None,
+        rollback_on_failure: bool = True,
+        max_leg_delay_seconds: float = 5.0
+    ):
+        """
+        Args:
+            base_executor: Executor to use for individual legs (default: AggressiveExecutor)
+            rollback_on_failure: Whether to unwind filled legs if later legs fail
+            max_leg_delay_seconds: Max time allowed between leg executions
+        """
+        self.base_executor = base_executor or AggressiveExecutor()
+        self.rollback_on_failure = rollback_on_failure
+        self.max_leg_delay_seconds = max_leg_delay_seconds
+
+    @property
+    def name(self) -> str:
+        return f"multi_leg_{self.base_executor.name}"
+
+    async def execute(
+        self,
+        client: "ClobClient",
+        token_id: str,
+        side: Side,
+        size_usd: float,
+        price: float,
+        orderbook: Optional[OrderbookSnapshot] = None,
+        original_signal_price: Optional[float] = None,
+        market_lifetime_hours: Optional[float] = None
+    ) -> ExecutionResult:
+        """Single-leg execution - delegates to base executor"""
+        return await self.base_executor.execute(
+            client, token_id, side, size_usd, price,
+            orderbook, original_signal_price, market_lifetime_hours
+        )
+
+    async def execute_multi_leg(
+        self,
+        client: "ClobClient",
+        signal: MultiLegSignal,
+        total_size_usd: float
+    ) -> MultiLegExecutionResult:
+        """
+        Execute multiple legs atomically.
+
+        Args:
+            client: CLOB client for placing orders
+            signal: MultiLegSignal containing all legs to execute
+            total_size_usd: Total position size in USD (divided among legs)
+
+        Returns:
+            MultiLegExecutionResult with per-leg results
+        """
+        leg_results: List[LegExecutionResult] = []
+        total_cost = 0.0
+        total_shares = 0.0
+        start_time = datetime.now(timezone.utc)
+
+        for i, leg in enumerate(signal.legs):
+            # Check for timeout between legs
+            elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
+            if i > 0 and elapsed > self.max_leg_delay_seconds * i:
+                logger.warning(
+                    f"Multi-leg execution taking too long: {elapsed:.1f}s for {i} legs"
+                )
+
+            # Calculate size for this leg
+            leg_size_usd = total_size_usd * leg.size_pct
+
+            # Execute leg
+            result = await self.base_executor.execute(
+                client=client,
+                token_id=leg.token_id,
+                side=leg.side,
+                size_usd=leg_size_usd,
+                price=leg.target_price
+            )
+
+            leg_results.append(LegExecutionResult(
+                leg_index=i,
+                token_id=leg.token_id,
+                result=result
+            ))
+
+            if result.success:
+                total_cost += result.filled_shares * result.filled_price
+                total_shares += result.filled_shares
+                logger.info(
+                    f"Leg {i+1}/{signal.num_legs} filled: "
+                    f"{leg.side.value} {result.filled_shares:.2f} @ ${result.filled_price:.4f}"
+                )
+            else:
+                logger.warning(
+                    f"Leg {i+1}/{signal.num_legs} failed: {result.error_message}"
+                )
+
+                # Check if we need to rollback
+                if self.rollback_on_failure and i > 0:
+                    # Some legs already filled - need to unwind
+                    return MultiLegExecutionResult(
+                        success=False,
+                        leg_results=leg_results,
+                        total_cost=total_cost,
+                        total_shares=total_shares,
+                        error_message=f"Leg {i+1} failed: {result.error_message}",
+                        needs_rollback=True
+                    )
+                else:
+                    return MultiLegExecutionResult(
+                        success=False,
+                        leg_results=leg_results,
+                        total_cost=total_cost,
+                        total_shares=total_shares,
+                        error_message=f"Leg {i+1} failed: {result.error_message}",
+                        needs_rollback=False
+                    )
+
+        # All legs succeeded
+        return MultiLegExecutionResult(
+            success=True,
+            leg_results=leg_results,
+            total_cost=total_cost,
+            total_shares=total_shares
+        )
+
+    async def rollback_position(
+        self,
+        client: "ClobClient",
+        leg_results: List[LegExecutionResult]
+    ) -> List[ExecutionResult]:
+        """
+        Attempt to unwind filled legs after a partial failure.
+
+        Args:
+            client: CLOB client
+            leg_results: Results from the failed multi-leg execution
+
+        Returns:
+            List of rollback execution results
+        """
+        rollback_results = []
+
+        for leg_result in leg_results:
+            if not leg_result.success:
+                continue
+
+            # Reverse the trade
+            original = leg_result.result
+            reverse_side = Side.SELL if original.filled_shares > 0 else Side.BUY
+
+            # Try to unwind at market
+            rollback = await self.base_executor.execute(
+                client=client,
+                token_id=leg_result.token_id,
+                side=reverse_side,
+                size_usd=original.filled_shares * original.filled_price,
+                price=original.filled_price
+            )
+
+            rollback_results.append(rollback)
+
+            if rollback.success:
+                logger.info(
+                    f"Rolled back leg {leg_result.leg_index}: "
+                    f"{reverse_side.value} {rollback.filled_shares:.2f}"
+                )
+            else:
+                logger.error(
+                    f"Failed to rollback leg {leg_result.leg_index}: "
+                    f"{rollback.error_message}"
+                )
+
+        return rollback_results
+
+
+class DryRunMultiLegExecutor(MultiLegExecutor):
+    """Dry run version of multi-leg executor for testing"""
+
+    def __init__(self, fill_probability: float = 0.95):
+        super().__init__(
+            base_executor=DryRunExecutor(fill_probability=fill_probability),
+            rollback_on_failure=False  # No real rollback needed in dry run
+        )
+
+    @property
+    def name(self) -> str:
+        return "dry_run_multi_leg"
 
 

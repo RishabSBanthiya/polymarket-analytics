@@ -2,15 +2,24 @@
 """
 Unified Trading Bot Runner.
 
-Run different trading strategies with a single command.
+Run any trading strategy with a single command.
 
 Usage:
     # Bond strategy (expiring markets)
     python run_bot.py bond --dry-run
-    
+
     # Flow copy strategy
     python run_bot.py flow --dry-run --min-score 40
-    
+
+    # Arbitrage strategy
+    python run_bot.py arb --dry-run --min-edge 50
+
+    # Statistical arbitrage
+    python run_bot.py stat-arb --dry-run --types pair_spread,multi_outcome
+
+    # Sports portfolio
+    python run_bot.py sports --dry-run --sports nba,nfl
+
     # Multiple agents
     python run_bot.py bond --agent-id bond-1 &
     python run_bot.py flow --agent-id flow-1 &
@@ -165,6 +174,96 @@ async def run_flow(args):
         await _bot.stop()
 
 
+async def run_arb(args):
+    """Run arbitrage strategy"""
+    from polymarket.strategies.arb_strategy import create_arb_bot, ArbSignals
+
+    global _bot
+
+    _bot = create_arb_bot(
+        agent_id=args.agent_id,
+        dry_run=args.dry_run,
+        min_edge_bps=args.min_edge,
+        order_size_usd=args.order_size,
+        max_positions=args.max_positions,
+    )
+
+    setup_async_signal_handlers(_bot)
+
+    try:
+        await _bot.start()
+
+        # Refresh markets before running
+        if isinstance(_bot.signal_source, ArbSignals):
+            await _bot.signal_source.refresh_markets()
+
+        await _bot.run(interval_seconds=args.interval)
+
+    finally:
+        await _bot.stop()
+
+
+async def run_stat_arb(args):
+    """Run statistical arbitrage strategy"""
+    from polymarket.strategies.stat_arb.signals import create_stat_arb_bot
+
+    global _bot
+
+    # Parse types
+    types = args.types.split(",") if args.types else None
+
+    _bot = create_stat_arb_bot(
+        agent_id=args.agent_id,
+        dry_run=args.dry_run,
+        types=types,
+        entry_z=args.entry_z,
+        exit_z=args.exit_z,
+        stop_z=args.stop_z,
+        min_correlation=args.min_correlation,
+        max_positions=args.max_positions,
+        position_size_pct=args.position_size,
+    )
+
+    setup_async_signal_handlers(_bot)
+
+    try:
+        await _bot.start()
+        await _bot.run(interval_seconds=args.interval)
+    finally:
+        await _bot.stop()
+
+
+async def run_sports(args):
+    """Run sports portfolio strategy"""
+    from polymarket.strategies.sports_portfolio.scanner import create_sports_bot
+
+    global _bot
+
+    # Parse sports
+    sports = args.sports.split(",") if args.sports else None
+
+    _bot = create_sports_bot(
+        agent_id=args.agent_id,
+        dry_run=args.dry_run,
+        sports=sports,
+        capital=args.capital,
+        max_portfolios=args.max_portfolios,
+        min_sharpe=args.min_sharpe,
+        risk_aversion=args.risk_aversion,
+        stop_loss=args.stop_loss,
+        take_profit=args.take_profit,
+        allow_shorts=args.allow_shorts,
+    )
+
+    setup_async_signal_handlers(_bot)
+
+    try:
+        await _bot.start()
+        await _bot.run(interval_seconds=args.interval)
+    finally:
+        await _bot.stop()
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Unified Trading Bot Runner",
@@ -173,12 +272,14 @@ def main():
 Examples:
   python run_bot.py bond --dry-run
   python run_bot.py flow --dry-run --min-score 40
-  python run_bot.py bond --agent-id bond-1
+  python run_bot.py arb --dry-run --min-edge 50
+  python run_bot.py stat-arb --dry-run --types pair_spread
+  python run_bot.py sports --dry-run --sports nba,nfl
         """
     )
-    
+
     subparsers = parser.add_subparsers(dest="strategy", help="Trading strategy")
-    
+
     # Bond strategy
     bond_parser = subparsers.add_parser("bond", help="Expiring market strategy")
     bond_parser.add_argument("--agent-id", default="bond-bot", help="Agent ID")
@@ -186,7 +287,7 @@ Examples:
     bond_parser.add_argument("--interval", type=float, default=5.0, help="Scan interval (seconds)")
     bond_parser.add_argument("--min-price", type=float, default=0.95, help="Minimum price")
     bond_parser.add_argument("--max-price", type=float, default=0.98, help="Maximum price")
-    
+
     # Flow strategy
     flow_parser = subparsers.add_parser("flow", help="Flow copy strategy")
     flow_parser.add_argument("--agent-id", default="flow-bot", help="Agent ID")
@@ -195,37 +296,80 @@ Examples:
     flow_parser.add_argument("--min-score", type=float, default=30.0, help="Minimum signal score")
     flow_parser.add_argument("--min-trade-size", type=float, default=100.0, help="Min trade size to track")
     flow_parser.add_argument("--category", type=str, default=None, help="Market category filter")
-    
+
+    # Arb strategy
+    arb_parser = subparsers.add_parser("arb", help="Delta-neutral arbitrage")
+    arb_parser.add_argument("--agent-id", default="arb-bot", help="Agent ID")
+    arb_parser.add_argument("--dry-run", action="store_true", help="Dry run mode")
+    arb_parser.add_argument("--interval", type=float, default=10.0, help="Scan interval (seconds)")
+    arb_parser.add_argument("--min-edge", type=int, default=50, help="Minimum edge (bps)")
+    arb_parser.add_argument("--order-size", type=float, default=20.0, help="Order size (USD)")
+    arb_parser.add_argument("--max-positions", type=int, default=5, help="Max concurrent positions")
+
+    # Stat-arb strategy
+    stat_arb_parser = subparsers.add_parser("stat-arb", help="Statistical arbitrage")
+    stat_arb_parser.add_argument("--agent-id", default="stat-arb-bot", help="Agent ID")
+    stat_arb_parser.add_argument("--dry-run", action="store_true", help="Dry run mode")
+    stat_arb_parser.add_argument("--interval", type=float, default=30.0, help="Scan interval (seconds)")
+    stat_arb_parser.add_argument("--types", type=str, default=None,
+                                  help="Arb types: pair_spread,multi_outcome,duplicate,conditional")
+    stat_arb_parser.add_argument("--entry-z", type=float, default=2.0, help="Entry z-score")
+    stat_arb_parser.add_argument("--exit-z", type=float, default=0.5, help="Exit z-score")
+    stat_arb_parser.add_argument("--stop-z", type=float, default=3.5, help="Stop loss z-score")
+    stat_arb_parser.add_argument("--min-correlation", type=float, default=0.7, help="Min correlation")
+    stat_arb_parser.add_argument("--max-positions", type=int, default=10, help="Max positions")
+    stat_arb_parser.add_argument("--position-size", type=float, default=0.10, help="Position size (fraction)")
+
+    # Sports strategy
+    sports_parser = subparsers.add_parser("sports", help="Sports portfolio strategy")
+    sports_parser.add_argument("--agent-id", default="sports-bot", help="Agent ID")
+    sports_parser.add_argument("--dry-run", action="store_true", help="Dry run mode")
+    sports_parser.add_argument("--interval", type=float, default=60.0, help="Scan interval (seconds)")
+    sports_parser.add_argument("--sports", type=str, default="nba,nfl,nhl", help="Sports to track")
+    sports_parser.add_argument("--capital", type=float, default=200.0, help="Capital per portfolio")
+    sports_parser.add_argument("--max-portfolios", type=int, default=3, help="Max concurrent portfolios")
+    sports_parser.add_argument("--min-sharpe", type=float, default=0.5, help="Minimum Sharpe ratio")
+    sports_parser.add_argument("--risk-aversion", type=float, default=2.0, help="Risk aversion")
+    sports_parser.add_argument("--stop-loss", type=float, default=0.15, help="Stop loss pct")
+    sports_parser.add_argument("--take-profit", type=float, default=0.30, help="Take profit pct")
+    sports_parser.add_argument("--allow-shorts", action="store_true", help="Allow short positions")
+
     # Global args
-    parser.add_argument("--log-level", default="INFO", 
+    parser.add_argument("--log-level", default="INFO",
                         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
                         help="Log level")
     parser.add_argument("--log-dir", default="logs",
                         help="Directory for log files (default: logs)")
-    
+
     args = parser.parse_args()
-    
+
     if not args.strategy:
         parser.print_help()
         sys.exit(1)
-    
+
     # Get agent_id from subparser args
     agent_id = getattr(args, 'agent_id', f'{args.strategy}-bot')
-    
+
     # Setup logging with file output
     global logger
     logger = setup_logging(agent_id, args.log_level, args.log_dir)
-    
+
     logger.info(f"{'='*60}")
     logger.info(f"Starting {args.strategy} bot: {agent_id}")
     logger.info(f"Log files: {args.log_dir}/{agent_id}.log")
     logger.info(f"{'='*60}")
 
-    # Run appropriate strategy (signal handlers set up inside async functions)
+    # Run appropriate strategy
     if args.strategy == "bond":
         asyncio.run(run_bond(args))
     elif args.strategy == "flow":
         asyncio.run(run_flow(args))
+    elif args.strategy == "arb":
+        asyncio.run(run_arb(args))
+    elif args.strategy == "stat-arb":
+        asyncio.run(run_stat_arb(args))
+    elif args.strategy == "sports":
+        asyncio.run(run_sports(args))
     else:
         parser.print_help()
         sys.exit(1)

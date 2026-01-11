@@ -281,3 +281,129 @@ class StatArbSignals(SignalSource):
             "market_clusters": len(self.correlation_engine.get_clusters()),
             "dedup_cache_size": len(self._seen_opportunities),
         }
+
+
+def create_stat_arb_signals(
+    api: PolymarketAPI,
+    types: Optional[List[str]] = None,
+    entry_z: float = 2.0,
+    exit_z: float = 0.5,
+    stop_z: float = 3.5,
+    min_correlation: float = 0.7,
+    multi_min_edge: int = 30,
+    dup_min_edge: int = 30,
+    dup_similarity: float = 0.85,
+    cond_min_edge: int = 50,
+) -> StatArbSignals:
+    """
+    Factory function to create StatArbSignals with custom configuration.
+
+    Args:
+        api: PolymarketAPI instance
+        types: List of arb types to enable (default: all)
+        entry_z: Z-score threshold for pair trade entry
+        exit_z: Z-score threshold for pair trade exit
+        stop_z: Z-score threshold for pair trade stop loss
+        min_correlation: Minimum correlation for pairs
+        multi_min_edge: Minimum edge for multi-outcome arb (bps)
+        dup_min_edge: Minimum edge for duplicate arb (bps)
+        dup_similarity: Minimum similarity for duplicate detection
+        cond_min_edge: Minimum edge for conditional arb (bps)
+
+    Returns:
+        Configured StatArbSignals instance
+    """
+    from .config import (
+        StatArbConfig, PairTradingConfig, MultiOutcomeConfig,
+        DuplicateConfig, ConditionalConfig, CorrelationConfig
+    )
+
+    # Determine enabled types
+    enabled_types = types if types else ["pair_spread", "multi_outcome", "duplicate", "conditional"]
+    type_set = set(enabled_types)
+
+    config = StatArbConfig(
+        enabled_types=list(type_set),
+        pair_trading=PairTradingConfig(
+            entry_z_threshold=entry_z,
+            exit_z_threshold=exit_z,
+            stop_loss_z=stop_z,
+            min_correlation=min_correlation,
+        ),
+        multi_outcome=MultiOutcomeConfig(
+            min_edge_bps=multi_min_edge,
+        ),
+        duplicate=DuplicateConfig(
+            min_edge_bps=dup_min_edge,
+            min_similarity=dup_similarity,
+        ),
+        conditional=ConditionalConfig(
+            min_edge_bps=cond_min_edge,
+        ),
+        correlation=CorrelationConfig(
+            min_price_correlation=min_correlation,
+        ),
+    )
+
+    return StatArbSignals(api, config)
+
+
+def create_stat_arb_bot(
+    agent_id: str = "stat-arb-bot",
+    dry_run: bool = True,
+    types: Optional[List[str]] = None,
+    entry_z: float = 2.0,
+    exit_z: float = 0.5,
+    stop_z: float = 3.5,
+    min_correlation: float = 0.7,
+    max_positions: int = 10,
+    position_size_pct: float = 0.10,
+) -> "TradingBot":
+    """
+    Factory function to create a stat arb trading bot.
+
+    Args:
+        agent_id: Unique identifier for this bot
+        dry_run: If True, simulate trades without executing
+        types: List of arb types to enable
+        entry_z: Z-score for pair trade entry
+        exit_z: Z-score for pair trade exit
+        stop_z: Z-score for stop loss
+        min_correlation: Minimum correlation threshold
+        max_positions: Maximum concurrent positions
+        position_size_pct: Position size as fraction of capital
+
+    Returns:
+        TradingBot configured for stat arb
+    """
+    from polymarket.trading.bot import TradingBot
+    from polymarket.trading.components.executors import (
+        MultiLegExecutor, DryRunMultiLegExecutor
+    )
+    from polymarket.trading.components.sizers import FixedFractionSizer
+
+    api = PolymarketAPI()
+
+    signal_source = create_stat_arb_signals(
+        api, types=types, entry_z=entry_z, exit_z=exit_z,
+        stop_z=stop_z, min_correlation=min_correlation,
+    )
+
+    if dry_run:
+        executor = DryRunMultiLegExecutor()
+    else:
+        executor = MultiLegExecutor()
+
+    sizer = FixedFractionSizer(
+        fraction=position_size_pct,
+        min_trade_usd=10.0,
+        max_trade_usd=100.0,
+    )
+
+    return TradingBot(
+        agent_id=agent_id,
+        signal_source=signal_source,
+        position_sizer=sizer,
+        executor=executor,
+        dry_run=dry_run,
+    )

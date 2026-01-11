@@ -339,19 +339,120 @@ class ExecutionResult:
     error_message: Optional[str] = None
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     is_rejection: bool = False  # True = protective rejection (price drift, spread), not a system error
-    
+
     @property
     def fill_ratio(self) -> float:
         """Ratio of filled to requested shares"""
         if self.requested_shares > 0:
             return self.filled_shares / self.requested_shares
         return 0.0
-    
+
     @property
     def slippage(self) -> float:
         """Price slippage from requested to filled"""
         if self.requested_price > 0:
             return abs(self.filled_price - self.requested_price) / self.requested_price
         return 0.0
+
+
+@dataclass
+class SignalLeg:
+    """A single leg of a multi-leg signal (for arb/stat-arb/sports strategies)"""
+    token_id: str
+    market_id: str
+    side: Side
+    target_price: float
+    size_pct: float = 1.0  # Portion of total position for this leg
+    outcome: str = ""
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class MultiLegSignal:
+    """
+    Signal containing multiple legs to execute atomically.
+
+    Used by strategies that require simultaneous execution of multiple positions:
+    - Arb: Buy YES and NO of same market
+    - Stat-arb: Buy/sell correlated markets
+    - Sports: Portfolio of correlated positions
+    """
+    signal_id: str
+    legs: List[SignalLeg]
+    strategy_type: str  # "arb", "stat_arb", "sports_portfolio"
+    score: float  # Composite score (0-100)
+    edge_bps: float = 0.0  # Expected edge in basis points
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def num_legs(self) -> int:
+        return len(self.legs)
+
+    @property
+    def total_cost_estimate(self) -> float:
+        """Estimate total cost based on leg prices"""
+        return sum(leg.target_price * leg.size_pct for leg in self.legs)
+
+    @property
+    def market_ids(self) -> List[str]:
+        """All unique market IDs in this signal"""
+        return list(set(leg.market_id for leg in self.legs))
+
+    @property
+    def is_single_market(self) -> bool:
+        """True if all legs are in the same market (e.g., arb)"""
+        return len(self.market_ids) == 1
+
+
+@dataclass
+class LegExecutionResult:
+    """Result of executing a single leg"""
+    leg_index: int
+    token_id: str
+    result: ExecutionResult
+
+    @property
+    def success(self) -> bool:
+        return self.result.success
+
+
+@dataclass
+class MultiLegExecutionResult:
+    """
+    Result of multi-leg execution.
+
+    Tracks success/failure of each leg and provides rollback info.
+    """
+    success: bool  # True only if ALL legs succeeded
+    leg_results: List[LegExecutionResult] = field(default_factory=list)
+    total_cost: float = 0.0
+    total_shares: float = 0.0
+    error_message: Optional[str] = None
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    needs_rollback: bool = False  # True if partial fill needs unwinding
+
+    @property
+    def filled_legs(self) -> int:
+        return sum(1 for r in self.leg_results if r.success)
+
+    @property
+    def total_legs(self) -> int:
+        return len(self.leg_results)
+
+    @property
+    def partial_fill(self) -> bool:
+        """True if some but not all legs filled"""
+        return 0 < self.filled_legs < self.total_legs
+
+    @property
+    def avg_fill_price(self) -> float:
+        """Average fill price across all legs"""
+        filled = [r for r in self.leg_results if r.success]
+        if not filled:
+            return 0.0
+        total_value = sum(r.result.filled_shares * r.result.filled_price for r in filled)
+        total_shares = sum(r.result.filled_shares for r in filled)
+        return total_value / total_shares if total_shares > 0 else 0.0
 
 

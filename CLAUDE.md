@@ -136,17 +136,19 @@ flowchart TB
 ## Common Commands
 
 ```bash
-# Trading bots
+# Trading bots (unified entry point)
 python scripts/run_bot.py bond --dry-run --agent-id bond-1
 python scripts/run_bot.py flow --dry-run --agent-id flow-1
-python scripts/run_arb_bot.py --dry-run
-python scripts/run_stat_arb_bot.py --dry-run
+python scripts/run_bot.py arb --dry-run --min-edge 50
+python scripts/run_bot.py stat-arb --dry-run --types pair_spread,multi_outcome
+python scripts/run_bot.py sports --dry-run --sports nba,nfl
 
 # Live trading
 python scripts/run_bot.py bond --agent-id bond-1 --interval 60
 python scripts/run_bot.py flow --agent-id flow-1 --interval 5
-python scripts/run_arb_bot.py --min-edge 0.02 --position-size 50
-python scripts/run_stat_arb_bot.py --types pair_spread,multi_outcome
+python scripts/run_bot.py arb --min-edge 30 --order-size 50
+python scripts/run_bot.py stat-arb --types pair_spread --entry-z 2.0
+python scripts/run_bot.py sports --sports nba --capital 200
 
 # Orderbook recording
 python scripts/record_orderbooks_enhanced.py                    # Default (WS + polling)
@@ -163,15 +165,17 @@ python scripts/risk_monitor.py drawdown
 python scripts/risk_monitor.py sync
 python scripts/risk_monitor.py reset-drawdown
 
-# Backtesting
-python -m polymarket.backtesting.strategies.bond_backtest --backtest
-python -m polymarket.backtesting.strategies.flow_backtest --backtest
-python -m polymarket.backtesting.strategies.arb_backtest --backtest
-python -m polymarket.backtesting.strategies.stat_arb_backtest --backtest
+# Backtesting (unified CLI)
+python -m polymarket.backtesting run --strategy bond --backtest
+python -m polymarket.backtesting run --strategy flow --backtest
+python -m polymarket.backtesting run --strategy arb --backtest
+python -m polymarket.backtesting run --strategy stat-arb --backtest
+python -m polymarket.backtesting run --strategy sports --backtest
 
 # Optimization (Bayesian, anti-overfitting)
-python -m polymarket.backtesting.strategies.bond_backtest --optimize -n 50
-python -m polymarket.backtesting.strategies.flow_backtest --optimize -n 50
+python -m polymarket.backtesting run --strategy bond --optimize -n 50
+python -m polymarket.backtesting run --strategy flow --optimize -n 50
+python -m polymarket.backtesting run --strategy stat-arb --optimize -n 50
 
 # Web dashboard
 python scripts/run_webapp.py
@@ -349,27 +353,36 @@ polymarket/
 │   └── components/
 │       ├── signals.py         # Signal sources
 │       ├── sizers.py          # Position sizers
-│       ├── executors.py       # Execution engines
+│       ├── executors.py       # Execution engines (incl. MultiLegExecutor)
+│       ├── position_managers.py # Multi-leg position management
 │       ├── exit_strategies.py # Exit monitors
 │       ├── hedge_monitor.py   # Hedge monitoring
 │       └── hedge_strategies.py # Hedge execution
 │
 ├── strategies/                # Strategy implementations
+│   ├── factories.py           # Unified bot factory (all strategies)
 │   ├── bond_strategy.py       # Expiring markets (95-98c -> $1)
 │   ├── flow_strategy.py       # Flow copy (smart money signals)
 │   ├── arb_strategy.py        # Delta-neutral arbitrage
-│   └── stat_arb/              # Statistical arbitrage
+│   ├── stat_arb/              # Statistical arbitrage
+│   │   ├── config.py          # Configuration dataclasses
+│   │   ├── models.py          # StatArbOpportunity, MarketPair, etc.
+│   │   ├── correlation_engine.py  # Price & semantic correlation
+│   │   ├── signals.py         # StatArbSignals (SignalSource)
+│   │   ├── position_manager.py # Multi-leg position management
+│   │   ├── strategy.py        # StatArbStrategy orchestration
+│   │   └── scanners/          # Opportunity scanners
+│   │       ├── multi_outcome.py   # Sum != 100% arb
+│   │       ├── duplicate.py       # Same question, diff prices
+│   │       ├── pair_spread.py     # Mean reversion pairs
+│   │       └── conditional.py     # P(A|B) mispricings
+│   └── sports_portfolio/      # Sports portfolio strategy
 │       ├── config.py          # Configuration dataclasses
-│       ├── models.py          # StatArbOpportunity, MarketPair, etc.
-│       ├── correlation_engine.py  # Price & semantic correlation
-│       ├── signals.py         # StatArbSignals (SignalSource)
-│       ├── position_manager.py # Multi-leg position management
-│       ├── strategy.py        # StatArbStrategy orchestration
-│       └── scanners/          # Opportunity scanners
-│           ├── multi_outcome.py   # Sum != 100% arb
-│           ├── duplicate.py       # Same question, diff prices
-│           ├── pair_spread.py     # Mean reversion pairs
-│           └── conditional.py     # P(A|B) mispricings
+│       ├── models.py          # SportsGame, PortfolioPosition, etc.
+│       ├── scanner.py         # SportsPortfolioScanner + SignalSource
+│       ├── game_aggregator.py # Game market aggregation
+│       ├── correlation_model.py # ML correlation prediction
+│       └── portfolio_optimizer.py # Portfolio optimization
 │
 ├── data/                      # Data recording & storage
 │   ├── orderbook_storage.py   # Orderbook history SQLite (gap tracking, volume filter)
@@ -378,6 +391,8 @@ polymarket/
 ├── flow_detector.py           # Real-time WebSocket flow detection
 │
 └── backtesting/               # Backtesting framework
+    ├── __main__.py            # Unified backtesting CLI entry point
+    ├── runner.py              # BacktestRunner with strategy registry
     ├── base.py                # BaseBacktester class
     ├── results.py             # BacktestResults dataclass
     ├── execution.py           # Simulated execution
@@ -386,9 +401,9 @@ polymarket/
     ├── strategies/
     │   ├── bond_backtest.py   # Bond (3 params)
     │   ├── flow_backtest.py   # Flow momentum (3 params)
-    │   ├── flow_trade_backtest.py  # Flow with trade data
     │   ├── arb_backtest.py    # Arb (3 params)
-    │   └── stat_arb_backtest.py # Stat arb backtest
+    │   ├── stat_arb_backtest.py # Stat arb backtest
+    │   └── sports_portfolio_backtest.py # Sports portfolio backtest
     └── data/
         ├── cache.py           # SQLite price/trade cache
         ├── cached_fetcher.py  # Cached data fetcher
@@ -399,15 +414,19 @@ polymarket/
 
 | Purpose | File |
 |---------|------|
-| Bot entry | `scripts/run_bot.py` |
-| Arb bot | `scripts/run_arb_bot.py` |
-| Stat arb bot | `scripts/run_stat_arb_bot.py` |
+| Unified bot entry | `scripts/run_bot.py` |
+| Bot factory | `polymarket/strategies/factories.py` |
+| Backtest CLI | `polymarket/backtesting/__main__.py` |
+| Backtest runner | `polymarket/backtesting/runner.py` |
 | Orderbook recorder | `scripts/record_orderbooks_enhanced.py` |
 | Risk monitor | `scripts/risk_monitor.py` |
 | Bond strategy | `polymarket/strategies/bond_strategy.py` |
 | Flow strategy | `polymarket/strategies/flow_strategy.py` |
 | Arb strategy | `polymarket/strategies/arb_strategy.py` |
 | Stat arb strategy | `polymarket/strategies/stat_arb/strategy.py` |
+| Sports portfolio | `polymarket/strategies/sports_portfolio/scanner.py` |
+| Multi-leg executor | `polymarket/trading/components/executors.py` |
+| Position manager | `polymarket/trading/components/position_managers.py` |
 | Risk coordinator | `polymarket/trading/risk_coordinator.py` |
 | Safety | `polymarket/trading/safety.py` |
 | Storage | `polymarket/trading/storage/sqlite.py` |
@@ -592,16 +611,16 @@ Cross-market arbitrage scanner supporting multiple strategy types.
 
 ```bash
 # Dry run (all types enabled)
-python scripts/run_stat_arb_bot.py --dry-run
+python scripts/run_bot.py stat-arb --dry-run
 
 # Enable specific types
-python scripts/run_stat_arb_bot.py --types pair_spread,multi_outcome
+python scripts/run_bot.py stat-arb --dry-run --types pair_spread,multi_outcome
 
 # Custom pair trading parameters
-python scripts/run_stat_arb_bot.py --entry-z 2.5 --exit-z 0.3 --stop-z 4.0
+python scripts/run_bot.py stat-arb --dry-run --entry-z 2.5 --exit-z 0.3 --stop-z 4.0
 
-# Custom edge thresholds
-python scripts/run_stat_arb_bot.py --multi-min-edge 75 --dup-min-edge 50
+# Live trading with custom parameters
+python scripts/run_bot.py stat-arb --min-correlation 0.8 --max-positions 5
 ```
 
 ### Configuration
@@ -613,10 +632,8 @@ python scripts/run_stat_arb_bot.py --multi-min-edge 75 --dup-min-edge 50
 | `--exit-z` | 0.5 | Pair trade exit z-score |
 | `--stop-z` | 3.5 | Pair trade stop loss z-score |
 | `--min-correlation` | 0.7 | Minimum pair correlation |
-| `--multi-min-edge` | 30 | Multi-outcome min edge (bps) - optimized |
-| `--dup-min-edge` | 30 | Duplicate min edge (bps) - optimized |
-| `--dup-similarity` | 0.85 | Duplicate semantic similarity - optimized |
 | `--max-positions` | 10 | Max concurrent positions |
+| `--position-size` | 0.10 | Position size (fraction of capital) |
 
 **Optimized Parameters** (Sharpe=7.11, WinRate=85%):
 - `min_edge_bps`: 30 (lower edge captures more opportunities)

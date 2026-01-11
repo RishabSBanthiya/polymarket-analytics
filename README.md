@@ -3,7 +3,7 @@
 Multi-agent trading infrastructure for Polymarket prediction markets.
 
 ```
-Strategies: Bond | Flow | Arbitrage | Stat Arb
+Strategies: Bond | Flow | Arbitrage | Stat Arb | Sports Portfolio
 Features:   Atomic capital reservation | Real-time flow detection | On-chain sync | Orderbook recording
 ```
 
@@ -31,6 +31,7 @@ flowchart TB
         FLOW[Flow Bot<br/>Copy Trading]
         ARB[Arb Bot<br/>Delta-Neutral]
         STAT[Stat Arb Bot<br/>Cross-Market]
+        SPORT[Sports Bot<br/>Portfolio Optimization]
     end
 
     subgraph Core[Core Infrastructure]
@@ -42,11 +43,11 @@ flowchart TB
     end
 
     RTDS --> FLOW_DET --> ALERTS --> FLOW
-    GAMMA --> BOND & FLOW & ARB & STAT
-    CLOB --> BOND & FLOW & ARB & STAT & OB_REC
+    GAMMA --> BOND & FLOW & ARB & STAT & SPORT
+    CLOB --> BOND & FLOW & ARB & STAT & SPORT & OB_REC
     DATA --> RISK
     POLY --> RISK & SYNC
-    BOND & FLOW & ARB & STAT --> RISK
+    BOND & FLOW & ARB & STAT & SPORT --> RISK
     RISK --> SAFETY & STORE
     SYNC --> STORE
     OB_REC --> STORE
@@ -63,11 +64,12 @@ python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env  # Add your keys
 
-# Run bots (dry-run first)
+# Run bots (dry-run first) - all use unified entry point
 python scripts/run_bot.py bond --dry-run
 python scripts/run_bot.py flow --dry-run
-python scripts/run_arb_bot.py --dry-run
-python scripts/run_stat_arb_bot.py --dry-run
+python scripts/run_bot.py arb --dry-run
+python scripts/run_bot.py stat-arb --dry-run
+python scripts/run_bot.py sports --dry-run
 
 # Monitor
 python scripts/risk_monitor.py status
@@ -100,8 +102,8 @@ python scripts/run_bot.py flow --agent-id flow-1 --category crypto
 Risk-free arbitrage on binary markets where both sides sum to < $1.
 
 ```bash
-python scripts/run_arb_bot.py --dry-run
-python scripts/run_arb_bot.py --min-edge 0.02 --position-size 50
+python scripts/run_bot.py arb --dry-run
+python scripts/run_bot.py arb --min-edge 50 --order-size 50
 ```
 
 ### Statistical Arbitrage (Cross-Market)
@@ -116,9 +118,19 @@ Cross-market arbitrage scanner with multiple strategy types:
 | **Conditional** | P(A\|B) mispricings |
 
 ```bash
-python scripts/run_stat_arb_bot.py --dry-run
-python scripts/run_stat_arb_bot.py --types pair_spread,multi_outcome
-python scripts/run_stat_arb_bot.py --entry-z 2.5 --exit-z 0.3
+python scripts/run_bot.py stat-arb --dry-run
+python scripts/run_bot.py stat-arb --dry-run --types pair_spread,multi_outcome
+python scripts/run_bot.py stat-arb --entry-z 2.5 --exit-z 0.3
+```
+
+### Sports Portfolio
+
+ML-based portfolio optimization for sports markets with correlation modeling.
+
+```bash
+python scripts/run_bot.py sports --dry-run
+python scripts/run_bot.py sports --dry-run --sports nba,nfl --capital 200
+python scripts/run_bot.py sports --min-sharpe 0.5 --max-portfolios 3
 ```
 
 ---
@@ -180,15 +192,19 @@ python scripts/risk_monitor.py stop-all       # Emergency stop
 ## Backtesting
 
 ```bash
-# Run backtests
-python -m polymarket.backtesting.strategies.bond_backtest --backtest
-python -m polymarket.backtesting.strategies.flow_backtest --backtest
-python -m polymarket.backtesting.strategies.arb_backtest --backtest
-python -m polymarket.backtesting.strategies.stat_arb_backtest --backtest
+# Run backtests (unified CLI)
+python -m polymarket.backtesting run --strategy bond --backtest
+python -m polymarket.backtesting run --strategy flow --backtest
+python -m polymarket.backtesting run --strategy arb --backtest
+python -m polymarket.backtesting run --strategy stat-arb --backtest
+python -m polymarket.backtesting run --strategy sports --backtest
 
 # Parameter optimization (Bayesian, anti-overfitting)
-python -m polymarket.backtesting.strategies.bond_backtest --optimize -n 50
-python -m polymarket.backtesting.strategies.flow_backtest --optimize -n 50
+python -m polymarket.backtesting run --strategy bond --optimize -n 50
+python -m polymarket.backtesting run --strategy flow --optimize -n 50
+
+# Custom lookback and capital
+python -m polymarket.backtesting run --strategy arb --backtest --days 90 --capital 5000
 ```
 
 **Anti-Overfitting:** 3 parameters only, walk-forward validation, L2 regularization.
@@ -203,7 +219,7 @@ polymarket-analytics/
 │   ├── core/                      # Shared infrastructure
 │   │   ├── api.py                 # Async Polymarket API client
 │   │   ├── config.py              # Configuration management
-│   │   ├── models.py              # All dataclasses
+│   │   ├── models.py              # All dataclasses (incl. MultiLegSignal)
 │   │   └── rate_limiter.py        # Sliding window limiter
 │   │
 │   ├── trading/                   # Live trading
@@ -213,12 +229,17 @@ polymarket-analytics/
 │   │   ├── safety.py              # Circuit breaker, drawdown
 │   │   ├── storage/sqlite.py      # SQLite persistence (WAL)
 │   │   └── components/            # Pluggable components
+│   │       ├── executors.py       # Execution engines (incl. MultiLegExecutor)
+│   │       ├── position_managers.py # Multi-leg position management
+│   │       └── ...                # signals, sizers, exit strategies
 │   │
 │   ├── strategies/                # Strategy implementations
+│   │   ├── factories.py           # Unified bot factory (all strategies)
 │   │   ├── bond_strategy.py       # Expiring markets
 │   │   ├── flow_strategy.py       # Flow copy trading
 │   │   ├── arb_strategy.py        # Delta-neutral arb
-│   │   └── stat_arb/              # Statistical arbitrage
+│   │   ├── stat_arb/              # Statistical arbitrage
+│   │   └── sports_portfolio/      # Sports portfolio optimization
 │   │
 │   ├── data/                      # Data storage
 │   │   ├── orderbook_storage.py   # Orderbook history DB
@@ -227,13 +248,13 @@ polymarket-analytics/
 │   ├── flow_detector.py           # Real-time flow detection
 │   │
 │   └── backtesting/               # Backtesting framework
+│       ├── __main__.py            # Unified CLI entry point
+│       ├── runner.py              # BacktestRunner with strategy registry
 │       ├── strategies/            # Strategy backtests
 │       └── data/                  # Price/trade cache
 │
 ├── scripts/                       # CLI tools
-│   ├── run_bot.py                 # Bond/Flow bot entry
-│   ├── run_arb_bot.py             # Arbitrage bot
-│   ├── run_stat_arb_bot.py        # Stat arb bot
+│   ├── run_bot.py                 # Unified bot entry (all strategies)
 │   ├── record_orderbooks_enhanced.py  # Orderbook recorder
 │   └── risk_monitor.py            # Monitoring CLI
 │
@@ -281,10 +302,11 @@ CIRCUIT_BREAKER_FAILURES=5
 |-------|----------|
 | Bot not starting | Check `.env` has `PRIVATE_KEY` and `POLYMARKET_PROXY_ADDRESS` |
 | Rate limit errors | Increase `--interval`, check API limits |
-| Phantom drawdown | Run `risk_monitor.py reset-drawdown` |
+| Phantom drawdown | Run `python scripts/risk_monitor.py reset-drawdown` |
 | No signals | Lower `--min-score`, wait for flow detector warmup (~1 min) |
-| Circuit breaker | Run `risk_monitor.py cleanup` to reset |
-| Orderbook gaps | Check `record_orderbooks_enhanced.py gaps` for backfill status |
+| Circuit breaker | Run `python scripts/risk_monitor.py cleanup` to reset |
+| Orderbook gaps | Run `python scripts/record_orderbooks_enhanced.py gaps` for backfill status |
+| List strategies | Run `python scripts/run_bot.py --help` for all options |
 
 ---
 

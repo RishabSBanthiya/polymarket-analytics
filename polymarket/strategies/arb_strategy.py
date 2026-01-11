@@ -21,9 +21,13 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Dict, Tuple
 from enum import Enum
 
-from polymarket.core.models import Market, Token, Side, OrderbookSnapshot
+from polymarket.core.models import (
+    Market, Token, Side, OrderbookSnapshot,
+    Signal, SignalDirection, SignalLeg, MultiLegSignal
+)
 from polymarket.core.api import PolymarketAPI
 from polymarket.core.config import Config
+from polymarket.trading.components.signals import SignalSource
 
 logger = logging.getLogger(__name__)
 
@@ -703,3 +707,211 @@ class ArbStrategy:
             "active_markets": len(self._markets),
             "dry_run": self.dry_run,
         }
+
+
+class ArbSignals(SignalSource):
+    """
+    SignalSource implementation for arbitrage strategy.
+
+    Wraps ArbScanner to convert ArbOpportunities into Signals
+    compatible with the TradingBot composition pattern.
+    """
+
+    def __init__(
+        self,
+        api: PolymarketAPI,
+        config: Optional[ArbConfig] = None,
+        min_edge_bps: int = 50,
+    ):
+        self.api = api
+        self.config = config or ArbConfig(min_edge_bps=min_edge_bps)
+        self.scanner = ArbScanner(api, self.config)
+        self._markets: List[Market] = []
+        self._signal_counter = 0
+
+    @property
+    def name(self) -> str:
+        return "arb"
+
+    def update_markets(self, markets: List[Market]):
+        """Update the list of markets to scan"""
+        self._markets = markets
+
+    async def refresh_markets(self):
+        """Fetch latest 15-minute crypto markets from API"""
+        raw_markets = await self.api.fetch_15min_markets(
+            window_count=8,
+            include_past=1,
+            cryptos=["btc", "eth", "sol", "xrp"],
+        )
+
+        self._markets = []
+        for raw in raw_markets:
+            parsed = self.api.parse_market(raw)
+            if parsed and parsed.fees_enabled and parsed.enable_order_book:
+                self._markets.append(parsed)
+
+        logger.debug(f"ArbSignals: refreshed {len(self._markets)} markets")
+
+    async def get_signals(self) -> List[Signal]:
+        """
+        Get arbitrage signals from scanner.
+
+        Returns standard Signal objects for single-leg compatibility.
+        For full multi-leg execution, use get_multi_leg_signals().
+        """
+        opportunities = await self.scanner.scan_for_opportunities(self._markets)
+
+        signals = []
+        for opp in opportunities:
+            self._signal_counter += 1
+            signal = self._opportunity_to_signal(opp)
+            signals.append(signal)
+
+        return signals
+
+    async def get_multi_leg_signals(self) -> List[MultiLegSignal]:
+        """
+        Get arbitrage opportunities as MultiLegSignals.
+
+        For use with MultiLegExecutor for atomic execution.
+        """
+        opportunities = await self.scanner.scan_for_opportunities(self._markets)
+
+        signals = []
+        for opp in opportunities:
+            self._signal_counter += 1
+            signal = self._opportunity_to_multi_leg_signal(opp)
+            signals.append(signal)
+
+        return signals
+
+    def _opportunity_to_signal(self, opp: ArbOpportunity) -> Signal:
+        """Convert ArbOpportunity to standard Signal (primary leg only)"""
+        return Signal(
+            market_id=opp.market_id,
+            token_id=opp.up_token_id,  # Primary leg
+            direction=SignalDirection.BUY,
+            score=min(100, opp.edge_bps / 2),  # Scale edge to 0-100 score
+            source=self.name,
+            metadata={
+                "arb_type": opp.arb_type,
+                "edge_bps": opp.edge_bps,
+                "guaranteed_profit_pct": opp.guaranteed_profit_pct,
+                "total_cost": opp.total_cost,
+                "up_price": opp.up_price,
+                "down_price": opp.down_price,
+                "up_token_id": opp.up_token_id,
+                "down_token_id": opp.down_token_id,
+                "question": opp.question[:100],
+                "seconds_to_expiry": opp.seconds_to_expiry,
+                "is_multi_leg": True,
+            }
+        )
+
+    def _opportunity_to_multi_leg_signal(self, opp: ArbOpportunity) -> MultiLegSignal:
+        """Convert ArbOpportunity to MultiLegSignal for atomic execution"""
+        signal_id = f"arb_{self._signal_counter}_{datetime.now().strftime('%H%M%S')}"
+
+        legs = [
+            SignalLeg(
+                token_id=opp.up_token_id,
+                market_id=opp.market_id,
+                side=Side.BUY,
+                target_price=opp.up_price,
+                size_pct=0.5,  # Equal split
+                outcome="UP",
+                metadata={"spread": opp.spread_up}
+            ),
+            SignalLeg(
+                token_id=opp.down_token_id,
+                market_id=opp.market_id,
+                side=Side.BUY,
+                target_price=opp.down_price,
+                size_pct=0.5,  # Equal split
+                outcome="DOWN",
+                metadata={"spread": opp.spread_down}
+            ),
+        ]
+
+        return MultiLegSignal(
+            signal_id=signal_id,
+            legs=legs,
+            strategy_type="arb",
+            score=min(100, opp.edge_bps / 2),
+            edge_bps=opp.edge_bps,
+            metadata={
+                "arb_type": opp.arb_type,
+                "guaranteed_profit_pct": opp.guaranteed_profit_pct,
+                "total_cost": opp.total_cost,
+                "question": opp.question,
+                "seconds_to_expiry": opp.seconds_to_expiry,
+            }
+        )
+
+
+def create_arb_bot(
+    agent_id: str = "arb-bot",
+    dry_run: bool = True,
+    min_edge_bps: int = 50,
+    order_size_usd: float = 20.0,
+    max_positions: int = 5,
+) -> "TradingBot":
+    """
+    Factory function to create an arbitrage trading bot.
+
+    Args:
+        agent_id: Unique identifier for this bot
+        dry_run: If True, simulate trades without executing
+        min_edge_bps: Minimum edge in basis points to trade
+        order_size_usd: Size per order in USD
+        max_positions: Maximum concurrent positions
+
+    Returns:
+        TradingBot configured for arbitrage
+    """
+    from polymarket.trading.bot import TradingBot
+    from polymarket.trading.components.executors import (
+        MultiLegExecutor, DryRunMultiLegExecutor
+    )
+    from polymarket.trading.components.sizers import FixedFractionSizer
+    from polymarket.trading.components.position_managers import SimpleMultiLegPositionManager
+
+    config = ArbConfig(
+        min_edge_bps=min_edge_bps,
+        order_size_usd=order_size_usd,
+        max_positions=max_positions,
+    )
+
+    # Create API (will be initialized by bot)
+    api = PolymarketAPI()
+
+    # Create signal source
+    signal_source = ArbSignals(api, config)
+
+    # Create executor
+    if dry_run:
+        executor = DryRunMultiLegExecutor()
+    else:
+        executor = MultiLegExecutor()
+
+    # Create position sizer (fixed fraction for arb)
+    sizer = FixedFractionSizer(
+        fraction=order_size_usd / 1000,  # Relative to $1000 base
+        min_trade_usd=10.0,
+        max_trade_usd=order_size_usd * 2,
+    )
+
+    # Create position manager for multi-leg positions
+    position_manager = SimpleMultiLegPositionManager(
+        executor=executor,
+        max_positions=max_positions,
+    )
+
+    return TradingBot(
+        agent_id=agent_id,
+        signal_source=signal_source,
+        position_sizer=sizer,
+        executor=executor,
+        dry_run=dry_run,
+    )

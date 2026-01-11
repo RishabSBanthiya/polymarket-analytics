@@ -27,3 +27,23 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+# Database files (too large for git)
+*.db
+*.db-shm
+*.db-wal
+data/*.db
+data/*.db-*
+scripts/data/*.db
+
+# Log files
+logs/
+scripts/logs/
+
+# Model files
+data/sports_models/
+
+# Reports (generated)
+reports/
+
+# Misc
+=20.0
