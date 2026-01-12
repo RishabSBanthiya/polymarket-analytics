@@ -51,15 +51,33 @@ class SimpleBondBacktester:
 
     ~150 lines instead of 900. No hedging, no dynamic time windows,
     no complex exit strategies. Just the core logic.
+
+    Constructor signature matches BacktestRunner expectations:
+    - initial_capital as keyword arg
+    - individual params as kwargs
     """
 
     def __init__(
         self,
-        params: BondParams,
         initial_capital: float = 1000.0,
+        entry_price: float = 0.95,
+        max_spread_pct: float = 0.03,
+        max_position_pct: float = 0.10,
         slippage_pct: float = 0.005,
+        # Also accept params object for backward compatibility
+        params: Optional[BondParams] = None,
+        **kwargs,
     ):
-        self.params = params
+        # Build params from individual args or use provided params object
+        if params is not None:
+            self.params = params
+        else:
+            self.params = BondParams(
+                entry_price=entry_price,
+                max_spread_pct=max_spread_pct,
+                max_position_pct=max_position_pct,
+            )
+
         self.initial_capital = initial_capital
         self.slippage_pct = slippage_pct
 

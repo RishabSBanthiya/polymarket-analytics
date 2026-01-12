@@ -89,16 +89,38 @@ class StatArbBacktester:
     Supports:
     - Multi-outcome sum arbitrage (buy all when sum < 100%)
     - Duplicate market arbitrage (buy cheap, sell expensive)
+
+    Constructor signature matches BacktestRunner expectations:
+    - initial_capital as keyword arg
+    - individual params as kwargs
     """
 
     def __init__(
         self,
-        params: StatArbParams,
         initial_capital: float = 1000.0,
+        min_edge_bps: int = 50,
+        position_size_pct: float = 0.10,
+        min_similarity: float = 0.85,
+        fee_bps: int = 100,
+        execution_success_rate: float = 0.70,
+        # Also accept params object for backward compatibility
+        params: Optional[StatArbParams] = None,
+        **kwargs,
     ):
-        self.params = params
+        # Build params from individual args or use provided params object
+        if params is not None:
+            self.params = params
+        else:
+            self.params = StatArbParams(
+                min_edge_bps=min_edge_bps,
+                position_size_pct=position_size_pct,
+                min_similarity=min_similarity,
+                fee_bps=fee_bps,
+                execution_success_rate=execution_success_rate,
+            )
+
         self.initial_capital = initial_capital
-        self.fee_multiplier = 1 + (params.fee_bps / 10000)
+        self.fee_multiplier = 1 + (self.params.fee_bps / 10000)
 
         self.cash = initial_capital
         self._price_cache: Dict[str, List[Dict]] = {}

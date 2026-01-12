@@ -272,9 +272,9 @@ class BacktestRunner:
                 ),
                 "sports": SimpleParameterSpace(
                     params={
-                        "min_sharpe": (0.3, 1.0, 0.5),
-                        "min_hedge_effectiveness": (0.3, 0.8, 0.5),
-                        "max_portfolio_cost": (100, 500, 200),
+                        "min_negative_corr": (-0.8, -0.3, -0.5),
+                        "max_position_pct": (0.05, 0.25, 0.15),
+                        "min_edge_pct": (0.01, 0.10, 0.03),
                     }
                 ),
             }

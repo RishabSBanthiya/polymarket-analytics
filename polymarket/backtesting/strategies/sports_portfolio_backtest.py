@@ -89,16 +89,34 @@ class SportsPortfolioBacktester:
     - Realistic slippage/liquidity
     - Walk-forward compatible
     - 3 parameters only
+
+    Constructor signature matches BacktestRunner expectations:
+    - initial_capital as keyword arg
+    - individual params (min_negative_corr, max_position_pct, min_edge_pct) as kwargs
     """
 
     def __init__(
         self,
-        params: SportsPortfolioParams,
-        sport: str = "all",
         initial_capital: float = 1000.0,
+        min_negative_corr: float = -0.5,
+        max_position_pct: float = 0.15,
+        min_edge_pct: float = 0.01,
+        sport: str = "all",
         db_path: Path = None,
+        # Also accept params object for backward compatibility
+        params: Optional[SportsPortfolioParams] = None,
+        **kwargs,
     ):
-        self.params = params
+        # Build params from individual args or use provided params object
+        if params is not None:
+            self.params = params
+        else:
+            self.params = SportsPortfolioParams(
+                min_negative_corr=min_negative_corr,
+                max_position_pct=max_position_pct,
+                min_edge_pct=min_edge_pct,
+            )
+
         self.sport = sport
         self.initial_capital = initial_capital
         self.db_path = db_path or Path("data/sports_training_data.db")

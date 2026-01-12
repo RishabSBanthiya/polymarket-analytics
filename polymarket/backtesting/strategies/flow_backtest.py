@@ -146,15 +146,37 @@ class SimpleFlowBacktester:
     - Sports market filtering
 
     Based on analysis of 3,524 real SMART_MONEY_ACTIVITY alerts.
+
+    Constructor signature matches BacktestRunner expectations:
+    - initial_capital as keyword arg
+    - individual params as kwargs
     """
 
     def __init__(
         self,
-        params: FlowParams,
         initial_capital: float = 1000.0,
+        min_entry_price: float = 0.50,
+        max_entry_price: float = 0.90,
+        stop_loss_pct: float = 0.20,
+        take_profit_pct: float = 0.50,
+        max_position_pct: float = 0.10,
         filter_sports: bool = True,
+        # Also accept params object for backward compatibility
+        params: Optional[FlowParams] = None,
+        **kwargs,
     ):
-        self.params = params
+        # Build params from individual args or use provided params object
+        if params is not None:
+            self.params = params
+        else:
+            self.params = FlowParams(
+                min_entry_price=min_entry_price,
+                max_entry_price=max_entry_price,
+                stop_loss_pct=stop_loss_pct,
+                take_profit_pct=take_profit_pct,
+                max_position_pct=max_position_pct,
+            )
+
         self.initial_capital = initial_capital
         self.cash = initial_capital
         self.filter_sports = filter_sports

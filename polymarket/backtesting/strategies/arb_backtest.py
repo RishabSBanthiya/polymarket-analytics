@@ -64,16 +64,36 @@ class ArbBacktester:
     Looks for opportunities where:
     - UP_price + DOWN_price < $1.00 (after fees)
     - Buying both sides guarantees profit at resolution
+
+    Constructor signature matches BacktestRunner expectations:
+    - initial_capital as keyword arg
+    - individual params as kwargs
     """
 
     def __init__(
         self,
-        params: ArbParams,
         initial_capital: float = 1000.0,
+        min_edge_bps: int = 50,
+        order_size_pct: float = 0.10,
+        max_positions: int = 5,
+        fee_bps: int = 100,
+        # Also accept params object for backward compatibility
+        params: Optional[ArbParams] = None,
+        **kwargs,
     ):
-        self.params = params
+        # Build params from individual args or use provided params object
+        if params is not None:
+            self.params = params
+        else:
+            self.params = ArbParams(
+                min_edge_bps=min_edge_bps,
+                order_size_pct=order_size_pct,
+                max_positions=max_positions,
+                fee_bps=fee_bps,
+            )
+
         self.initial_capital = initial_capital
-        self.fee_multiplier = 1 + (params.fee_bps / 10000)
+        self.fee_multiplier = 1 + (self.params.fee_bps / 10000)
 
         self.cash = initial_capital
         self.positions: List[ArbPosition] = []

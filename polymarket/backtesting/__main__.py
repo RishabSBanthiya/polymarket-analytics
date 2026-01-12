@@ -82,6 +82,10 @@ Examples:
     run_parser.add_argument("--max-spread", type=float, help="Bond: max spread pct")
     run_parser.add_argument("--min-edge", type=int, help="Arb/StatArb: min edge bps")
     run_parser.add_argument("--types", type=str, help="StatArb: arb types (comma-separated)")
+    run_parser.add_argument("--min-negative-corr", type=float, help="Sports: min negative correlation")
+    run_parser.add_argument("--max-position", type=float, help="Sports: max position pct")
+    run_parser.add_argument("--min-edge-pct", type=float, help="Sports: min edge pct")
+    run_parser.add_argument("--sport", type=str, default="all", help="Sports: sport to backtest (nba, nfl, nhl, all)")
 
     # List command
     list_parser = subparsers.add_parser("list", help="List available strategies")
@@ -137,6 +141,16 @@ async def run_backtest(args):
             params["min_edge_bps"] = args.min_edge
         if args.types:
             params["enabled_types"] = args.types.split(",")
+
+    elif args.strategy == "sports":
+        if hasattr(args, 'min_negative_corr') and args.min_negative_corr is not None:
+            params["min_negative_corr"] = args.min_negative_corr
+        if hasattr(args, 'max_position') and args.max_position is not None:
+            params["max_position_pct"] = args.max_position
+        if hasattr(args, 'min_edge_pct') and args.min_edge_pct is not None:
+            params["min_edge_pct"] = args.min_edge_pct
+        if hasattr(args, 'sport') and args.sport:
+            params["sport"] = args.sport
 
     if args.backtest:
         print(f"\nRunning {args.strategy} backtest...")

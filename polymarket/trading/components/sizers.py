@@ -106,6 +106,50 @@ class PercentageSizer(PositionSizer):
         return available_capital * self.percentage
 
 
+class FixedFractionSizer(PositionSizer):
+    """
+    Fixed fraction position sizing with min/max constraints.
+
+    Uses a fixed fraction of capital per trade, constrained by
+    minimum and maximum trade sizes.
+    """
+
+    def __init__(
+        self,
+        fraction: float = 0.10,
+        min_trade_usd: float = 10.0,
+        max_trade_usd: float = 100.0,
+    ):
+        """
+        Args:
+            fraction: Fraction of capital per trade (e.g., 0.10 = 10%)
+            min_trade_usd: Minimum trade size in USD
+            max_trade_usd: Maximum trade size in USD
+        """
+        if not 0 < fraction <= 1:
+            raise ValueError("Fraction must be between 0 and 1")
+        self.fraction = fraction
+        self.min_trade_usd = min_trade_usd
+        self.max_trade_usd = max_trade_usd
+
+    @property
+    def name(self) -> str:
+        return "fixed_fraction"
+
+    def calculate_size(
+        self,
+        signal: Signal,
+        available_capital: float,
+        current_price: float
+    ) -> float:
+        """Use fraction of capital, constrained by min/max."""
+        base_size = available_capital * self.fraction
+        # Apply constraints
+        size = max(self.min_trade_usd, min(self.max_trade_usd, base_size))
+        # Ensure we don't exceed available capital
+        return min(size, available_capital)
+
+
 class KellyPositionSizer(PositionSizer):
     """
     Kelly Criterion-based position sizing.
