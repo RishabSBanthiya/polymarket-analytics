@@ -61,7 +61,16 @@ class PolymarketAPI:
             ssl_ctx.check_hostname = False
             ssl_ctx.verify_mode = ssl.CERT_NONE
             connector = aiohttp.TCPConnector(ssl=ssl_ctx)
-            self.session = aiohttp.ClientSession(connector=connector)
+            # Add browser-like headers to avoid Cloudflare blocks
+            # Note: Don't include 'br' (brotli) in Accept-Encoding unless Brotli is installed
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "application/json, text/plain, */*",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Accept-Encoding": "gzip, deflate",
+                "Connection": "keep-alive",
+            }
+            self.session = aiohttp.ClientSession(connector=connector, headers=headers)
         return self
     
     async def close(self):

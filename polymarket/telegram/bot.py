@@ -239,6 +239,15 @@ class TelegramControlBot:
         """Get or create CLOB client."""
         if self._clob_client is None:
             from py_clob_client.client import ClobClient
+            from py_clob_client.http_helpers import helpers as http_helpers
+
+            # Monkey-patch the User-Agent to avoid Cloudflare blocks
+            original_overload = http_helpers.overloadHeaders
+            def patched_overload(method: str, headers: dict) -> dict:
+                headers = original_overload(method, headers)
+                headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                return headers
+            http_helpers.overloadHeaders = patched_overload
 
             self._clob_client = ClobClient(
                 self.config.clob_host,

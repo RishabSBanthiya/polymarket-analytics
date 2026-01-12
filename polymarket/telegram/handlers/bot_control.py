@@ -22,6 +22,16 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def truncate_error(error: Exception, max_length: int = 200) -> str:
+    """Truncate error message for Telegram display."""
+    error_str = str(error)
+    if "<html" in error_str.lower() or "<!doctype" in error_str.lower():
+        error_str = "API error (blocked by Cloudflare or server error)"
+    if len(error_str) > max_length:
+        error_str = error_str[:max_length] + "..."
+    return error_str
+
+
 def is_authorized(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
     """Check if the update is from an authorized chat."""
     bot: "TelegramControlBot" = context.bot_data.get("control_bot")
@@ -113,7 +123,7 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
     except Exception as e:
         logger.error(f"Error getting status: {e}")
-        await update.message.reply_text(f"Error: {e}")
+        await update.message.reply_text(f"Error: {truncate_error(e)}")
 
 
 async def cmd_bots(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -174,7 +184,7 @@ async def cmd_bots(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     except Exception as e:
         logger.error(f"Error listing bots: {e}")
-        await update.message.reply_text(f"Error: {e}")
+        await update.message.reply_text(f"Error: {truncate_error(e)}")
 
 
 async def cmd_start_bot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -237,7 +247,7 @@ async def cmd_start_bot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     except Exception as e:
         logger.error(f"Error starting bot: {e}")
-        await update.message.reply_text(f"Error: {e}")
+        await update.message.reply_text(f"Error: {truncate_error(e)}")
 
 
 async def cmd_stop_bot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -279,7 +289,7 @@ async def cmd_stop_bot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
     except Exception as e:
         logger.error(f"Error stopping bot: {e}")
-        await update.message.reply_text(f"Error: {e}")
+        await update.message.reply_text(f"Error: {truncate_error(e)}")
 
 
 def register_bot_control_handlers(app) -> None:

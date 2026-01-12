@@ -29,6 +29,20 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Telegram message limit
+MAX_MESSAGE_LENGTH = 4096
+
+
+def truncate_error(error: Exception, max_length: int = 200) -> str:
+    """Truncate error message for Telegram display."""
+    error_str = str(error)
+    # Strip HTML if present (e.g., Cloudflare error pages)
+    if "<html" in error_str.lower() or "<!doctype" in error_str.lower():
+        error_str = "API error (blocked by Cloudflare or server error)"
+    if len(error_str) > max_length:
+        error_str = error_str[:max_length] + "..."
+    return error_str
+
 
 def is_authorized(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
     """Check if the update is from an authorized chat."""
@@ -121,23 +135,23 @@ async def cmd_search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
                 question += "..."
 
             # Show each outcome with price
-            for token in market.get("tokens", []):
+            for j, token in enumerate(market.get("tokens", [])):
                 outcome = token.get("outcome", "Yes")
                 price = token.get("price", 0)
-                token_id = token.get("token_id", "")
 
                 lines.append(f"{i+1}. {question}")
                 lines.append(f"   <b>{outcome}</b>: ${price:.2f}")
 
-                # Add buy/sell buttons for this outcome
+                # Add buy/sell buttons using indices (callback_data has 64 byte limit)
+                # Format: buy:market_idx:token_idx or sell:market_idx:token_idx
                 keyboard.append([
                     InlineKeyboardButton(
                         f"Buy {outcome} @ ${price:.2f}",
-                        callback_data=f"buy:{token_id}:{i}"
+                        callback_data=f"buy:{i}:{j}"
                     ),
                     InlineKeyboardButton(
                         f"Sell {outcome}",
-                        callback_data=f"sell:{token_id}:{i}"
+                        callback_data=f"sell:{i}:{j}"
                     ),
                 ])
             lines.append("")
@@ -151,7 +165,7 @@ async def cmd_search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
     except Exception as e:
         logger.error(f"Error searching markets: {e}")
-        await update.message.reply_text(f"Error: {e}")
+        await update.message.reply_text(f"Error: {truncate_error(e)}")
 
 
 async def callback_trade_select(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -165,15 +179,15 @@ async def callback_trade_select(update: Update, context: ContextTypes.DEFAULT_TY
     bot: "TelegramControlBot" = context.bot_data["control_bot"]
     user_id = update.effective_user.id
 
-    # Parse callback data: buy:token_id:index or sell:token_id:index
+    # Parse callback data: buy:market_idx:token_idx or sell:market_idx:token_idx
     parts = query.data.split(":")
     if len(parts) < 3:
         await query.edit_message_text("Invalid selection")
         return ConversationHandler.END
 
     side = parts[0].upper()
-    token_id = parts[1]
-    market_idx = int(parts[2])
+    market_idx = int(parts[1])
+    token_idx = int(parts[2])
 
     # Get market from search results
     markets = _search_results.get(user_id, [])
@@ -183,16 +197,14 @@ async def callback_trade_select(update: Update, context: ContextTypes.DEFAULT_TY
 
     market = markets[market_idx]
 
-    # Find the token
-    token = None
-    for t in market.get("tokens", []):
-        if t.get("token_id") == token_id:
-            token = t
-            break
-
-    if not token:
+    # Get the token by index
+    tokens = market.get("tokens", [])
+    if token_idx >= len(tokens):
         await query.edit_message_text("Token not found. Please search again.")
         return ConversationHandler.END
+
+    token = tokens[token_idx]
+    token_id = token.get("token_id", "")
 
     # Get current price
     try:
@@ -373,11 +385,17 @@ async def callback_confirm_trade(update: Update, context: ContextTypes.DEFAULT_T
             )
         else:
             error = result.get("error", "Unknown error")
-            await query.edit_message_text(f"Trade failed: {error}")
+            # Truncate error message for Telegram
+            error_str = str(error)
+            if "<html" in error_str.lower() or "<!doctype" in error_str.lower():
+                error_str = "API error (blocked by Cloudflare or server error)"
+            elif len(error_str) > 200:
+                error_str = error_str[:200] + "..."
+            await query.edit_message_text(f"Trade failed: {error_str}")
 
     except Exception as e:
         logger.error(f"Trade execution error: {e}")
-        await query.edit_message_text(f"Error: {e}")
+        await query.edit_message_text(f"Error: {truncate_error(e)}")
 
     # Clean up
     if user_id in _pending_trades:
@@ -463,7 +481,7 @@ async def cmd_positions(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     except Exception as e:
         logger.error(f"Error getting positions: {e}")
-        await update.message.reply_text(f"Error: {e}")
+        await update.message.reply_text(f"Error: {truncate_error(e)}")
 
 
 async def fallback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
