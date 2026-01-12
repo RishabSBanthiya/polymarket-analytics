@@ -29,6 +29,27 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
+def is_authorized(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
+    """Check if the update is from an authorized chat."""
+    bot: "TelegramControlBot" = context.bot_data.get("control_bot")
+    if not bot:
+        return False
+    chat_id = str(update.effective_chat.id)
+    return bot.chat_id == "0" or chat_id == bot.chat_id
+
+
+async def check_auth(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
+    """Check authorization and send error message if not authorized."""
+    if not is_authorized(update, context):
+        logger.warning(f"Unauthorized access attempt from chat {update.effective_chat.id}")
+        if update.message:
+            await update.message.reply_text("Unauthorized. Use /id to get your chat ID.")
+        elif update.callback_query:
+            await update.callback_query.answer("Unauthorized", show_alert=True)
+        return False
+    return True
+
 # Conversation states
 AWAITING_AMOUNT = 1
 AWAITING_PRICE = 2
@@ -64,6 +85,9 @@ _search_results: Dict[int, List[dict]] = {}
 
 async def cmd_search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Search markets by name."""
+    if not await check_auth(update, context):
+        return
+
     bot: "TelegramControlBot" = context.bot_data["control_bot"]
 
     if not context.args:
@@ -132,6 +156,9 @@ async def cmd_search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
 async def callback_trade_select(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle buy/sell button clicks from search results."""
+    if not await check_auth(update, context):
+        return ConversationHandler.END
+
     query = update.callback_query
     await query.answer()
 
@@ -203,6 +230,9 @@ async def callback_trade_select(update: Update, context: ContextTypes.DEFAULT_TY
 
 async def handle_amount_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle amount input for trade."""
+    if not await check_auth(update, context):
+        return ConversationHandler.END
+
     bot: "TelegramControlBot" = context.bot_data["control_bot"]
     user_id = update.effective_user.id
 
@@ -249,6 +279,9 @@ async def handle_amount_input(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle limit price input for trade."""
+    if not await check_auth(update, context):
+        return ConversationHandler.END
+
     user_id = update.effective_user.id
 
     pending = _pending_trades.get(user_id)
@@ -300,6 +333,9 @@ async def handle_price_input(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def callback_confirm_trade(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Execute the confirmed trade."""
+    if not await check_auth(update, context):
+        return ConversationHandler.END
+
     query = update.callback_query
     await query.answer()
 
@@ -352,6 +388,9 @@ async def callback_confirm_trade(update: Update, context: ContextTypes.DEFAULT_T
 
 async def callback_cancel_trade(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Cancel the pending trade."""
+    if not await check_auth(update, context):
+        return ConversationHandler.END
+
     query = update.callback_query
     await query.answer()
 
@@ -366,6 +405,9 @@ async def callback_cancel_trade(update: Update, context: ContextTypes.DEFAULT_TY
 
 async def cmd_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Cancel any pending trade."""
+    if not await check_auth(update, context):
+        return
+
     user_id = update.effective_user.id
 
     if user_id in _pending_trades:
@@ -377,6 +419,9 @@ async def cmd_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
 async def cmd_positions(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Show open positions."""
+    if not await check_auth(update, context):
+        return
+
     bot: "TelegramControlBot" = context.bot_data["control_bot"]
 
     try:

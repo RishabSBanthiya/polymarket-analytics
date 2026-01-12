@@ -11,7 +11,7 @@ Commands:
 
 import logging
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from telegram import Update
 from telegram.ext import CommandHandler, ContextTypes
@@ -22,8 +22,30 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def is_authorized(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
+    """Check if the update is from an authorized chat."""
+    bot: "TelegramControlBot" = context.bot_data.get("control_bot")
+    if not bot:
+        return False
+    chat_id = str(update.effective_chat.id)
+    # Allow if chat_id is "0" (setup mode) or matches authorized chat
+    return bot.chat_id == "0" or chat_id == bot.chat_id
+
+
+async def check_auth(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
+    """Check authorization and send error message if not authorized."""
+    if not is_authorized(update, context):
+        logger.warning(f"Unauthorized access attempt from chat {update.effective_chat.id}")
+        await update.message.reply_text("Unauthorized. Use /id to get your chat ID.")
+        return False
+    return True
+
+
 async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Show help message with available commands."""
+    if not await check_auth(update, context):
+        return
+
     help_text = """
 <b>Polymarket Control Bot</b>
 
@@ -53,6 +75,9 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Show wallet and bot status summary."""
+    if not await check_auth(update, context):
+        return
+
     bot: "TelegramControlBot" = context.bot_data["control_bot"]
 
     try:
@@ -93,6 +118,9 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 
 async def cmd_bots(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """List all registered bots with detailed status."""
+    if not await check_auth(update, context):
+        return
+
     bot: "TelegramControlBot" = context.bot_data["control_bot"]
 
     try:
@@ -151,6 +179,9 @@ async def cmd_bots(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def cmd_start_bot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Start a trading bot."""
+    if not await check_auth(update, context):
+        return
+
     bot: "TelegramControlBot" = context.bot_data["control_bot"]
 
     if not context.args:
@@ -211,6 +242,9 @@ async def cmd_start_bot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
 async def cmd_stop_bot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Stop a trading bot."""
+    if not await check_auth(update, context):
+        return
+
     bot: "TelegramControlBot" = context.bot_data["control_bot"]
 
     if not context.args:
