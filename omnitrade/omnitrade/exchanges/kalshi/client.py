@@ -80,9 +80,24 @@ class KalshiClient(ExchangeClient):
             return await resp.json()
 
     async def get_instruments(self, active_only: bool = True, **filters) -> list[Instrument]:
-        params = "?status=open" if active_only else ""
-        limit = filters.get("limit", 100)
-        params += f"&limit={limit}"
+        limit = filters.get("limit", 200)
+        event_ticker = filters.get("event_ticker", "")
+        ticker = filters.get("ticker", "")
+        series_ticker = filters.get("series_ticker", "")
+
+        params = f"?limit={limit}"
+        if active_only:
+            params += "&status=open"
+
+        # Kalshi supports series_ticker for broad category filtering (e.g. KXBTC)
+        if series_ticker:
+            params += f"&series_ticker={series_ticker}"
+        # event_ticker for specific event (e.g. KXBTC-25NOV1800)
+        if event_ticker:
+            params += f"&event_ticker={event_ticker}"
+        # ticker for exact market
+        if ticker:
+            params += f"&ticker={ticker}"
 
         data = await self._request("GET", f"/markets{params}")
         instruments = []
@@ -106,7 +121,9 @@ class KalshiClient(ExchangeClient):
     async def get_orderbook(self, instrument_id: str, depth: int = 10) -> OrderbookSnapshot:
         ticker = instrument_id.rsplit("-", 1)[0] if "-" in instrument_id else instrument_id
         data = await self._request("GET", f"/markets/{ticker}/orderbook?depth={depth}")
-        return KalshiAdapter.orderbook_to_snapshot(instrument_id, data.get("orderbook", data))
+        # v3 API nests under "orderbook_fp"; legacy uses "orderbook"
+        book = data.get("orderbook_fp", data.get("orderbook", data))
+        return KalshiAdapter.orderbook_to_snapshot(instrument_id, book)
 
     async def place_order(self, request: OrderRequest) -> OrderResult:
         ticker = request.instrument_id.rsplit("-", 1)[0]

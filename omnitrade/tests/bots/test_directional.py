@@ -7,8 +7,8 @@ from unittest.mock import AsyncMock
 from omnitrade.core.enums import Side, SignalDirection, ExchangeId, Environment
 from omnitrade.core.models import Signal, ExchangePosition
 from omnitrade.components.signals import SignalSource
-from omnitrade.components.sizers import FixedSizer
-from omnitrade.components.executors import DryRunExecutor
+from omnitrade.components.trading import FixedSizer
+from omnitrade.exchanges.base import PaperClient
 from omnitrade.bots.directional import DirectionalBot
 
 
@@ -24,31 +24,28 @@ class MockSignalSource(SignalSource):
         return self._signals
 
 
+def _make_bot(mock_client, risk_coordinator, signals=None, **kwargs):
+    """Helper to create a DirectionalBot with PaperClient wrapping."""
+    paper_client = PaperClient(mock_client)
+    return DirectionalBot(
+        agent_id="test-bot",
+        client=paper_client,
+        signal_source=MockSignalSource(signals or []),
+        sizer=FixedSizer(50.0),
+        risk=risk_coordinator,
+        **kwargs,
+    )
+
+
 class TestDirectionalBot:
     async def test_start_stop(self, mock_client, risk_coordinator):
-        bot = DirectionalBot(
-            agent_id="test-bot",
-            client=mock_client,
-            signal_source=MockSignalSource(),
-            sizer=FixedSizer(50.0),
-            executor=DryRunExecutor(),
-            risk=risk_coordinator,
-            environment=Environment.PAPER,
-        )
+        bot = _make_bot(mock_client, risk_coordinator)
         await bot.start()
         assert mock_client.is_connected
         await bot.stop()
 
     async def test_iteration_no_signals(self, mock_client, risk_coordinator):
-        bot = DirectionalBot(
-            agent_id="test-bot",
-            client=mock_client,
-            signal_source=MockSignalSource([]),
-            sizer=FixedSizer(50.0),
-            executor=DryRunExecutor(),
-            risk=risk_coordinator,
-            environment=Environment.PAPER,
-        )
+        bot = _make_bot(mock_client, risk_coordinator, signals=[])
         await bot.start()
         await bot._iteration()  # Should not raise
         await bot.stop()
@@ -61,15 +58,7 @@ class TestDirectionalBot:
             source="test",
             price=0.65,
         )
-        bot = DirectionalBot(
-            agent_id="test-bot",
-            client=mock_client,
-            signal_source=MockSignalSource([signal]),
-            sizer=FixedSizer(50.0),
-            executor=DryRunExecutor(),
-            risk=risk_coordinator,
-            environment=Environment.PAPER,
-        )
+        bot = _make_bot(mock_client, risk_coordinator, signals=[signal])
         await bot.start()
         await bot._iteration()
         # Should have created a position
@@ -85,15 +74,7 @@ class TestDirectionalBot:
             source="test",
             price=0.65,
         )
-        bot = DirectionalBot(
-            agent_id="test-bot",
-            client=mock_client,
-            signal_source=MockSignalSource([signal]),
-            sizer=FixedSizer(50.0),
-            executor=DryRunExecutor(),
-            risk=risk_coordinator,
-            environment=Environment.PAPER,
-        )
+        bot = _make_bot(mock_client, risk_coordinator, signals=[signal])
         await bot.start()
         await bot._iteration()
         positions = risk_coordinator.storage.get_agent_positions("test-bot", "open")
@@ -108,15 +89,7 @@ class TestDirectionalBot:
             source="test",
             price=0.02,  # Below default min_price of 0.05
         )
-        bot = DirectionalBot(
-            agent_id="test-bot",
-            client=mock_client,
-            signal_source=MockSignalSource([signal]),
-            sizer=FixedSizer(50.0),
-            executor=DryRunExecutor(),
-            risk=risk_coordinator,
-            environment=Environment.PAPER,
-        )
+        bot = _make_bot(mock_client, risk_coordinator, signals=[signal])
         await bot.start()
         await bot._iteration()
         positions = risk_coordinator.storage.get_agent_positions("test-bot", "open")
@@ -131,15 +104,7 @@ class TestDirectionalBot:
             source="test",
             price=0.98,  # Above default max_price of 0.95
         )
-        bot = DirectionalBot(
-            agent_id="test-bot",
-            client=mock_client,
-            signal_source=MockSignalSource([signal]),
-            sizer=FixedSizer(50.0),
-            executor=DryRunExecutor(),
-            risk=risk_coordinator,
-            environment=Environment.PAPER,
-        )
+        bot = _make_bot(mock_client, risk_coordinator, signals=[signal])
         await bot.start()
         await bot._iteration()
         positions = risk_coordinator.storage.get_agent_positions("test-bot", "open")
@@ -154,16 +119,7 @@ class TestDirectionalBot:
             source="test",
             price=0.65,
         )
-        bot = DirectionalBot(
-            agent_id="test-bot",
-            client=mock_client,
-            signal_source=MockSignalSource([signal]),
-            sizer=FixedSizer(50.0),
-            executor=DryRunExecutor(),
-            risk=risk_coordinator,
-            environment=Environment.PAPER,
-            max_positions=1,
-        )
+        bot = _make_bot(mock_client, risk_coordinator, signals=[signal], max_positions=1)
         await bot.start()
         # First iteration opens a position
         await bot._iteration()
@@ -175,32 +131,16 @@ class TestDirectionalBot:
         assert len(positions) == 1
         await bot.stop()
 
-    async def test_paper_mode_wraps_executor(self, mock_client, risk_coordinator):
-        from omnitrade.components.executors import AggressiveExecutor
-        bot = DirectionalBot(
-            agent_id="test-bot",
-            client=mock_client,
-            signal_source=MockSignalSource(),
-            sizer=FixedSizer(50.0),
-            executor=AggressiveExecutor(),
-            risk=risk_coordinator,
-            environment=Environment.PAPER,
-        )
-        assert isinstance(bot.executor, DryRunExecutor)
-
-    async def test_live_mode_keeps_executor(self, mock_client, risk_coordinator):
-        from omnitrade.components.executors import AggressiveExecutor
-        original_executor = AggressiveExecutor()
-        bot = DirectionalBot(
-            agent_id="test-bot",
-            client=mock_client,
-            signal_source=MockSignalSource(),
-            sizer=FixedSizer(50.0),
-            executor=original_executor,
-            risk=risk_coordinator,
-            environment=Environment.LIVE,
-        )
-        assert bot.executor is original_executor
+    async def test_paper_client_simulates_fills(self, mock_client, risk_coordinator):
+        """PaperClient wrapping should produce simulated fills."""
+        paper = PaperClient(mock_client)
+        from omnitrade.core.models import OrderRequest
+        from omnitrade.core.enums import OrderType
+        result = await paper.place_order(OrderRequest(
+            instrument_id="token-yes", side=Side.BUY, size=10.0, price=0.52,
+        ))
+        assert result.success
+        assert result.order_id.startswith("PAPER-")
 
     async def test_highest_score_signal_processed_first(self, mock_client, risk_coordinator):
         """Bot should process the highest-score signal first."""
@@ -225,15 +165,7 @@ class TestDirectionalBot:
             bids=[OrderbookLevel(price=0.34, size=100)],
             asks=[OrderbookLevel(price=0.36, size=100)],
         )
-        bot = DirectionalBot(
-            agent_id="test-bot",
-            client=mock_client,
-            signal_source=MockSignalSource([low_signal, high_signal]),
-            sizer=FixedSizer(50.0),
-            executor=DryRunExecutor(),
-            risk=risk_coordinator,
-            environment=Environment.PAPER,
-        )
+        bot = _make_bot(mock_client, risk_coordinator, signals=[low_signal, high_signal])
         await bot.start()
         await bot._iteration()
         positions = risk_coordinator.storage.get_agent_positions("test-bot", "open")
@@ -242,15 +174,7 @@ class TestDirectionalBot:
         await bot.stop()
 
     async def test_exit_monitor_initialized(self, mock_client, risk_coordinator):
-        bot = DirectionalBot(
-            agent_id="test-bot",
-            client=mock_client,
-            signal_source=MockSignalSource(),
-            sizer=FixedSizer(50.0),
-            executor=DryRunExecutor(),
-            risk=risk_coordinator,
-            environment=Environment.PAPER,
-        )
+        bot = _make_bot(mock_client, risk_coordinator)
         assert bot.exit_monitor is not None
 
     async def test_restore_exit_states_on_start(self, mock_client, risk_coordinator):
@@ -264,15 +188,7 @@ class TestDirectionalBot:
             trailing_stop_level=0.565,
         )
 
-        bot = DirectionalBot(
-            agent_id="test-bot",
-            client=mock_client,
-            signal_source=MockSignalSource(),
-            sizer=FixedSizer(50.0),
-            executor=DryRunExecutor(),
-            risk=risk_coordinator,
-            environment=Environment.PAPER,
-        )
+        bot = _make_bot(mock_client, risk_coordinator)
         await bot.start()
 
         state = bot.exit_monitor.get_state("token-yes")
@@ -285,15 +201,7 @@ class TestDirectionalBot:
 
     async def test_restore_clean_start_no_positions(self, mock_client, risk_coordinator):
         """Starting with no open positions should not register anything."""
-        bot = DirectionalBot(
-            agent_id="test-bot",
-            client=mock_client,
-            signal_source=MockSignalSource(),
-            sizer=FixedSizer(50.0),
-            executor=DryRunExecutor(),
-            risk=risk_coordinator,
-            environment=Environment.PAPER,
-        )
+        bot = _make_bot(mock_client, risk_coordinator)
         await bot.start()
         assert bot.exit_monitor.get_state("token-yes") is None
         await bot.stop()
@@ -307,15 +215,7 @@ class TestDirectionalBot:
             source="test",
             price=0.65,
         )
-        bot = DirectionalBot(
-            agent_id="test-bot",
-            client=mock_client,
-            signal_source=MockSignalSource([signal]),
-            sizer=FixedSizer(50.0),
-            executor=DryRunExecutor(),
-            risk=risk_coordinator,
-            environment=Environment.PAPER,
-        )
+        bot = _make_bot(mock_client, risk_coordinator, signals=[signal])
         await bot.start()
         # Open a position
         await bot._iteration()
@@ -345,19 +245,11 @@ class TestDirectionalBot:
         # Exchange returns empty positions
         mock_client._positions = []
 
-        bot = DirectionalBot(
-            agent_id="test-bot",
-            client=mock_client,
-            signal_source=MockSignalSource(),
-            sizer=FixedSizer(50.0),
-            executor=DryRunExecutor(),
-            risk=risk_coordinator,
-            environment=Environment.PAPER,
-        )
+        bot = _make_bot(mock_client, risk_coordinator)
         await bot.start()
 
         import logging
-        with caplog.at_level(logging.WARNING):
+        with caplog.at_level(logging.DEBUG):
             await bot._reconcile_positions()
 
         assert any("RECONCILIATION" in msg and "not found on exchange" in msg
@@ -384,15 +276,7 @@ class TestDirectionalBot:
             )
         ]
 
-        bot = DirectionalBot(
-            agent_id="test-bot",
-            client=mock_client,
-            signal_source=MockSignalSource(),
-            sizer=FixedSizer(50.0),
-            executor=DryRunExecutor(),
-            risk=risk_coordinator,
-            environment=Environment.PAPER,
-        )
+        bot = _make_bot(mock_client, risk_coordinator)
         await bot.start()
 
         import logging
@@ -422,15 +306,7 @@ class TestDirectionalBot:
             )
         ]
 
-        bot = DirectionalBot(
-            agent_id="test-bot",
-            client=mock_client,
-            signal_source=MockSignalSource(),
-            sizer=FixedSizer(50.0),
-            executor=DryRunExecutor(),
-            risk=risk_coordinator,
-            environment=Environment.PAPER,
-        )
+        bot = _make_bot(mock_client, risk_coordinator)
         await bot.start()
 
         import logging

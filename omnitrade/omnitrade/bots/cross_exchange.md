@@ -30,9 +30,10 @@ Legs are executed sequentially, each with its own capital reservation:
 | Component | Interface | Role |
 |-----------|-----------|------|
 | `CrossExchangeSignalSource` | defined in `bots.cross_exchange` | Generates `MultiLegSignal` objects with per-leg exchange, direction, price, weight |
-| `Executor` (per exchange) | `components.executors` | Places orders on each exchange (all wrapped with `DryRunExecutor` in paper mode) |
 | `ExitMonitor` | `components.exit_strategies` | Tracks exit conditions on the primary leg |
 | `RiskCoordinator` | `risk.coordinator` | Capital reservation, drawdown limits, failure tracking across all exchanges |
+
+Execution uses `execute_aggressive()` directly on each exchange's client — paper mode is handled by wrapping clients with `PaperClient` at startup.
 
 ## Configuration
 
@@ -41,12 +42,10 @@ Constructor parameters:
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `agent_id` | `str` | required | Unique identifier for this bot instance |
-| `clients` | `dict[ExchangeId, ExchangeClient]` | required | Map of exchange connections |
+| `clients` | `dict[ExchangeId, ExchangeClient]` | required | Map of exchange connections (wrap with `PaperClient` for paper mode) |
 | `signal_source` | `CrossExchangeSignalSource` | required | Multi-leg signal generator |
-| `executors` | `dict[ExchangeId, Executor]` | required | Per-exchange order executors |
 | `risk` | `RiskCoordinator` | required | Shared risk coordinator |
 | `exit_config` | `ExitConfig` | `None` | Exit strategy thresholds |
-| `environment` | `Environment` | `PAPER` | Paper or live trading |
 | `base_size_usd` | `float` | `50.0` | Base position size in USD (scaled by leg weight) |
 | `max_strategies` | `int` | `5` | Maximum concurrent active strategies |
 

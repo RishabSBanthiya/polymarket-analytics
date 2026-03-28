@@ -1,9 +1,10 @@
-"""Tests for executors."""
+"""Tests for execution helpers and PaperClient."""
 
 import pytest
 from omnitrade.core.enums import Side, OrderStatus, ExchangeId, InstrumentType, SignalDirection
 from omnitrade.core.models import OrderbookSnapshot, OrderbookLevel, Instrument
-from omnitrade.components.executors import DryRunExecutor, AggressiveExecutor, LimitExecutor, Executor
+from omnitrade.components.trading import direction_to_side, check_pre_trade_safety, execute_aggressive
+from omnitrade.exchanges.base import PaperClient
 
 
 @pytest.fixture
@@ -15,176 +16,179 @@ def orderbook():
     )
 
 
-class TestDryRunExecutor:
+class TestPaperClient:
     async def test_buy(self, mock_client, orderbook):
-        executor = DryRunExecutor()
-        result = await executor.execute(
-            mock_client, "test-token", Side.BUY, 50.0, 0.52, orderbook
-        )
+        paper = PaperClient(mock_client)
+        from omnitrade.core.models import OrderRequest
+        result = await paper.place_order(OrderRequest(
+            instrument_id="test-token", side=Side.BUY, size=96.15, price=0.52,
+        ))
         assert result.success
-        assert result.order_id.startswith("DRY-")
+        assert result.order_id.startswith("PAPER-")
         assert result.filled_size > 0
 
     async def test_sell(self, mock_client, orderbook):
-        executor = DryRunExecutor()
-        result = await executor.execute(
-            mock_client, "test-token", Side.SELL, 50.0, 0.50, orderbook
-        )
+        paper = PaperClient(mock_client)
+        from omnitrade.core.models import OrderRequest
+        result = await paper.place_order(OrderRequest(
+            instrument_id="test-token", side=Side.SELL, size=100.0, price=0.50,
+        ))
         assert result.success
         assert result.filled_price > 0
 
     async def test_buy_uses_ask_with_slippage(self, mock_client, orderbook):
-        executor = DryRunExecutor(slippage_pct=0.01)
-        result = await executor.execute(
-            mock_client, "test-token", Side.BUY, 100.0, 0.52, orderbook
-        )
+        paper = PaperClient(mock_client, slippage_pct=0.01)
+        from omnitrade.core.models import OrderRequest
+        result = await paper.place_order(OrderRequest(
+            instrument_id="test-token", side=Side.BUY, size=100.0, price=0.52,
+        ))
         # Should execute at ask (0.52) * (1 + 0.01) = 0.5252
         assert result.success
         assert abs(result.filled_price - 0.5252) < 0.001
 
     async def test_sell_uses_bid_with_slippage(self, mock_client, orderbook):
-        executor = DryRunExecutor(slippage_pct=0.01)
-        result = await executor.execute(
-            mock_client, "test-token", Side.SELL, 100.0, 0.50, orderbook
-        )
+        paper = PaperClient(mock_client, slippage_pct=0.01)
+        from omnitrade.core.models import OrderRequest
+        result = await paper.place_order(OrderRequest(
+            instrument_id="test-token", side=Side.SELL, size=100.0, price=0.50,
+        ))
         # Should execute at bid (0.50) * (1 - 0.01) = 0.495
         assert result.success
         assert abs(result.filled_price - 0.495) < 0.001
 
-    async def test_name(self):
-        assert DryRunExecutor().name == "dry_run"
-
     async def test_sequential_order_ids(self, mock_client, orderbook):
-        executor = DryRunExecutor()
-        r1 = await executor.execute(mock_client, "test", Side.BUY, 10.0, 0.50, orderbook)
-        r2 = await executor.execute(mock_client, "test", Side.BUY, 10.0, 0.50, orderbook)
+        paper = PaperClient(mock_client)
+        from omnitrade.core.models import OrderRequest
+        r1 = await paper.place_order(OrderRequest(
+            instrument_id="test", side=Side.BUY, size=10.0, price=0.50,
+        ))
+        r2 = await paper.place_order(OrderRequest(
+            instrument_id="test", side=Side.BUY, size=10.0, price=0.50,
+        ))
         assert r1.order_id != r2.order_id
 
-    async def test_no_orderbook_fetches_from_client(self, mock_client):
-        executor = DryRunExecutor()
-        result = await executor.execute(
-            mock_client, "test-token", Side.BUY, 50.0, 0.52
-        )
-        assert result.success
-
     async def test_zero_price_orderbook(self, mock_client):
-        zero_book = OrderbookSnapshot(
+        mock_client._orderbook = OrderbookSnapshot(
             instrument_id="test",
             bids=[],
             asks=[],
         )
-        executor = DryRunExecutor()
-        result = await executor.execute(
-            mock_client, "test", Side.BUY, 50.0, 0.0, zero_book
-        )
+        paper = PaperClient(mock_client)
+        from omnitrade.core.models import OrderRequest
+        result = await paper.place_order(OrderRequest(
+            instrument_id="test", side=Side.BUY, size=50.0, price=0.0,
+        ))
         assert not result.success
 
+    async def test_cancel_is_noop(self, mock_client):
+        paper = PaperClient(mock_client)
+        assert await paper.cancel_order("any-id") is True
 
-class TestAggressiveExecutor:
-    async def test_spread_too_wide(self, mock_client):
+    async def test_delegates_market_data(self, mock_client):
+        paper = PaperClient(mock_client)
+        instruments = await paper.get_instruments()
+        assert len(instruments) == len(mock_client._instruments)
+        balance = await paper.get_balance()
+        assert balance.total_equity == mock_client._balance.total_equity
+
+    async def test_delegates_connect(self, mock_client):
+        paper = PaperClient(mock_client)
+        assert not paper.is_connected
+        await paper.connect()
+        assert paper.is_connected
+
+
+class TestPreTradeChecks:
+    def test_spread_too_wide(self):
         wide_book = OrderbookSnapshot(
             instrument_id="test",
             bids=[OrderbookLevel(price=0.30, size=100)],
             asks=[OrderbookLevel(price=0.70, size=100)],
         )
-        executor = AggressiveExecutor(max_spread=0.03)
-        result = await executor.execute(
-            mock_client, "test", Side.BUY, 50.0, 0.50, wide_book
-        )
-        assert not result.success
-        assert result.is_rejection
-        assert "Spread" in result.error_message
+        rejection = check_pre_trade_safety(wide_book, Side.BUY, 0.50, max_spread=0.03)
+        assert rejection is not None
+        assert rejection.is_rejection
+        assert "Spread" in rejection.error_message
 
-    async def test_spread_check_only_on_buy(self, mock_client):
-        """Spread check should not block sells (exit should always be allowed)."""
+    def test_spread_check_only_on_buy(self):
+        """Spread check should not block sells (exits should always be allowed)."""
         wide_book = OrderbookSnapshot(
             instrument_id="test",
             bids=[OrderbookLevel(price=0.30, size=100)],
             asks=[OrderbookLevel(price=0.70, size=100)],
         )
-        executor = AggressiveExecutor(max_spread=0.03, max_slippage=1.0)
-        result = await executor.execute(
-            mock_client, "test", Side.SELL, 50.0, 0.30, wide_book
+        rejection = check_pre_trade_safety(wide_book, Side.SELL, 0.30, max_spread=0.03, max_slippage=1.0)
+        assert rejection is None
+
+    def test_slippage_rejected(self):
+        book = OrderbookSnapshot(
+            instrument_id="test",
+            bids=[OrderbookLevel(price=0.50, size=100)],
+            asks=[OrderbookLevel(price=0.52, size=100)],
         )
-        # Sell should pass spread check even with wide spread
-        assert result.success
+        rejection = check_pre_trade_safety(book, Side.BUY, 0.40, max_slippage=0.001)
+        assert rejection is not None
+        assert rejection.is_rejection
 
-    async def test_slippage_rejected(self, mock_client, orderbook):
-        executor = AggressiveExecutor(max_slippage=0.001)
-        result = await executor.execute(
-            mock_client, "test", Side.BUY, 50.0, 0.40, orderbook
+    def test_passes_when_safe(self):
+        book = OrderbookSnapshot(
+            instrument_id="test",
+            bids=[OrderbookLevel(price=0.50, size=100)],
+            asks=[OrderbookLevel(price=0.52, size=100)],
         )
-        assert not result.success
-        assert result.is_rejection
+        rejection = check_pre_trade_safety(book, Side.BUY, 0.52, max_spread=0.10, max_slippage=0.10)
+        assert rejection is None
 
-    async def test_successful_buy(self, mock_client, orderbook):
-        executor = AggressiveExecutor(max_spread=0.10, max_slippage=0.10)
-        result = await executor.execute(
-            mock_client, "test", Side.BUY, 50.0, 0.52, orderbook
-        )
-        assert result.success
-
-    async def test_name(self):
-        assert AggressiveExecutor().name == "aggressive"
-
-    async def test_no_ask_available(self, mock_client):
+    def test_no_ask_available(self):
         empty_ask_book = OrderbookSnapshot(
             instrument_id="test",
             bids=[OrderbookLevel(price=0.50, size=100)],
             asks=[],
         )
-        executor = AggressiveExecutor(max_spread=0.10, max_slippage=0.10)
-        result = await executor.execute(
-            mock_client, "test", Side.BUY, 50.0, 0.50, empty_ask_book
-        )
-        assert not result.success
+        rejection = check_pre_trade_safety(empty_ask_book, Side.BUY, 0.50)
+        assert rejection is not None
+        assert "No ask" in rejection.error_message
 
-    async def test_no_bid_available(self, mock_client):
+    def test_no_bid_available(self):
         empty_bid_book = OrderbookSnapshot(
             instrument_id="test",
             bids=[],
             asks=[OrderbookLevel(price=0.50, size=100)],
         )
-        executor = AggressiveExecutor(max_spread=0.10, max_slippage=0.10)
-        result = await executor.execute(
-            mock_client, "test", Side.SELL, 50.0, 0.50, empty_bid_book
-        )
-        assert not result.success
+        rejection = check_pre_trade_safety(empty_bid_book, Side.SELL, 0.50)
+        assert rejection is not None
+        assert "No bid" in rejection.error_message
 
 
-class TestLimitExecutor:
-    async def test_buy_with_offset(self, mock_client, orderbook):
-        executor = LimitExecutor(price_offset=0.01)
-        result = await executor.execute(
-            mock_client, "test", Side.BUY, 50.0, 0.50, orderbook
+class TestExecuteAggressive:
+    async def test_successful_buy(self, mock_client):
+        result = await execute_aggressive(
+            mock_client, "test", Side.BUY, 50.0, 0.52,
+            max_spread=0.10, max_slippage=0.10,
         )
         assert result.success
 
-    async def test_sell_with_offset(self, mock_client, orderbook):
-        executor = LimitExecutor(price_offset=0.01)
-        result = await executor.execute(
-            mock_client, "test", Side.SELL, 50.0, 0.50, orderbook
+    async def test_rejects_wide_spread(self, mock_client):
+        mock_client._orderbook = OrderbookSnapshot(
+            instrument_id="test",
+            bids=[OrderbookLevel(price=0.30, size=100)],
+            asks=[OrderbookLevel(price=0.70, size=100)],
         )
-        assert result.success
-
-    async def test_name(self):
-        assert LimitExecutor().name == "limit"
-
-    async def test_invalid_limit_price(self, mock_client, orderbook):
-        executor = LimitExecutor(price_offset=0.0)
-        result = await executor.execute(
-            mock_client, "test", Side.SELL, 50.0, 0.0, orderbook
+        result = await execute_aggressive(
+            mock_client, "test", Side.BUY, 50.0, 0.50,
+            max_spread=0.03,
         )
         assert not result.success
+        assert result.is_rejection
 
 
-class TestExecutorStatic:
-    def test_direction_to_side_long(self):
-        assert Executor.direction_to_side(SignalDirection.LONG) == Side.BUY
+class TestDirectionToSide:
+    def test_long(self):
+        assert direction_to_side(SignalDirection.LONG) == Side.BUY
 
-    def test_direction_to_side_short(self):
-        assert Executor.direction_to_side(SignalDirection.SHORT) == Side.SELL
+    def test_short(self):
+        assert direction_to_side(SignalDirection.SHORT) == Side.SELL
 
-    def test_direction_to_side_neutral_raises(self):
+    def test_neutral_raises(self):
         with pytest.raises(ValueError):
-            Executor.direction_to_side(SignalDirection.NEUTRAL)
+            direction_to_side(SignalDirection.NEUTRAL)

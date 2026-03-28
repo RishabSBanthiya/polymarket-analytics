@@ -41,10 +41,18 @@ class KalshiAdapter:
             title = market.get("title", market.get("subtitle", ""))
             event_ticker = market.get("event_ticker", "")
 
-            yes_price = cents_to_normalized(float(market.get("yes_ask", 50)))
-            no_price = cents_to_normalized(float(market.get("no_ask", 50)))
-            yes_bid = cents_to_normalized(float(market.get("yes_bid", 0)))
-            no_bid = cents_to_normalized(float(market.get("no_bid", 0)))
+            # v3 API uses dollar fields (already 0-1); fall back to
+            # legacy cents fields for backwards compatibility.
+            if "yes_ask_dollars" in market:
+                yes_price = float(market.get("yes_ask_dollars") or 0)
+                no_price = float(market.get("no_ask_dollars") or 0)
+                yes_bid = float(market.get("yes_bid_dollars") or 0)
+                no_bid = float(market.get("no_bid_dollars") or 0)
+            else:
+                yes_price = cents_to_normalized(float(market.get("yes_ask", 50)))
+                no_price = cents_to_normalized(float(market.get("no_ask", 50)))
+                yes_bid = cents_to_normalized(float(market.get("yes_bid", 0)))
+                no_bid = cents_to_normalized(float(market.get("no_bid", 0)))
 
             close_time = market.get("close_time", "")
             expiry = None
@@ -100,21 +108,46 @@ class KalshiAdapter:
 
     @staticmethod
     def orderbook_to_snapshot(ticker: str, book_data: dict) -> OrderbookSnapshot:
-        """Convert Kalshi orderbook (cents) to OrderbookSnapshot (0-1)."""
+        """Convert Kalshi orderbook to OrderbookSnapshot (0-1).
+
+        Supports both legacy cents format and v3 dollar format.
+        v3 format uses ``yes_dollars`` / ``no_dollars`` lists of [price, size].
+        For a YES instrument: bids come from ``yes_dollars``, asks are derived
+        as (1 - no_price) from ``no_dollars``.
+        """
         bids = []
         asks = []
 
-        for level in book_data.get("yes", {}).get("bids", []):
-            bids.append(OrderbookLevel(
-                price=cents_to_normalized(float(level[0])),
-                size=float(level[1]),
-            ))
+        # v3 dollar format (orderbook_fp container already stripped by caller,
+        # but handle both shapes)
+        yes_levels = book_data.get("yes_dollars", [])
+        no_levels = book_data.get("no_dollars", [])
 
-        for level in book_data.get("yes", {}).get("asks", []):
-            asks.append(OrderbookLevel(
-                price=cents_to_normalized(float(level[0])),
-                size=float(level[1]),
-            ))
+        if yes_levels or no_levels:
+            # YES bids: people willing to buy YES at these prices
+            for level in yes_levels:
+                bids.append(OrderbookLevel(
+                    price=float(level[0]),
+                    size=float(level[1]),
+                ))
+            # YES asks: derived from NO bids (ask = 1 - no_bid)
+            for level in no_levels:
+                asks.append(OrderbookLevel(
+                    price=1.0 - float(level[0]),
+                    size=float(level[1]),
+                ))
+        else:
+            # Legacy cents format
+            for level in book_data.get("yes", {}).get("bids", []):
+                bids.append(OrderbookLevel(
+                    price=cents_to_normalized(float(level[0])),
+                    size=float(level[1]),
+                ))
+            for level in book_data.get("yes", {}).get("asks", []):
+                asks.append(OrderbookLevel(
+                    price=cents_to_normalized(float(level[0])),
+                    size=float(level[1]),
+                ))
 
         bids.sort(key=lambda x: x.price, reverse=True)
         asks.sort(key=lambda x: x.price)

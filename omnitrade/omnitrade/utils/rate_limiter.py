@@ -61,9 +61,22 @@ class RateLimiter:
         Returns True if acquired within timeout, False otherwise.
         """
         start = time.time()
+        waited = False
         while time.time() - start < timeout:
             if await self.acquire():
+                if waited:
+                    wait_secs = time.time() - start
+                    logger.info(
+                        "Rate limit cleared after %.1fs (%d/%d used)",
+                        wait_secs, self.current_usage, self.max_requests,
+                    )
                 return True
+            if not waited:
+                logger.warning(
+                    "Rate limited: %d/%d requests in %ds window, waiting...",
+                    self.current_usage, self.max_requests, self.window_seconds,
+                )
+                waited = True
             # Calculate wait time until oldest request expires
             async with self._lock:
                 self._cleanup()
@@ -74,7 +87,10 @@ class RateLimiter:
                 else:
                     wait_time = 0.05
             await asyncio.sleep(wait_time)
-        logger.error(f"Rate limit timeout after {timeout}s")
+        logger.error(
+            "Rate limit timeout after %.0fs (%d/%d used)",
+            timeout, self.current_usage, self.max_requests,
+        )
         return False
 
     @property

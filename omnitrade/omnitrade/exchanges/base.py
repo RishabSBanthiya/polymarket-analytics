@@ -5,15 +5,18 @@ Every platform (Polymarket, Kalshi, Hyperliquid) implements this interface.
 Bots only depend on ExchangeClient - they never import platform-specific code.
 """
 
+import logging
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from ..core.enums import ExchangeId
+from ..core.enums import ExchangeId, OrderStatus, Side
 from ..core.models import (
     Instrument, OrderbookSnapshot, OrderRequest, OrderResult,
     OpenOrder, AccountBalance, ExchangePosition,
 )
 from ..core.config import ExchangeConfig
+
+logger = logging.getLogger(__name__)
 
 
 class ExchangeAuth(ABC):
@@ -136,3 +139,105 @@ class ExchangeClient(ABC):
             if pos.instrument_id == instrument_id:
                 return pos
         return None
+
+
+class PaperClient(ExchangeClient):
+    """
+    Paper trading wrapper around any ExchangeClient.
+
+    Simulates order fills locally using orderbook prices + configurable slippage,
+    without placing real orders. Delegates all read operations (market data, balance,
+    positions) to the underlying client.
+
+    Usage:
+        client = PaperClient(real_client)
+        # All bots use client.place_order() as normal — fills are simulated.
+    """
+
+    def __init__(self, client: ExchangeClient, slippage_pct: float = 0.001):
+        # Skip ExchangeClient.__init__ — we delegate everything to the wrapped client
+        self._client = client
+        self.slippage_pct = slippage_pct
+        self._order_counter = 0
+
+    @property
+    def exchange_id(self) -> ExchangeId:
+        return self._client.exchange_id
+
+    @property
+    def is_connected(self) -> bool:
+        return self._client.is_connected
+
+    # ==================== LIFECYCLE ====================
+
+    async def connect(self) -> None:
+        await self._client.connect()
+
+    async def close(self) -> None:
+        await self._client.close()
+
+    # ==================== MARKET DATA (delegate) ====================
+
+    async def get_instruments(self, active_only: bool = True, **filters) -> list[Instrument]:
+        return await self._client.get_instruments(active_only=active_only, **filters)
+
+    async def get_instrument(self, instrument_id: str) -> Optional[Instrument]:
+        return await self._client.get_instrument(instrument_id)
+
+    async def get_orderbook(self, instrument_id: str, depth: int = 10) -> OrderbookSnapshot:
+        return await self._client.get_orderbook(instrument_id, depth=depth)
+
+    async def get_midpoint(self, instrument_id: str) -> Optional[float]:
+        return await self._client.get_midpoint(instrument_id)
+
+    # ==================== TRADING (simulated) ====================
+
+    async def place_order(self, request: OrderRequest) -> OrderResult:
+        """Simulate a fill using orderbook prices + slippage."""
+        orderbook = await self._client.get_orderbook(request.instrument_id, depth=1)
+
+        if request.side == Side.BUY:
+            exec_price = orderbook.best_ask or request.price
+            exec_price *= (1 + self.slippage_pct)
+        else:
+            exec_price = orderbook.best_bid or request.price
+            exec_price *= (1 - self.slippage_pct)
+
+        if exec_price <= 0:
+            return OrderResult(success=False, error_message="No price available")
+
+        self._order_counter += 1
+        order_id = f"PAPER-{self._order_counter:06d}"
+
+        logger.info(
+            "[PAPER] %s %.4f @ $%.4f (requested %.4f @ $%.4f) instrument=%s",
+            request.side.value, request.size, exec_price,
+            request.size, request.price, request.instrument_id,
+        )
+
+        return OrderResult(
+            success=True,
+            order_id=order_id,
+            status=OrderStatus.FILLED,
+            filled_size=request.size,
+            filled_price=exec_price,
+            requested_size=request.size,
+            requested_price=request.price,
+        )
+
+    async def cancel_order(self, order_id: str, instrument_id: str = "") -> bool:
+        return True
+
+    async def cancel_all_orders(self, instrument_id: str | None = None) -> int:
+        return 0
+
+    async def get_open_orders(self, instrument_id: str | None = None) -> list[OpenOrder]:
+        return []
+
+    # ==================== ACCOUNT (delegate) ====================
+
+    async def get_balance(self) -> AccountBalance:
+        return await self._client.get_balance()
+
+    async def get_positions(self) -> list[ExchangePosition]:
+        return await self._client.get_positions()

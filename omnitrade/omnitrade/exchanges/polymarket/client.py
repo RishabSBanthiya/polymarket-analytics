@@ -47,6 +47,7 @@ class PolymarketClient(ExchangeClient):
             window_seconds=config.rate_limit_window_seconds,
         )
         self._session: Optional[aiohttp.ClientSession] = None
+        self._paper_balance = 10_000.0
 
     @property
     def exchange_id(self) -> ExchangeId:
@@ -196,12 +197,12 @@ class PolymarketClient(ExchangeClient):
             return []
 
     async def get_balance(self) -> AccountBalance:
-        # Polymarket doesn't have a direct balance API via CLOB
-        # Balance comes from on-chain USDC
+        # Polymarket balances are on-chain USDC with no direct CLOB API.
+        # Return a simulated balance for paper trading / sizing.
         return AccountBalance(
             exchange=ExchangeId.POLYMARKET,
-            total_equity=0,
-            available_balance=0,
+            total_equity=self._paper_balance,
+            available_balance=self._paper_balance,
             currency="USDC",
         )
 

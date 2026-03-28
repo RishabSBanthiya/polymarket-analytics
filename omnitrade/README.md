@@ -287,7 +287,7 @@ Bots are assembled from pluggable, interchangeable components. Each component is
 
 | Component | Purpose |
 |-----------|---------|
-| `SimpleSpreadQuoter` | Fixed-spread quotes around midpoint with inventory skew |
+| `AdaptiveQuoter` | Volatility-scaled quotes around fair value with toxicity awareness |
 | `ActiveMarketSelector` | Selects most liquid markets by spread tightness |
 | `InventoryManager` | Tracks signed USD exposure per instrument |
 
@@ -533,7 +533,7 @@ omnitrade/
 │   │   ├── executors.py            # Executor ABC + DryRun, Aggressive, Limit
 │   │   ├── exit_strategies.py      # ExitConfig + ExitMonitor (5 exit conditions)
 │   │   ├── hedge_signals.py        # BinaryPerpHedgeSignal, CrossExchangeArbSignal
-│   │   ├── quote_engines.py        # QuoteEngine ABC + SimpleSpreadQuoter
+│   │   ├── quote_engines.py        # QuoteEngine protocol + AdaptiveQuoter
 │   │   ├── market_selectors.py     # MarketSelector ABC + ActiveMarketSelector
 │   │   └── inventory.py            # InventoryManager for market making
 │   │

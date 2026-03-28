@@ -20,24 +20,12 @@ from ..core.models import (
 )
 from ..core.errors import RiskLimitError, OmniTradeError
 from ..exchanges.base import ExchangeClient
-from ..components.executors import Executor, DryRunExecutor
-from ..components.exit_strategies import ExitMonitor, ExitConfig
+from ..core.models import OrderRequest
+from ..components.trading import ExitMonitor, ExitConfig
+from ..components.signals import CrossExchangeSignalSource
 from ..risk.coordinator import RiskCoordinator
 
 logger = logging.getLogger(__name__)
-
-
-class CrossExchangeSignalSource:
-    """Abstract base for cross-exchange signal sources."""
-
-    async def generate(
-        self, clients: dict[ExchangeId, ExchangeClient]
-    ) -> list[MultiLegSignal]:
-        raise NotImplementedError
-
-    @property
-    def name(self) -> str:
-        return "cross_exchange"
 
 
 class CrossExchangeBot:
@@ -59,10 +47,8 @@ class CrossExchangeBot:
         agent_id: str,
         clients: dict[ExchangeId, ExchangeClient],
         signal_source: CrossExchangeSignalSource,
-        executors: dict[ExchangeId, Executor],
         risk: RiskCoordinator,
         exit_config: Optional[ExitConfig] = None,
-        environment: Environment = Environment.PAPER,
         base_size_usd: float = 50.0,
         max_strategies: int = 5,
     ):
@@ -72,17 +58,7 @@ class CrossExchangeBot:
         self.risk = risk
         self.base_size_usd = base_size_usd
         self.max_strategies = max_strategies
-        self.environment = environment
         self._running = False
-
-        # Per-exchange executors (paper mode wraps all with DryRun)
-        if environment == Environment.PAPER:
-            self.executors = {
-                ex: DryRunExecutor() for ex in clients
-            }
-            logger.info("Paper mode: all executors wrapped with DryRunExecutor")
-        else:
-            self.executors = executors
 
         self.exit_monitor = ExitMonitor(exit_config)
 
@@ -220,23 +196,16 @@ class CrossExchangeBot:
                 return
 
             # Execute leg
-            executor = self.executors.get(leg.exchange)
-            if executor is None:
-                logger.error(f"No executor for {leg.exchange}")
-                for rid, _ in reservations:
-                    self.risk.release_reservation(rid)
-                return
-
             client = self.clients[leg.exchange]
             side = Side.BUY if leg.direction == SignalDirection.LONG else Side.SELL
+            shares = size_usd / leg.price if leg.price > 0 else 0
 
-            result = await executor.execute(
-                client=client,
+            result = await client.place_order(OrderRequest(
                 instrument_id=leg.instrument_id,
                 side=side,
-                size_usd=size_usd,
+                size=shares,
                 price=leg.price,
-            )
+            ))
 
             leg_results.append(LegResult(
                 leg=leg,
@@ -315,23 +284,20 @@ class CrossExchangeBot:
             leg = lr.leg
             client = self.clients[leg.exchange]
             opposite_side = Side.SELL if leg.direction == SignalDirection.LONG else Side.BUY
-            executor = self.executors.get(leg.exchange)
 
-            if executor:
-                rollback_result = await executor.execute(
-                    client=client,
-                    instrument_id=leg.instrument_id,
-                    side=opposite_side,
-                    size_usd=lr.order_result.filled_size * lr.order_result.filled_price,
-                    price=lr.order_result.filled_price,
+            rollback_result = await client.place_order(OrderRequest(
+                instrument_id=leg.instrument_id,
+                side=opposite_side,
+                size=lr.order_result.filled_size,
+                price=lr.order_result.filled_price,
+            ))
+            if rollback_result.success:
+                logger.info(f"  Rolled back {leg.exchange.value}/{leg.instrument_id}")
+            else:
+                logger.error(
+                    f"  ROLLBACK FAILED for {leg.exchange.value}/{leg.instrument_id}: "
+                    f"{rollback_result.error_message}"
                 )
-                if rollback_result.success:
-                    logger.info(f"  Rolled back {leg.exchange.value}/{leg.instrument_id}")
-                else:
-                    logger.error(
-                        f"  ROLLBACK FAILED for {leg.exchange.value}/{leg.instrument_id}: "
-                        f"{rollback_result.error_message}"
-                    )
 
     async def _monitor_strategies(self) -> None:
         """Monitor active strategies for exit conditions."""
@@ -386,26 +352,23 @@ class CrossExchangeBot:
             sub_agent = f"{self.agent_id}-{leg.exchange.value}"
             client = self.clients[leg.exchange]
             opposite_side = Side.SELL if leg.direction == SignalDirection.LONG else Side.BUY
-            executor = self.executors.get(leg.exchange)
 
-            if executor:
-                # Get current price for sizing
-                mid = await client.get_midpoint(leg.instrument_id)
-                if mid and mid > 0:
-                    positions = self.risk.storage.get_agent_positions(sub_agent, "open")
-                    for pos in positions:
-                        if pos["instrument_id"] == leg.instrument_id:
-                            result = await executor.execute(
-                                client=client,
-                                instrument_id=leg.instrument_id,
-                                side=opposite_side,
-                                size_usd=pos["size"] * mid,
-                                price=mid,
+            # Get current price for sizing
+            mid = await client.get_midpoint(leg.instrument_id)
+            if mid and mid > 0:
+                positions = self.risk.storage.get_agent_positions(sub_agent, "open")
+                for pos in positions:
+                    if pos["instrument_id"] == leg.instrument_id:
+                        result = await client.place_order(OrderRequest(
+                            instrument_id=leg.instrument_id,
+                            side=opposite_side,
+                            size=pos["size"],
+                            price=mid,
+                        ))
+                        if result.success:
+                            self.risk.storage.close_position(
+                                pos["position_id"], result.filled_price, exit_reason
                             )
-                            if result.success:
-                                self.risk.storage.close_position(
-                                    pos["position_id"], result.filled_price, exit_reason
-                                )
 
         self.exit_monitor.unregister(strategy_key)
         del self._active_strategies[strategy_key]
@@ -487,24 +450,21 @@ class CrossExchangeBot:
             instrument_id = pos["instrument_id"]
             exchange_value = sub_agent.split("-")[-1]
             client = None
-            executor = None
             for eid, c in self.clients.items():
                 if eid.value == exchange_value:
                     client = c
-                    executor = self.executors.get(eid)
                     break
 
-            if client and executor:
+            if client:
                 exit_side = Side.SELL if pos["side"] == "BUY" else Side.BUY
                 mid = await client.get_midpoint(instrument_id)
                 if mid and mid > 0:
-                    result = await executor.execute(
-                        client=client,
+                    result = await client.place_order(OrderRequest(
                         instrument_id=instrument_id,
                         side=exit_side,
-                        size_usd=pos["size"] * mid,
+                        size=pos["size"],
                         price=mid,
-                    )
+                    ))
                     if result.success:
                         self.risk.storage.close_position(
                             pos["position_id"], result.filled_price, reason_val

@@ -16,9 +16,8 @@ from ..core.config import Config
 from ..core.errors import RiskLimitError, OmniTradeError
 from ..exchanges.base import ExchangeClient
 from ..components.signals import SignalSource
-from ..components.sizers import PositionSizer
-from ..components.executors import Executor, DryRunExecutor
-from ..components.exit_strategies import ExitMonitor, ExitConfig
+from ..core.models import OrderRequest
+from ..components.trading import PositionSizer, direction_to_side, ExitMonitor, ExitConfig
 from ..risk.coordinator import RiskCoordinator
 
 logger = logging.getLogger(__name__)
@@ -38,10 +37,8 @@ class DirectionalBot:
         client: ExchangeClient,
         signal_source: SignalSource,
         sizer: PositionSizer,
-        executor: Executor,
         risk: RiskCoordinator,
         exit_config: Optional[ExitConfig] = None,
-        environment: Environment = Environment.PAPER,
         max_positions: int = 10,
         min_price: float = 0.05,
         max_price: float = 0.95,
@@ -55,13 +52,6 @@ class DirectionalBot:
         self.min_price = min_price
         self.max_price = max_price
         self._running = False
-
-        # Use DryRun executor in paper mode
-        if environment == Environment.PAPER and not isinstance(executor, DryRunExecutor):
-            logger.info("Paper mode: wrapping executor with DryRunExecutor")
-            self.executor = DryRunExecutor()
-        else:
-            self.executor = executor
 
         self.exit_monitor = ExitMonitor(exit_config)
         self._iteration_count = 0
@@ -104,10 +94,17 @@ class DirectionalBot:
     async def _iteration(self) -> None:
         """Single trading iteration."""
         self._iteration_count += 1
+        is_verbose_tick = self._iteration_count % 10 == 1  # Log details every 10 iterations
 
         # Update balance for drawdown tracking
         balance = await self.client.get_balance()
         self.risk.update_equity(balance.total_equity)
+
+        if is_verbose_tick:
+            logger.info(
+                "[iter %d] balance=$%.2f (avail=$%.2f)",
+                self._iteration_count, balance.total_equity, balance.available_balance,
+            )
 
         # Monitor existing positions for exits
         await self._monitor_positions()
@@ -118,28 +115,54 @@ class DirectionalBot:
 
         # Generate new signals
         signals = await self.signal_source.generate(self.client)
+
+        if is_verbose_tick:
+            instruments = await self.client.get_instruments(active_only=True)
+            logger.info(
+                "[iter %d] scanning %d instruments via %s -> %d signals",
+                self._iteration_count, len(instruments),
+                self.signal_source.name, len(signals),
+            )
+
         if not signals:
             return
 
         # Check position limit
         current_positions = self.risk.storage.get_agent_positions(self.agent_id, "open")
         if len(current_positions) >= self.max_positions:
-            logger.debug(f"At position limit ({self.max_positions})")
+            logger.info(
+                "[iter %d] at position limit (%d/%d), skipping new signals",
+                self._iteration_count, len(current_positions), self.max_positions,
+            )
             return
 
-        # Process best signal
+        # Process best signal (try next if top signal is filtered out)
         signals.sort(key=lambda s: s.score, reverse=True)
+
+        if is_verbose_tick and signals:
+            top = signals[0]
+            logger.info(
+                "[iter %d] top signal: %s %s @ %.4f (score=%.1f)",
+                self._iteration_count, top.direction.value, top.instrument_id,
+                top.price, top.score,
+            )
+
         for signal in signals:
             if not signal.is_actionable:
                 continue
-            await self._process_signal(signal)
-            break  # One trade per iteration
+            traded = await self._process_signal(signal)
+            if traded:
+                break  # One trade per iteration
 
-    async def _process_signal(self, signal: Signal) -> None:
-        """Process a single signal: size -> reserve -> execute."""
+    async def _process_signal(self, signal: Signal) -> bool:
+        """Process a single signal: size -> reserve -> execute. Returns True if trade was placed."""
         # Price filter
         if signal.price < self.min_price or signal.price > self.max_price:
-            return
+            logger.info(
+                "SKIP %s: price %.4f outside [%.2f, %.2f]",
+                signal.instrument_id, signal.price, self.min_price, self.max_price,
+            )
+            return False
 
         # Get current balance for sizing
         balance = await self.client.get_balance()
@@ -148,10 +171,20 @@ class DirectionalBot:
         # Size the position
         size_usd = self.sizer.calculate_size(signal, available, signal.price)
         if size_usd <= 0:
-            return
+            logger.info(
+                "SKIP %s: sizer returned $0 (avail=$%.2f, price=%.4f)",
+                signal.instrument_id, available, signal.price,
+            )
+            return False
 
         # Map direction to side
-        side = Executor.direction_to_side(signal.direction)
+        side = direction_to_side(signal.direction)
+
+        logger.info(
+            "CONSIDERING %s %s %s: $%.2f @ %.4f (score=%.1f)",
+            side.value, signal.direction.value, signal.instrument_id,
+            size_usd, signal.price, signal.score,
+        )
 
         # Reserve capital
         try:
@@ -162,18 +195,21 @@ class DirectionalBot:
                 amount_usd=size_usd,
             )
         except (RiskLimitError, Exception) as e:
-            logger.info(f"Risk check blocked trade: {e}")
-            return
+            logger.info("BLOCKED %s: risk check -> %s", signal.instrument_id, e)
+            return False
 
         # Execute
         try:
-            result = await self.executor.execute(
-                client=self.client,
+            shares = size_usd / signal.price if signal.price > 0 else 0
+            if shares <= 0:
+                self.risk.release_reservation(reservation_id)
+                return False
+            result = await self.client.place_order(OrderRequest(
                 instrument_id=signal.instrument_id,
                 side=side,
-                size_usd=size_usd,
+                size=shares,
                 price=signal.price,
-            )
+            ))
 
             if result.success and result.filled_size > 0:
                 # Confirm with risk coordinator
@@ -202,13 +238,20 @@ class DirectionalBot:
                 )
 
                 logger.info(
-                    f"OPENED {side.value} {result.filled_size:.4f} @ ${result.filled_price:.4f} "
-                    f"on {signal.instrument_id} (score={signal.score:.1f})"
+                    "OPENED %s %.4f @ $%.4f on %s (score=%.1f, order=%s)",
+                    side.value, result.filled_size, result.filled_price,
+                    signal.instrument_id, signal.score, result.order_id,
                 )
+                return True
             else:
                 self.risk.release_reservation(reservation_id)
                 if not result.is_rejection:
                     self.risk.record_failure()
+                logger.info(
+                    "FAILED %s: %s",
+                    signal.instrument_id, result.error_message or "no fill",
+                )
+                return False
 
         except Exception as e:
             self.risk.release_reservation(reservation_id)
@@ -242,6 +285,15 @@ class DirectionalBot:
         positions = self.risk.storage.get_agent_positions(self.agent_id, "open")
         now = datetime.now(timezone.utc)
 
+        if positions and self._iteration_count % 10 == 1:
+            pos_summary = ", ".join(
+                f"{p['instrument_id'][:20]} {p['side']} {p['size']:.2f}@{p['entry_price']:.4f}"
+                for p in positions[:5]
+            )
+            if len(positions) > 5:
+                pos_summary += f" (+{len(positions) - 5} more)"
+            logger.info("[positions] %d open: %s", len(positions), pos_summary)
+
         for pos in positions:
             instrument_id = pos["instrument_id"]
             state = self.exit_monitor.get_state(instrument_id)
@@ -270,24 +322,35 @@ class DirectionalBot:
                 continue
 
             reason, exit_price, description = exit_result
-            logger.info(f"EXIT SIGNAL [{reason.value}]: {description}")
+            pnl_pct = (mid - state.entry_price) / state.entry_price * 100 if state.entry_price > 0 else 0
+            logger.info(
+                "EXIT SIGNAL [%s] %s: %s (entry=%.4f, now=%.4f, pnl=%.1f%%)",
+                reason.value, instrument_id, description,
+                state.entry_price, mid, pnl_pct,
+            )
 
             # Execute exit
             exit_side = Side.SELL if state.side == Side.BUY else Side.BUY
-            result = await self.executor.execute(
-                client=self.client,
+            result = await self.client.place_order(OrderRequest(
                 instrument_id=instrument_id,
                 side=exit_side,
-                size_usd=state.size * exit_price,
+                size=state.size,
                 price=exit_price,
-            )
+            ))
 
             if result.success:
+                pnl = (result.filled_price - state.entry_price) * state.size
+                if state.side == Side.SELL:
+                    pnl = -pnl
                 self.risk.storage.close_position(
                     pos["position_id"], result.filled_price, reason.value
                 )
                 self.exit_monitor.unregister(instrument_id)
-                logger.info(f"CLOSED {instrument_id}: {reason.value}")
+                logger.info(
+                    "CLOSED %s: %s @ %.4f -> %.4f (PnL=$%.2f)",
+                    instrument_id, reason.value, state.entry_price,
+                    result.filled_price, pnl,
+                )
 
     async def _reconcile_positions(self) -> None:
         """Compare DB positions with exchange positions and log discrepancies."""
@@ -310,9 +373,9 @@ class DirectionalBot:
             db_seen_ids.add(iid)
             ep = exchange_by_id.get(iid)
             if ep is None:
-                logger.warning(
-                    f"RECONCILIATION: DB position {iid} (id={pos['position_id']}) "
-                    f"not found on exchange"
+                logger.debug(
+                    "RECONCILIATION: DB position %s (id=%s) not found on exchange",
+                    iid, pos['position_id'],
                 )
                 continue
             # Size mismatch

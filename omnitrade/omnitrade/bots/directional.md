@@ -24,9 +24,10 @@ All components are pluggable (composition over inheritance):
 |-----------|-----------|------|
 | `SignalSource` | `components.signals` | Generates `Signal` objects with direction, price, score |
 | `PositionSizer` | `components.sizers` | Determines USD size given signal, balance, price |
-| `Executor` | `components.executors` | Places orders on the exchange (auto-wrapped with `DryRunExecutor` in paper mode) |
 | `ExitMonitor` | `components.exit_strategies` | Tracks stop-loss, take-profit, trailing stops, time expiry |
 | `RiskCoordinator` | `risk.coordinator` | Capital reservation, drawdown limits, failure tracking |
+
+Execution uses `execute_aggressive()` directly — paper mode is handled by wrapping the client with `PaperClient` at startup.
 
 ## Configuration
 
@@ -35,13 +36,11 @@ Constructor parameters:
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `agent_id` | `str` | required | Unique identifier for this bot instance |
-| `client` | `ExchangeClient` | required | Exchange connection |
+| `client` | `ExchangeClient` | required | Exchange connection (wrap with `PaperClient` for paper mode) |
 | `signal_source` | `SignalSource` | required | Signal generator |
 | `sizer` | `PositionSizer` | required | Position sizing logic |
-| `executor` | `Executor` | required | Order execution (wrapped in paper mode) |
 | `risk` | `RiskCoordinator` | required | Shared risk coordinator |
 | `exit_config` | `ExitConfig` | `None` | Exit strategy thresholds |
-| `environment` | `Environment` | `PAPER` | Paper or live trading |
 | `max_positions` | `int` | `10` | Maximum concurrent open positions |
 | `min_price` | `float` | `0.05` | Minimum price filter (normalized 0-1) |
 | `max_price` | `float` | `0.95` | Maximum price filter (normalized 0-1) |

@@ -4,7 +4,7 @@ import pytest
 from datetime import datetime, timezone, timedelta
 from omnitrade.core.enums import ExitReason, Side
 from omnitrade.core.models import PositionState
-from omnitrade.components.exit_strategies import ExitMonitor, ExitConfig
+from omnitrade.components.trading import ExitMonitor, ExitConfig
 
 
 @pytest.fixture

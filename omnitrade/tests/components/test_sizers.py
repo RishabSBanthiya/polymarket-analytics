@@ -3,7 +3,7 @@
 import pytest
 from omnitrade.core.enums import SignalDirection, ExchangeId
 from omnitrade.core.models import Signal
-from omnitrade.components.sizers import (
+from omnitrade.components.trading import (
     FixedSizer, PercentageSizer, FixedFractionSizer,
     KellySizer, SignalScaledSizer, CompositeSizer,
 )

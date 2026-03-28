@@ -29,6 +29,10 @@ dev = [
     "pytest-cov>=4.0",
     "aioresponses>=0.7",
 ]
+backtest-data = [
+    "pandas>=2.0",
+    "pyarrow>=14.0",
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
