@@ -263,6 +263,7 @@ class ExchangeClient(ABC):
         instrument_id: str = "",
         new_price: Optional[float] = None,
         new_size: Optional[float] = None,
+        side: Side = Side.BUY,
     ) -> OrderResult:
         """Amend an existing order's price and/or size.
 
@@ -271,6 +272,13 @@ class ExchangeClient(ABC):
         and may result in both orders being filled in a race.  Subclasses
         should override this when the exchange provides a native amend
         endpoint.
+
+        Args:
+            order_id: The exchange order ID to amend.
+            instrument_id: Instrument the order belongs to.
+            new_price: New limit price (None to keep original).
+            new_size: New order size (None to keep original).
+            side: Order side for the replacement order.
 
         Returns the OrderResult for the replacement order.
         """
@@ -291,7 +299,7 @@ class ExchangeClient(ABC):
         # OrderTracker which carry forward the full original request.
         request = OrderRequest(
             instrument_id=instrument_id,
-            side=Side.BUY,  # Will be overridden by subclass or tracker
+            side=side,
             size=new_size or 0.0,
             price=new_price or 0.0,
         )
@@ -443,6 +451,7 @@ class PaperClient(ExchangeClient):
         instrument_id: str = "",
         new_price: Optional[float] = None,
         new_size: Optional[float] = None,
+        side: Side = Side.BUY,
     ) -> OrderResult:
         """Paper amendment: simulate a new fill at amended parameters."""
         if new_price is None and new_size is None:
@@ -452,7 +461,7 @@ class PaperClient(ExchangeClient):
             )
         request = OrderRequest(
             instrument_id=instrument_id,
-            side=Side.BUY,
+            side=side,
             size=new_size or 0.0,
             price=new_price or 0.0,
         )

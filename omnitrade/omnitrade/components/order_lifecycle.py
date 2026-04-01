@@ -306,6 +306,11 @@ class OrderTracker:
                 found = True
                 if oo.filled_size > tracked.filled_size:
                     tracked.filled_size = oo.filled_size
+                    # Propagate fill price from the open order's limit price
+                    # as a best-effort average price when the exchange doesn't
+                    # provide a dedicated avg_price field.
+                    if oo.price > 0:
+                        tracked.filled_price = oo.price
                 tracked.status = oo.status
                 # Auto-detect partial fill status
                 if (tracked.status == OrderStatus.OPEN
@@ -320,7 +325,14 @@ class OrderTracker:
             if tracked.filled_size >= tracked.requested_size:
                 tracked.status = OrderStatus.FILLED
             elif tracked.filled_size > 0:
-                # Disappeared with partial fill -- could be cancelled remainder
+                # Disappeared with partial fill -- could be fully filled between
+                # polls or cancelled with a partial remainder.
+                logger.warning(
+                    "Order %s disappeared from open orders with partial fill "
+                    "(%.4f/%.4f). May have been fully filled between polls or "
+                    "cancelled with partial remainder.",
+                    tracked.order_id, tracked.filled_size, tracked.requested_size,
+                )
                 tracked.status = OrderStatus.CANCELLED
             else:
                 # No fills at all -- cancelled or expired
