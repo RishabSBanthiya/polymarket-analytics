@@ -322,6 +322,12 @@ class OrderTracker:
         if not found and not tracked.is_terminal:
             # Order disappeared from open orders -- likely fully filled or cancelled.
             # If we have partial fills, assume filled; otherwise assume cancelled.
+            #
+            # If filled_price is still 0.0 (no previous poll caught a fill with
+            # price data), use the requested_price as a best-effort estimate so
+            # downstream PnL / decision logic doesn't operate on a zero price.
+            if tracked.filled_size > 0 and tracked.filled_price == 0.0:
+                tracked.filled_price = tracked.requested_price
             if tracked.filled_size >= tracked.requested_size:
                 tracked.status = OrderStatus.FILLED
             elif tracked.filled_size > 0:

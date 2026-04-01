@@ -289,7 +289,8 @@ class ExchangeClient(ABC):
         instrument_id: str = "",
         new_price: Optional[float] = None,
         new_size: Optional[float] = None,
-        side: Side = Side.BUY,
+        *,
+        side: Side,
     ) -> OrderResult:
         """Amend an existing order's price and/or size.
 
@@ -304,7 +305,9 @@ class ExchangeClient(ABC):
             instrument_id: Instrument the order belongs to.
             new_price: New limit price (None to keep original).
             new_size: New order size (None to keep original).
-            side: Order side for the replacement order.
+            side: Order side for the replacement order.  Required to prevent
+                silent misuse — callers must explicitly pass the original
+                order's side.
 
         Returns the OrderResult for the replacement order.
         """
@@ -320,9 +323,6 @@ class ExchangeClient(ABC):
                 success=False,
                 error_message="amend_order requires at least new_price or new_size",
             )
-        # Build a minimal replacement request.  Callers using the default
-        # cancel-replace path should prefer the dedicated amend helpers on
-        # OrderTracker which carry forward the full original request.
         request = OrderRequest(
             instrument_id=instrument_id,
             side=side,
@@ -477,7 +477,8 @@ class PaperClient(ExchangeClient):
         instrument_id: str = "",
         new_price: Optional[float] = None,
         new_size: Optional[float] = None,
-        side: Side = Side.BUY,
+        *,
+        side: Side,
     ) -> OrderResult:
         """Paper amendment: simulate a new fill at amended parameters."""
         if new_price is None and new_size is None:
