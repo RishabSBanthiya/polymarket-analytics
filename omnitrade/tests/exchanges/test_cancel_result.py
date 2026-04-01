@@ -1,5 +1,6 @@
 """Tests for CancelResult model and cancel_orders() return type."""
 
+import aiohttp
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 
@@ -172,7 +173,7 @@ class TestKalshiCancelOrders:
     @pytest.mark.asyncio
     async def test_cancel_orders_batch_fallback(self, kalshi_client):
         """When batch API fails, individual cancels are attempted."""
-        kalshi_client._request = AsyncMock(side_effect=Exception("API down"))
+        kalshi_client._request = AsyncMock(side_effect=aiohttp.ClientError("API down"))
         kalshi_client.cancel_order = AsyncMock(side_effect=[True, False])
 
         result = await kalshi_client.cancel_orders(["o1", "o2"])

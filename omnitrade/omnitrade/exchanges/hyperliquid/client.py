@@ -18,6 +18,12 @@ from ...core.models import (
 )
 from ...core.errors import ExchangeError
 from ...utils.rate_limiter import RateLimiter
+
+try:
+    from hyperliquid.utils.error import ClientError as HlClientError, ServerError as HlServerError
+except ImportError:  # SDK not installed — tests mock everything
+    HlClientError = type("HlClientError", (Exception,), {})  # type: ignore[misc]
+    HlServerError = type("HlServerError", (Exception,), {})  # type: ignore[misc]
 from ..base import ExchangeClient, MarketDataUpdate
 from ..registry import register_exchange
 from ..auth_retry import with_auth_retry
@@ -108,7 +114,8 @@ class HyperliquidClient(ExchangeClient):
                 {"limit": {"tif": "Gtc"}},
             )
             return HyperliquidAdapter.order_response_to_result(result, request.size, request.price)
-        except Exception as e:
+        except (ExchangeError, HlClientError, HlServerError, asyncio.TimeoutError, ValueError, OSError, KeyError) as e:
+            logger.warning(f"Order placement failed: {e}", exc_info=True)
             return OrderResult(
                 success=False,
                 error_message=str(e),
@@ -125,8 +132,8 @@ class HyperliquidClient(ExchangeClient):
                 exchange.cancel, instrument_id, int(order_id)
             )
             return result.get("status") == "ok"
-        except Exception as e:
-            logger.warning(f"Failed to cancel order {order_id}: {e}")
+        except (ExchangeError, HlClientError, HlServerError, asyncio.TimeoutError, ValueError, OSError) as e:
+            logger.warning(f"Failed to cancel order {order_id}: {e}", exc_info=True)
             return False
 
     async def cancel_all_orders(self, instrument_id: str | None = None) -> int:
@@ -162,8 +169,8 @@ class HyperliquidClient(ExchangeClient):
                     status=OrderStatus.OPEN,
                 ))
             return result
-        except Exception as e:
-            logger.warning(f"Failed to get open orders: {e}")
+        except (ExchangeError, HlClientError, HlServerError, asyncio.TimeoutError, KeyError, ValueError, OSError) as e:
+            logger.warning(f"Failed to get open orders: {e}", exc_info=True)
             return []
 
     @with_auth_retry
@@ -173,8 +180,8 @@ class HyperliquidClient(ExchangeClient):
             info = self._auth.info
             state = await asyncio.to_thread(info.user_state, self._auth.address)
             return HyperliquidAdapter.user_state_to_balance(state)
-        except Exception as e:
-            logger.warning(f"Failed to get balance: {e}")
+        except (ExchangeError, HlClientError, HlServerError, asyncio.TimeoutError, KeyError, ValueError, OSError) as e:
+            logger.warning(f"Failed to get balance: {e}", exc_info=True)
             return AccountBalance(exchange=ExchangeId.HYPERLIQUID)
 
     @with_auth_retry
@@ -184,8 +191,8 @@ class HyperliquidClient(ExchangeClient):
             info = self._auth.info
             state = await asyncio.to_thread(info.user_state, self._auth.address)
             return HyperliquidAdapter.user_state_to_positions(state)
-        except Exception as e:
-            logger.warning(f"Failed to get positions: {e}")
+        except (ExchangeError, HlClientError, HlServerError, asyncio.TimeoutError, KeyError, ValueError, OSError) as e:
+            logger.warning(f"Failed to get positions: {e}", exc_info=True)
             return []
 
     # ==================== STREAMING ====================
@@ -238,6 +245,6 @@ class HyperliquidClient(ExchangeClient):
                 exchange.update_leverage, leverage, instrument_id, is_cross
             )
             return result.get("status") == "ok"
-        except Exception as e:
-            logger.warning(f"Failed to set leverage: {e}")
+        except (ExchangeError, HlClientError, HlServerError, asyncio.TimeoutError, ValueError, OSError) as e:
+            logger.warning(f"Failed to set leverage: {e}", exc_info=True)
             return False
