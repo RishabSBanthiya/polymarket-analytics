@@ -14,9 +14,9 @@ Usage inside an ExchangeClient subclass::
 
 The decorated method's ``self`` must expose:
 - ``self._auth``  - an :class:`ExchangeAuth` instance with ``authenticate()``
-- ``self._connected`` - bool flag (set back to True after re-auth)
 """
 
+import asyncio
 import functools
 import logging
 from typing import TypeVar, Callable, Any
@@ -65,7 +65,7 @@ def _is_auth_error(exc: BaseException) -> bool:
 def with_auth_retry(fn: F) -> F:
     """Decorator that retries an async method once after re-authenticating.
 
-    The owning class must have ``_auth`` (ExchangeAuth) and ``_connected`` attrs.
+    The owning class must have an ``_auth`` (ExchangeAuth) attribute.
     """
 
     @functools.wraps(fn)
@@ -102,23 +102,31 @@ def with_auth_retry(fn: F) -> F:
 async def _reauthenticate(client: Any) -> None:
     """Re-run authentication on a client's auth object.
 
+    Uses ``client._auth_lock`` (created lazily) to prevent concurrent
+    re-authentication attempts from racing each other.
+
     Raises AuthError if re-authentication itself fails.
     """
     auth = getattr(client, "_auth", None)
     if auth is None:
         raise AuthError("Client has no _auth attribute; cannot re-authenticate")
 
-    try:
-        await auth.authenticate()
-        logger.info(
-            "%s: re-authentication successful (auth_count=%d)",
-            type(client).__name__,
-            auth.auth_count,
-        )
-    except Exception as exc:
-        logger.error(
-            "%s: re-authentication failed: %s",
-            type(client).__name__,
-            exc,
-        )
-        raise AuthError(f"Re-authentication failed: {exc}") from exc
+    # Lazily create the lock so existing clients don't need __init__ changes.
+    if not hasattr(client, "_auth_lock"):
+        client._auth_lock = asyncio.Lock()
+
+    async with client._auth_lock:
+        try:
+            await auth.authenticate()
+            logger.info(
+                "%s: re-authentication successful (auth_count=%d)",
+                type(client).__name__,
+                auth.auth_count,
+            )
+        except Exception as exc:
+            logger.error(
+                "%s: re-authentication failed: %s",
+                type(client).__name__,
+                exc,
+            )
+            raise AuthError(f"Re-authentication failed: {exc}") from exc

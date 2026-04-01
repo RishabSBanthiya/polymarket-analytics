@@ -204,6 +204,7 @@ class PolymarketClient(ExchangeClient):
             logger.warning(f"Failed to get open orders: {e}")
             return []
 
+    @with_auth_retry
     async def get_balance(self) -> AccountBalance:
         # Polymarket balances are on-chain USDC with no direct CLOB API.
         # Return a simulated balance for paper trading / sizing.
