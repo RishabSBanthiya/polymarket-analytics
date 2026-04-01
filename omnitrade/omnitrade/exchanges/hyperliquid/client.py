@@ -3,11 +3,12 @@ Hyperliquid exchange client.
 
 Wraps hyperliquid-python-sdk (synchronous) with asyncio.to_thread.
 Handles perpetual-specific features: leverage, funding, margin.
+Supports WebSocket streaming for real-time L2 orderbook data.
 """
 
 import asyncio
 import logging
-from typing import Optional
+from typing import Callable, Optional
 
 from ...core.enums import ExchangeId, Side, OrderType, OrderStatus
 from ...core.config import ExchangeConfig
@@ -17,11 +18,12 @@ from ...core.models import (
 )
 from ...core.errors import ExchangeError
 from ...utils.rate_limiter import RateLimiter
-from ..base import ExchangeClient
+from ..base import ExchangeClient, MarketDataUpdate
 from ..registry import register_exchange
 from ..auth_retry import with_auth_retry
 from .auth import HyperliquidAuth
 from .adapter import HyperliquidAdapter
+from .websocket import HyperliquidWebSocket
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +44,7 @@ class HyperliquidClient(ExchangeClient):
             window_seconds=config.rate_limit_window_seconds,
         )
         self._instruments_cache: list[Instrument] = []
+        self._ws: Optional[HyperliquidWebSocket] = None
 
     @property
     def exchange_id(self) -> ExchangeId:
@@ -53,6 +56,9 @@ class HyperliquidClient(ExchangeClient):
         logger.info("Hyperliquid client connected")
 
     async def close(self) -> None:
+        if self._ws is not None:
+            await self._ws.close()
+            self._ws = None
         self._connected = False
 
     @with_auth_retry
@@ -181,6 +187,46 @@ class HyperliquidClient(ExchangeClient):
         except Exception as e:
             logger.warning(f"Failed to get positions: {e}")
             return []
+
+    # ==================== STREAMING ====================
+
+    @property
+    def supports_streaming(self) -> bool:
+        return True
+
+    async def _ensure_ws(self) -> HyperliquidWebSocket:
+        """Lazily create and connect the WebSocket."""
+        if self._ws is None:
+            testnet = "testnet" in self._config.api_base.lower() if self._config.api_base else False
+            self._ws = HyperliquidWebSocket(testnet=testnet)
+            await self._ws.connect()
+        return self._ws
+
+    async def subscribe_orderbook(
+        self,
+        instrument_id: str,
+        callback: Callable[[MarketDataUpdate], None],
+    ) -> None:
+        """Subscribe to real-time L2 orderbook updates via WebSocket."""
+        ws = await self._ensure_ws()
+        await ws.subscribe(instrument_id, callback)
+
+    async def unsubscribe_orderbook(self, instrument_id: str) -> None:
+        """Unsubscribe from L2 orderbook updates."""
+        if self._ws is not None:
+            await self._ws.unsubscribe(instrument_id)
+
+    async def unsubscribe_all(self) -> None:
+        """Close the WebSocket and all subscriptions."""
+        if self._ws is not None:
+            await self._ws.close()
+            self._ws = None
+
+    @property
+    def active_subscriptions(self) -> set[str]:
+        if self._ws is not None:
+            return self._ws.subscribed_instruments
+        return set()
 
     @with_auth_retry
     async def set_leverage(self, instrument_id: str, leverage: int, is_cross: bool = True) -> bool:
