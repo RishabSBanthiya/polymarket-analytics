@@ -9,6 +9,7 @@ Loop: poll target positions -> diff against snapshot -> size & adjust -> execute
 
 import asyncio
 import logging
+import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Optional
@@ -442,8 +443,7 @@ class CopyTradingBot:
             return
 
         # Check cooldown
-        import time
-        now = time.monotonic()
+        now = time.time()
         last_copy = self._copy_cooldowns.get(delta.instrument_id, 0)
         if now - last_copy < self.config.cooldown_seconds:
             logger.info(
@@ -554,8 +554,7 @@ class CopyTradingBot:
                 )
 
                 self._mirrored[delta.instrument_id] = (delta.side, result.filled_size)
-                import time
-                self._copy_cooldowns[delta.instrument_id] = time.monotonic()
+                self._copy_cooldowns[delta.instrument_id] = time.time()
 
                 logger.info(
                     "COPIED %s %.4f @ $%.4f (order=%s)",
@@ -624,8 +623,7 @@ class CopyTradingBot:
                     break
 
             self._mirrored.pop(delta.instrument_id, None)
-            import time
-            self._copy_cooldowns[delta.instrument_id] = time.monotonic()
+            self._copy_cooldowns[delta.instrument_id] = time.time()
 
             logger.info(
                 "CLOSED COPY %s @ %.4f (order=%s)",
