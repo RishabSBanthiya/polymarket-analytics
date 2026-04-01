@@ -19,6 +19,7 @@ from ...core.errors import ExchangeError
 from ...utils.rate_limiter import RateLimiter
 from ..base import ExchangeClient
 from ..registry import register_exchange
+from ..auth_retry import with_auth_retry
 from .auth import HyperliquidAuth
 from .adapter import HyperliquidAdapter
 
@@ -54,6 +55,7 @@ class HyperliquidClient(ExchangeClient):
     async def close(self) -> None:
         self._connected = False
 
+    @with_auth_retry
     async def get_instruments(self, active_only: bool = True, **filters) -> list[Instrument]:
         await self._limiter.wait_and_acquire()
 
@@ -76,12 +78,14 @@ class HyperliquidClient(ExchangeClient):
                 return inst
         return None
 
+    @with_auth_retry
     async def get_orderbook(self, instrument_id: str, depth: int = 10) -> OrderbookSnapshot:
         await self._limiter.wait_and_acquire()
         info = self._auth.info
         l2 = await asyncio.to_thread(info.l2_snapshot, instrument_id)
         return HyperliquidAdapter.l2_to_snapshot(instrument_id, {"levels": l2})
 
+    @with_auth_retry
     async def place_order(self, request: OrderRequest) -> OrderResult:
         await self._limiter.wait_and_acquire()
 
@@ -106,6 +110,7 @@ class HyperliquidClient(ExchangeClient):
                 requested_price=request.price,
             )
 
+    @with_auth_retry
     async def cancel_order(self, order_id: str, instrument_id: str = "") -> bool:
         await self._limiter.wait_and_acquire()
         try:
@@ -127,6 +132,7 @@ class HyperliquidClient(ExchangeClient):
                 cancelled += 1
         return cancelled
 
+    @with_auth_retry
     async def get_open_orders(self, instrument_id: str | None = None) -> list[OpenOrder]:
         await self._limiter.wait_and_acquire()
         try:
@@ -154,6 +160,7 @@ class HyperliquidClient(ExchangeClient):
             logger.warning(f"Failed to get open orders: {e}")
             return []
 
+    @with_auth_retry
     async def get_balance(self) -> AccountBalance:
         await self._limiter.wait_and_acquire()
         try:
@@ -164,6 +171,7 @@ class HyperliquidClient(ExchangeClient):
             logger.warning(f"Failed to get balance: {e}")
             return AccountBalance(exchange=ExchangeId.HYPERLIQUID)
 
+    @with_auth_retry
     async def get_positions(self) -> list[ExchangePosition]:
         await self._limiter.wait_and_acquire()
         try:
@@ -174,6 +182,7 @@ class HyperliquidClient(ExchangeClient):
             logger.warning(f"Failed to get positions: {e}")
             return []
 
+    @with_auth_retry
     async def set_leverage(self, instrument_id: str, leverage: int, is_cross: bool = True) -> bool:
         """Set leverage for an instrument. Hyperliquid-specific."""
         await self._limiter.wait_and_acquire()
