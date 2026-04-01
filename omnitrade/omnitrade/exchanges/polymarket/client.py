@@ -221,11 +221,20 @@ class PolymarketClient(ExchangeClient):
         else:
             self._paper_balance += cost
 
-        self._paper_balance -= result.fees
+        # The adapter does not populate fees on OrderResult, so estimate
+        # using Polymarket's ~2% taker fee when no fee data is present.
+        fees = result.fees if result.fees > 0 else cost * 0.02
+        self._paper_balance -= fees
+
+        if self._paper_balance < 0:
+            logger.warning(
+                "Paper balance went negative: %.4f (side=%s cost=%.4f fees=%.4f)",
+                self._paper_balance, side.value, cost, fees,
+            )
 
         logger.debug(
             "Balance updated: side=%s cost=%.4f fees=%.4f new_balance=%.4f",
-            side.value, cost, result.fees, self._paper_balance,
+            side.value, cost, fees, self._paper_balance,
         )
 
     async def get_balance(self) -> AccountBalance:

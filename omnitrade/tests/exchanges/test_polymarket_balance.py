@@ -64,7 +64,9 @@ class TestPaperBalance:
         poly_client._apply_balance_delta(result, Side.BUY)
 
         balance = await poly_client.get_balance()
-        expected = 10_000.0 - (100.0 * 0.65)
+        cost = 100.0 * 0.65
+        estimated_fee = cost * 0.02  # 2% taker fee estimate when fees=0
+        expected = 10_000.0 - cost - estimated_fee
         assert balance.total_equity == pytest.approx(expected)
 
     @pytest.mark.asyncio
@@ -82,7 +84,9 @@ class TestPaperBalance:
         poly_client._apply_balance_delta(result, Side.SELL)
 
         balance = await poly_client.get_balance()
-        expected = 10_000.0 + (50.0 * 0.80)
+        cost = 50.0 * 0.80
+        estimated_fee = cost * 0.02  # 2% taker fee estimate when fees=0
+        expected = 10_000.0 + cost - estimated_fee
         assert balance.total_equity == pytest.approx(expected)
 
     @pytest.mark.asyncio
@@ -103,8 +107,10 @@ class TestPaperBalance:
         poly_client._apply_balance_delta(sell_result, Side.SELL)
 
         balance = await poly_client.get_balance()
-        # Net: -50 + 70 = +20 profit
-        expected = 10_000.0 - 50.0 + 70.0
+        # Net: -50 + 70 = +20 profit, minus 2% estimated fees on each leg
+        buy_cost = 100.0 * 0.50
+        sell_cost = 100.0 * 0.70
+        expected = 10_000.0 - buy_cost + sell_cost - buy_cost * 0.02 - sell_cost * 0.02
         assert balance.total_equity == pytest.approx(expected)
 
     @pytest.mark.asyncio
@@ -202,7 +208,9 @@ class TestLiveBalance:
         live_client._apply_balance_delta(result, Side.BUY)
 
         balance = await live_client.get_balance()
-        expected = 10_000.0 - (200.0 * 0.40)
+        cost = 200.0 * 0.40
+        estimated_fee = cost * 0.02  # 2% taker fee estimate when fees=0
+        expected = 10_000.0 - cost - estimated_fee
         assert balance.total_equity == pytest.approx(expected)
 
     @pytest.mark.asyncio
